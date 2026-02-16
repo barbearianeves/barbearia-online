@@ -22,6 +22,9 @@
     --blockBg:#142017;
     --blockLine:#2bd66a;
 
+    --histBg:#10151d;
+    --histLine:#49566f;
+
     --pickBg:#1a2230;
     --pickLine:#5e7aa8;
   }
@@ -44,6 +47,7 @@
   .pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);margin-left:6px}
   .pill.block{border-color:var(--blockLine);color:#bff3ce}
   .pill.busy{border-color:var(--busyLine);color:#ffb4c1}
+  .pill.hist{border-color:var(--histLine);color:#c9d4ea}
 
   /* mapa */
   .mapTop{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
@@ -71,6 +75,7 @@
   .slot .d{font-size:12px;color:var(--muted)}
   .slot.busy{background:var(--busyBg);border-color:var(--busyLine);cursor:not-allowed}
   .slot.block{background:var(--blockBg);border-color:var(--blockLine);cursor:pointer}
+  .slot.hist{background:var(--histBg);border-color:var(--histLine);cursor:not-allowed;opacity:.75}
   .slot.pick{background:var(--pickBg);border-color:var(--pickLine);box-shadow:0 0 0 3px rgba(94,122,168,.22)}
   .slot .actions{display:flex;gap:8px;margin-top:6px}
   .slot .actions button{padding:8px;border-radius:10px;width:auto;margin:0;font-size:12px}
@@ -100,7 +105,7 @@
   <hr>
 
   <h3 style="margin:6px 6px 0">Bloquear horário</h3>
-  <small>Seleciona data + hora + duração e clica Bloquear. Para desbloquear, apaga o bloqueio.</small><br>
+  <small>Bloqueia (INDISPONÍVEL). Para “desbloquear” fica no histórico (status: Desbloqueado).</small><br>
 
   <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px">
     <input type="time" id="b_time" step="1800" style="min-width:150px">
@@ -109,10 +114,9 @@
     <button onclick="createBlock()">Bloquear</button>
   </div>
 
-  <small>💡 Dica: clica num horário LIVRE no mapa abaixo para preencher a hora.</small>
+  <small>💡 Dica: clica num horário LIVRE no mapa para preencher a hora.</small>
 </div>
 
-<!-- MAPA / CALENDÁRIO -->
 <div class="card">
   <div class="mapTop">
     <div>
@@ -123,6 +127,7 @@
       <small>
         <span class="pill busy">OCUPADO</span>
         <span class="pill block">INDISPONÍVEL</span>
+        <span class="pill hist">HISTÓRICO</span>
       </small>
     </div>
   </div>
@@ -130,12 +135,11 @@
   <div class="slots" id="slots"></div>
 </div>
 
-<!-- LISTA -->
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
     <div>
       <div style="font-weight:900">Lista de marcações</div>
-      <small>(mostra só o barbeiro selecionado; se apagares a data mostra tudo)</small>
+      <small>(mostra só o barbeiro selecionado; histórico aparece com status Desbloqueado)</small>
     </div>
     <button class="secondary" onclick="reloadList()">Atualizar lista</button>
   </div>
@@ -158,7 +162,6 @@
 <script>
 const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
-// horário de trabalho no mapa
 const WORK_START = "09:00";
 const WORK_END   = "19:00";
 const STEP_MIN   = 30;
@@ -219,6 +222,9 @@ async function apiSend(url, method, body){
 function isBlockItem(b){
   return (b.status === "Bloqueado") || (b.service === "INDISPONIVEL");
 }
+function isHistoryItem(b){
+  return (b.status === "Desbloqueado");
+}
 
 /* ---------------------------
    LISTA
@@ -235,7 +241,7 @@ async function reloadList(){
   try{
     const data = await apiGet(url.toString());
     renderList(data.items || []);
-    statusEl.textContent = `OK • ${ (data.items||[]).length } item(s)`;
+    statusEl.textContent = `OK • ${(data.items||[]).length} item(s)`;
   }catch(ex){
     statusEl.textContent = "Erro";
     alert("Erro: " + ex.message);
@@ -257,9 +263,10 @@ function renderList(items){
   items.forEach(b => {
     const tr = document.createElement("tr");
     const block = isBlockItem(b);
+    const hist  = isHistoryItem(b);
 
-    const cliente = block ? "<b>INDISPONÍVEL</b>" : (escapeHtml(b.name || b.client || ""));
-    const servico = block ? "<b>INDISPONÍVEL</b>" : escapeHtml(b.service || "");
+    const cliente = (block || hist) ? "<b>INDISPONÍVEL</b>" : escapeHtml(b.name || b.client || "");
+    const servico = (block || hist) ? "<b>INDISPONÍVEL</b>" : escapeHtml(b.service || "");
     const notas = escapeHtml(b.notes || "");
 
     tr.innerHTML = `
@@ -268,20 +275,21 @@ function renderList(items){
       <td>${servico}</td>
       <td>
         <select onchange="updateStatus('${b.id}', this.value)">
-          ${["Marcado","Confirmado","Concluido","Cancelado","Bloqueado"].map(s =>
+          ${["Marcado","Confirmado","Concluido","Cancelado","Bloqueado","Desbloqueado"].map(s =>
             `<option value="${s}" ${(b.status||"Marcado")===s?"selected":""}>${s}</option>`
           ).join("")}
         </select>
       </td>
       <td>
-        <input value="${notas}" style="width:220px"
+        <input value="${notas}" style="width:240px"
                placeholder="Notas..." onchange="updateNotes('${b.id}', this.value)">
       </td>
       <td>
         ${block
-          ? `<button class="danger" onclick="unblock('${b.id}')">Desbloquear</button>`
-          : `<button class="danger" onclick="deleteBooking('${b.id}')">Apagar</button>`
+          ? `<button class="danger" onclick="unblockKeepHistory('${b.id}')">Desbloquear</button>`
+          : `<button class="danger" onclick="deleteForever('${b.id}')">Apagar</button>`
         }
+        ${hist ? `<div><small>(histórico)</small></div>` : ``}
       </td>
     `;
     tbody.appendChild(tr);
@@ -305,8 +313,9 @@ async function updateNotes(id, notes){
   }
 }
 
-async function deleteBooking(id){
-  if(!confirm("Apagar marcação?")) return;
+// apagar definitivo (só para limpar)
+async function deleteForever(id){
+  if(!confirm("Apagar definitivamente?")) return;
   try{
     await fetch(`${API_BASE}/admin/bookings/${id}`, {
       method: "DELETE",
@@ -319,7 +328,7 @@ async function deleteBooking(id){
 }
 
 /* ---------------------------
-   BLOQUEAR / DESBLOQUEAR
+   BLOQUEAR / DESBLOQUEAR (HISTÓRICO)
 --------------------------- */
 async function createBlock(){
   const d = date();
@@ -347,9 +356,18 @@ async function createBlock(){
   }
 }
 
-async function unblock(id){
-  if(!confirm("Desbloquear (apagar bloqueio)?")) return;
-  await deleteBooking(id);
+async function unblockKeepHistory(id){
+  if(!confirm("Desbloquear e guardar no histórico?")) return;
+
+  try{
+    await fetch(`${API_BASE}/admin/unblock/${id}`, {
+      method: "POST",
+      headers: { "X-Admin-Token": token() }
+    });
+    await reloadAll();
+  }catch(ex){
+    alert("Erro a desbloquear: " + ex.message);
+  }
 }
 
 /* ---------------------------
@@ -390,25 +408,29 @@ function buildSlots(items, dur){
 
 function renderMap(slots){
   slotsEl.innerHTML = "";
+
   const picked = document.getElementById("b_time").value;
 
   for(const s of slots){
     const div = document.createElement("div");
 
-    const block = s.busy && (s.busy.label === "INDISPONÍVEL");
-    const busy  = !!s.busy;
+    const isBlock = s.busy && (s.busy.label === "INDISPONÍVEL");
+    const isBusy  = !!s.busy;
 
     div.className = "slot" +
-      (block ? " block" : (busy ? " busy" : "")) +
-      ((!busy && s.time === picked) ? " pick" : "");
+      (isBlock ? " block" : (isBusy ? " busy" : "")) +
+      ((!isBusy && s.time === picked) ? " pick" : "");
 
-    if(busy){
+    if(isBusy){
       const label = (s.busy.label || "OCUPADO");
       const reason = (s.busy.notes || s.busy.service || "").trim();
+
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — ${escapeHtml(label)}</div>
         <div class="d">${escapeHtml(reason)}</div>
-        ${block ? `<div class="actions"><button class="danger" onclick="unblockFromMap('${s.busy.id}')">Desbloquear</button></div>` : ""}
+        ${isBlock ? `<div class="actions">
+            <button class="danger" onclick="unblockKeepHistory('${s.busy.id}')">Desbloquear</button>
+          </div>` : ``}
       `;
     }else{
       div.innerHTML = `
@@ -417,17 +439,12 @@ function renderMap(slots){
       `;
       div.addEventListener("click", () => {
         document.getElementById("b_time").value = s.time;
-        // feedback visual
         renderMap(slots.map(x => ({...x})));
       });
     }
 
     slotsEl.appendChild(div);
   }
-}
-
-async function unblockFromMap(id){
-  await unblock(id);
 }
 
 /* ---------------------------
@@ -463,7 +480,7 @@ async function reloadAll(){
   await reloadList();
 }
 
-// autorefresh do mapa (opcional)
+// autorefresh (opcional)
 setInterval(() => {
   if (dateEl.value) reloadMap();
 }, 60000);
