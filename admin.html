@@ -6,106 +6,266 @@
 <title>Área do Barbeiro</title>
 
 <style>
-body{font-family:Arial;max-width:1000px;margin:30px auto;background:#111;color:#fff}
-input,select,button{padding:8px;margin:5px}
-table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{border-bottom:1px solid #333;padding:10px;text-align:left;vertical-align:top}
-button{cursor:pointer}
-small{opacity:.75}
-hr{border:0;border-top:1px solid #333;margin:14px 0}
-h3{margin:10px 5px}
+  :root{
+    --bg:#0b0d10;
+    --card:#12161c;
+    --line:#2a3240;
+    --txt:#fff;
+    --muted:#aeb6c2;
+
+    --freeBg:#0f1319;
+    --freeLine:#2a3240;
+
+    --busyBg:#241216;
+    --busyLine:#7a2a3a;
+
+    --blockBg:#142017;
+    --blockLine:#2bd66a;
+
+    --pickBg:#1a2230;
+    --pickLine:#5e7aa8;
+  }
+
+  *{box-sizing:border-box}
+  body{font-family:Arial;max-width:1100px;margin:24px auto;background:var(--bg);color:var(--txt);padding:0 12px}
+  h2{margin:0 0 12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+  input,select,button{padding:10px;margin:6px;border-radius:10px;border:1px solid var(--line);background:#0f1319;color:#fff}
+  button{cursor:pointer;border:0;background:#fff;color:#000;font-weight:800}
+  button.secondary{background:#2a3240;color:#fff;border:1px solid #3b465a}
+  button.danger{background:#ff5c5c;color:#000}
+  small{color:var(--muted)}
+  hr{border:0;border-top:1px solid var(--line);margin:12px 0}
+
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{border-bottom:1px solid #2a3240;padding:10px;text-align:left;vertical-align:top}
+  th{color:#d9deea}
+  td small{color:var(--muted)}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);margin-left:6px}
+  .pill.block{border-color:var(--blockLine);color:#bff3ce}
+  .pill.busy{border-color:var(--busyLine);color:#ffb4c1}
+
+  /* mapa */
+  .mapTop{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  .slots{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:10px;
+    max-height:460px;
+    overflow:auto;
+    padding-right:6px;
+    margin-top:12px;
+  }
+  .slot{
+    border:1px solid var(--freeLine);
+    background:var(--freeBg);
+    border-radius:12px;
+    padding:10px;
+    cursor:pointer;
+    user-select:none;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .slot .t{font-weight:900}
+  .slot .d{font-size:12px;color:var(--muted)}
+  .slot.busy{background:var(--busyBg);border-color:var(--busyLine);cursor:not-allowed}
+  .slot.block{background:var(--blockBg);border-color:var(--blockLine);cursor:pointer}
+  .slot.pick{background:var(--pickBg);border-color:var(--pickLine);box-shadow:0 0 0 3px rgba(94,122,168,.22)}
+  .slot .actions{display:flex;gap:8px;margin-top:6px}
+  .slot .actions button{padding:8px;border-radius:10px;width:auto;margin:0;font-size:12px}
+  .slot .actions button.secondary{padding:7px}
+
+  @media (max-width: 980px){ .slots{grid-template-columns: repeat(2, 1fr);} }
+  @media (max-width: 520px){ .slots{grid-template-columns: 1fr;} }
 </style>
 </head>
 <body>
 
 <h2>Agenda do Barbeiro</h2>
 
-<input type="password" id="token" placeholder="Senha do barbeiro (ADMIN_TOKEN)">
-<input type="date" id="date">
-<button onclick="loadBookings()">Carregar</button>
-<small>(Se apagares a data e carregares, mostra tudo)</small>
+<div class="card">
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <input type="password" id="token" placeholder="Senha (ADMIN_TOKEN)" style="min-width:260px">
+    <select id="barber" style="min-width:200px">
+      <option value="Pedro">Pedro</option>
+      <option value="Joao">Joao</option>
+    </select>
+    <input type="date" id="date">
+    <button onclick="reloadAll()">Carregar</button>
+    <button class="secondary" onclick="clearDate()">Mostrar tudo</button>
+    <small id="status">—</small>
+  </div>
 
-<hr>
+  <hr>
 
-<h3>Bloquear horário (folga / almoço / indisponível)</h3>
+  <h3 style="margin:6px 6px 0">Bloquear horário</h3>
+  <small>Seleciona data + hora + duração e clica Bloquear. Para desbloquear, apaga o bloqueio.</small><br>
 
-<input type="date" id="b_date">
-<input type="time" id="b_time" step="1800">
-<input type="number" id="b_dur" value="30" min="30" step="30" style="width:120px">
-<select id="b_barber" style="width:200px">
-  <option value="Pedro">Pedro</option>
-  <option value="Joao">Joao</option>
-</select>
-<input type="text" id="b_notes" placeholder="Motivo (ex: Almoço, Folga)" style="width:260px">
-<button onclick="createBlock()">Bloquear</button>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px">
+    <input type="time" id="b_time" step="1800" style="min-width:150px">
+    <input type="number" id="b_dur" value="30" min="30" step="30" style="width:130px">
+    <input type="text" id="b_notes" placeholder="Motivo (ex: Almoço, Folga, Férias)" style="min-width:320px">
+    <button onclick="createBlock()">Bloquear</button>
+  </div>
 
-<table>
-<thead>
-<tr>
-<th>Hora</th>
-<th>Cliente</th>
-<th>Serviço</th>
-<th>Barbeiro</th>
-<th>Status</th>
-<th>Notas</th>
-<th>Ações</th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
+  <small>💡 Dica: clica num horário LIVRE no mapa abaixo para preencher a hora.</small>
+</div>
+
+<!-- MAPA / CALENDÁRIO -->
+<div class="card">
+  <div class="mapTop">
+    <div>
+      <div style="font-weight:900;font-size:16px">Mapa do dia</div>
+      <small id="mapSub">—</small>
+    </div>
+    <div>
+      <small>
+        <span class="pill busy">OCUPADO</span>
+        <span class="pill block">INDISPONÍVEL</span>
+      </small>
+    </div>
+  </div>
+
+  <div class="slots" id="slots"></div>
+</div>
+
+<!-- LISTA -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div>
+      <div style="font-weight:900">Lista de marcações</div>
+      <small>(mostra só o barbeiro selecionado; se apagares a data mostra tudo)</small>
+    </div>
+    <button class="secondary" onclick="reloadList()">Atualizar lista</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>Cliente</th>
+        <th>Serviço</th>
+        <th>Status</th>
+        <th>Notas</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
 
 <script>
 const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
-function token(){
-  return document.getElementById("token").value.trim();
+// horário de trabalho no mapa
+const WORK_START = "09:00";
+const WORK_END   = "19:00";
+const STEP_MIN   = 30;
+
+const tokenEl = document.getElementById("token");
+const dateEl  = document.getElementById("date");
+const barberEl= document.getElementById("barber");
+const statusEl= document.getElementById("status");
+
+const slotsEl = document.getElementById("slots");
+const mapSub  = document.getElementById("mapSub");
+const tbody   = document.getElementById("tbody");
+
+function token(){ return tokenEl.value.trim(); }
+function barber(){ return barberEl.value.trim(); }
+function date(){ return dateEl.value; }
+
+function pad2(n){ return (n<10?"0":"")+n; }
+function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60+m; }
+function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad2(h)+":"+pad2(m); }
+function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
+
+function todayISO(){
+  const d=new Date();
+  return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
 }
 
-async function loadBookings(){
-  const date = document.getElementById("date").value; // pode ser vazio
+function setTodayIfEmpty(){
+  if (!dateEl.value) dateEl.value = todayISO();
+}
 
-  const url = date
-    ? `${API_BASE}/admin/bookings?date=${encodeURIComponent(date)}`
-    : `${API_BASE}/admin/bookings`;
+function clearDate(){
+  dateEl.value = "";
+  reloadAll();
+}
 
+async function apiGet(url){
+  const res = await fetch(url, { headers: { "X-Admin-Token": token() }});
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+
+async function apiSend(url, method, body){
   const res = await fetch(url, {
-    headers: { "X-Admin-Token": token() }
+    method,
+    headers: {
+      "Content-Type":"application/json",
+      "X-Admin-Token": token()
+    },
+    body: body ? JSON.stringify(body) : undefined
   });
-
-  if(!res.ok){
-    const txt = await res.text();
-    alert("Erro: " + res.status + " - " + txt);
-    return;
-  }
-
-  const data = await res.json();
-  render(data.items || []);
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
 }
 
-function render(items){
-  const tbody = document.getElementById("tbody");
+function isBlockItem(b){
+  return (b.status === "Bloqueado") || (b.service === "INDISPONIVEL");
+}
+
+/* ---------------------------
+   LISTA
+--------------------------- */
+async function reloadList(){
+  const d = date();
+  const b = barber();
+
+  const url = new URL(API_BASE + "/admin/bookings");
+  if (d) url.searchParams.set("date", d);
+  if (b) url.searchParams.set("barber", b);
+
+  statusEl.textContent = "A carregar…";
+  try{
+    const data = await apiGet(url.toString());
+    renderList(data.items || []);
+    statusEl.textContent = `OK • ${ (data.items||[]).length } item(s)`;
+  }catch(ex){
+    statusEl.textContent = "Erro";
+    alert("Erro: " + ex.message);
+  }
+}
+
+function renderList(items){
   tbody.innerHTML = "";
 
   if(!items.length){
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="7"><small>Sem marcações para o filtro atual.</small></td>`;
+    tr.innerHTML = `<td colspan="6"><small>Sem itens para o filtro atual.</small></td>`;
     tbody.appendChild(tr);
     return;
   }
 
+  items.sort((a,b) => (a.time||"").localeCompare(b.time||""));
+
   items.forEach(b => {
     const tr = document.createElement("tr");
+    const block = isBlockItem(b);
 
-    const isBlock = (b.status === "Bloqueado") || (b.service === "INDISPONIVEL");
-    const cliente = isBlock ? "<b>INDISPONÍVEL</b>" : (b.name || b.client || "");
-    const servico = isBlock ? "<b>INDISPONÍVEL</b>" : (b.service || "");
-    const notas = (b.notes || "").replaceAll('"', "&quot;");
+    const cliente = block ? "<b>INDISPONÍVEL</b>" : (escapeHtml(b.name || b.client || ""));
+    const servico = block ? "<b>INDISPONÍVEL</b>" : escapeHtml(b.service || "");
+    const notas = escapeHtml(b.notes || "");
 
     tr.innerHTML = `
-      <td><b>${b.time || ""}</b><br><small>${b.date || ""}</small></td>
+      <td><b>${escapeHtml(b.time||"")}</b><br><small>${escapeHtml(b.date||"")}</small></td>
       <td>${cliente}</td>
       <td>${servico}</td>
-      <td>${b.barber || ""}</td>
       <td>
         <select onchange="updateStatus('${b.id}', this.value)">
           ${["Marcado","Confirmado","Concluido","Cancelado","Bloqueado"].map(s =>
@@ -114,11 +274,14 @@ function render(items){
         </select>
       </td>
       <td>
-        <input value="${notas}" style="width:200px"
+        <input value="${notas}" style="width:220px"
                placeholder="Notas..." onchange="updateNotes('${b.id}', this.value)">
       </td>
       <td>
-        <button onclick="deleteBooking('${b.id}')">Apagar</button>
+        ${block
+          ? `<button class="danger" onclick="unblock('${b.id}')">Desbloquear</button>`
+          : `<button class="danger" onclick="deleteBooking('${b.id}')">Apagar</button>`
+        }
       </td>
     `;
     tbody.appendChild(tr);
@@ -126,93 +289,191 @@ function render(items){
 }
 
 async function updateStatus(id, status){
-  const res = await fetch(`${API_BASE}/admin/bookings/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Admin-Token": token()
-    },
-    body: JSON.stringify({ status })
-  });
-
-  if(!res.ok){
-    const txt = await res.text();
-    alert("Erro ao atualizar status: " + res.status + " - " + txt);
-    return;
+  try{
+    await apiSend(`${API_BASE}/admin/bookings/${id}`, "PATCH", { status });
+    await reloadAll();
+  }catch(ex){
+    alert("Erro ao atualizar status: " + ex.message);
   }
-
-  loadBookings();
 }
 
 async function updateNotes(id, notes){
-  const res = await fetch(`${API_BASE}/admin/bookings/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Admin-Token": token()
-    },
-    body: JSON.stringify({ notes })
-  });
-
-  if(!res.ok){
-    const txt = await res.text();
-    alert("Erro ao atualizar notas: " + res.status + " - " + txt);
-    return;
+  try{
+    await apiSend(`${API_BASE}/admin/bookings/${id}`, "PATCH", { notes });
+  }catch(ex){
+    alert("Erro ao atualizar notas: " + ex.message);
   }
 }
 
 async function deleteBooking(id){
-  if(!confirm("Apagar?")) return;
-
-  const res = await fetch(`${API_BASE}/admin/bookings/${id}`, {
-    method: "DELETE",
-    headers: { "X-Admin-Token": token() }
-  });
-
-  if(!res.ok){
-    const txt = await res.text();
-    alert("Erro ao apagar: " + res.status + " - " + txt);
-    return;
+  if(!confirm("Apagar marcação?")) return;
+  try{
+    await fetch(`${API_BASE}/admin/bookings/${id}`, {
+      method: "DELETE",
+      headers: { "X-Admin-Token": token() }
+    });
+    await reloadAll();
+  }catch(ex){
+    alert("Erro ao apagar: " + ex.message);
   }
-
-  loadBookings();
 }
 
-// ✅ Criar bloqueio
+/* ---------------------------
+   BLOQUEAR / DESBLOQUEAR
+--------------------------- */
 async function createBlock(){
-  const date = document.getElementById("b_date").value;
+  const d = date();
+  const b = barber();
   const time = document.getElementById("b_time").value;
-  const dur = parseInt(document.getElementById("b_dur").value, 10) || 30;
-  const barber = document.getElementById("b_barber").value.trim();
+  const dur = parseInt(document.getElementById("b_dur").value,10) || 30;
   const notes = document.getElementById("b_notes").value.trim();
 
-  if(!date || !time || !barber){
-    alert("Preenche data, hora e barbeiro.");
-    return;
+  if(!d){ alert("Escolhe uma data."); return; }
+  if(!time){ alert("Escolhe uma hora."); return; }
+
+  try{
+    await apiSend(`${API_BASE}/admin/block`, "POST", {
+      date: d,
+      time: time.slice(0,5),
+      dur,
+      barber: b,
+      notes
+    });
+    document.getElementById("b_notes").value = "";
+    await reloadAll();
+    alert("✅ Horário bloqueado!");
+  }catch(ex){
+    alert("Erro a bloquear: " + ex.message);
   }
-
-  const res = await fetch(`${API_BASE}/admin/block`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Admin-Token": token()
-    },
-    body: JSON.stringify({ date, time: time.slice(0,5), dur, barber, notes })
-  });
-
-  if(!res.ok){
-    const txt = await res.text();
-    alert("Erro a bloquear: " + res.status + " - " + txt);
-    return;
-  }
-
-  alert("✅ Horário bloqueado!");
-  loadBookings();
 }
 
+async function unblock(id){
+  if(!confirm("Desbloquear (apagar bloqueio)?")) return;
+  await deleteBooking(id);
+}
+
+/* ---------------------------
+   MAPA DO DIA
+--------------------------- */
+async function fetchDayBusy(d, b){
+  const u = new URL(API_BASE + "/day");
+  u.searchParams.set("date", d);
+  u.searchParams.set("barber", b);
+  const r = await fetch(u.toString());
+  const data = await r.json().catch(()=> ({}));
+  if(!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+  return data.items || [];
+}
+
+function buildSlots(items, dur){
+  const booked = items.map(x => {
+    const s = toMin(x.time);
+    const e = s + (parseInt(x.dur,10) || 30);
+    return { ...x, s, e };
+  });
+
+  const start = toMin(WORK_START);
+  const end   = toMin(WORK_END);
+
+  const slots = [];
+  for(let t=start; t+dur<=end; t+=STEP_MIN){
+    const s=t, e=t+dur;
+
+    let busy = null;
+    for(const b of booked){
+      if(overlaps(s,e,b.s,b.e)){ busy=b; break; }
+    }
+    slots.push({ time: toHHMM(t), busy });
+  }
+  return slots;
+}
+
+function renderMap(slots){
+  slotsEl.innerHTML = "";
+  const picked = document.getElementById("b_time").value;
+
+  for(const s of slots){
+    const div = document.createElement("div");
+
+    const block = s.busy && (s.busy.label === "INDISPONÍVEL");
+    const busy  = !!s.busy;
+
+    div.className = "slot" +
+      (block ? " block" : (busy ? " busy" : "")) +
+      ((!busy && s.time === picked) ? " pick" : "");
+
+    if(busy){
+      const label = (s.busy.label || "OCUPADO");
+      const reason = (s.busy.notes || s.busy.service || "").trim();
+      div.innerHTML = `
+        <div class="t">${escapeHtml(s.time)} — ${escapeHtml(label)}</div>
+        <div class="d">${escapeHtml(reason)}</div>
+        ${block ? `<div class="actions"><button class="danger" onclick="unblockFromMap('${s.busy.id}')">Desbloquear</button></div>` : ""}
+      `;
+    }else{
+      div.innerHTML = `
+        <div class="t">${escapeHtml(s.time)} — Livre</div>
+        <div class="d">Clique para escolher hora</div>
+      `;
+      div.addEventListener("click", () => {
+        document.getElementById("b_time").value = s.time;
+        // feedback visual
+        renderMap(slots.map(x => ({...x})));
+      });
+    }
+
+    slotsEl.appendChild(div);
+  }
+}
+
+async function unblockFromMap(id){
+  await unblock(id);
+}
+
+/* ---------------------------
+   MISC
+--------------------------- */
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+async function reloadMap(){
+  const d = date();
+  const b = barber();
+  if(!d){
+    mapSub.textContent = "Escolhe uma data para ver o mapa.";
+    slotsEl.innerHTML = "";
+    return;
+  }
+  try{
+    const items = await fetchDayBusy(d, b);
+    const slots = buildSlots(items, 30);
+    renderMap(slots);
+    mapSub.textContent = `${b} • ${d} • ${items.length} item(s)`;
+  }catch(ex){
+    mapSub.textContent = "Erro a carregar mapa";
+    slotsEl.innerHTML = "";
+  }
+}
+
+async function reloadAll(){
+  await reloadMap();
+  await reloadList();
+}
+
+// autorefresh do mapa (opcional)
+setInterval(() => {
+  if (dateEl.value) reloadMap();
+}, 60000);
+
 // defaults
-document.getElementById("date").valueAsDate = new Date();
-document.getElementById("b_date").valueAsDate = new Date();
+setTodayIfEmpty();
+reloadAll();
+
+dateEl.addEventListener("change", reloadAll);
+barberEl.addEventListener("change", reloadAll);
 </script>
 
 </body>
