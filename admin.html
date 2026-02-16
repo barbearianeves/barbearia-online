@@ -27,44 +27,142 @@
 
     --pickBg:#1a2230;
     --pickLine:#5e7aa8;
+
+    --btn:#ffffff;
+    --btnTxt:#000000;
+    --btn2:#2a3240;
+    --btn2Txt:#ffffff;
+    --danger:#ff5c5c;
   }
 
   *{box-sizing:border-box}
-  body{font-family:Arial;max-width:1100px;margin:24px auto;background:var(--bg);color:var(--txt);padding:0 12px}
-  h2{margin:0 0 12px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
-  input,select,button{padding:10px;margin:6px;border-radius:10px;border:1px solid var(--line);background:#0f1319;color:#fff}
-  button{cursor:pointer;border:0;background:#fff;color:#000;font-weight:800}
-  button.secondary{background:#2a3240;color:#fff;border:1px solid #3b465a}
-  button.danger{background:#ff5c5c;color:#000}
-  small{color:var(--muted)}
-  hr{border:0;border-top:1px solid var(--line);margin:12px 0}
+  body{
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    margin:0;
+    background:var(--bg);
+    color:var(--txt);
+    padding:14px;
+  }
 
-  table{width:100%;border-collapse:collapse;margin-top:10px}
-  th,td{border-bottom:1px solid #2a3240;padding:10px;text-align:left;vertical-align:top}
-  th{color:#d9deea}
-  td small{color:var(--muted)}
-  .pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);margin-left:6px}
-  .pill.block{border-color:var(--blockLine);color:#bff3ce}
-  .pill.busy{border-color:var(--busyLine);color:#ffb4c1}
-  .pill.hist{border-color:var(--histLine);color:#c9d4ea}
+  .wrap{max-width:1100px;margin:0 auto}
+  h2{margin:6px 0 10px}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    margin:12px 0;
+  }
+
+  label{display:block;margin:10px 0 6px;color:#d9deea;font-weight:700;font-size:13px}
+  input,select{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#0f1319;
+    color:#fff;
+    outline:none;
+  }
+  input:focus,select:focus{border-color:#55637d;box-shadow:0 0 0 3px rgba(85,99,125,.25)}
+
+  .row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  @media (max-width:760px){
+    .row{grid-template-columns:1fr}
+  }
+
+  .btnRow{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:10px;
+  }
+  @media (max-width:760px){
+    .btnRow{grid-template-columns:1fr}
+  }
+
+  button{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:0;
+    cursor:pointer;
+    font-weight:900;
+  }
+  .primary{background:var(--btn);color:var(--btnTxt)}
+  .secondary{background:var(--btn2);color:var(--btn2Txt);border:1px solid #3b465a}
+  .danger{background:var(--danger);color:#000}
+
+  small{color:var(--muted)}
+  .status{margin-top:8px;color:var(--muted);font-size:13px}
+
+  /* Tabs */
+  .tabs{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+  .tabBtn{
+    width:auto;
+    padding:10px 12px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#0f1319;
+    color:#fff;
+    font-weight:800;
+  }
+  .tabBtn.active{
+    background:#ffffff;
+    color:#000;
+    border-color:#ffffff;
+  }
+  .tabPanel{display:none;margin-top:12px}
+  .tabPanel.active{display:block}
 
   /* mapa */
-  .mapTop{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  .mapTop{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    border:1px solid var(--line);
+    color:#d9deea;
+  }
+  .pill.busy{border-color:var(--busyLine);color:#ffb4c1}
+  .pill.block{border-color:var(--blockLine);color:#bff3ce}
+  .pill.hist{border-color:var(--histLine);color:#c9d4ea}
+
   .slots{
     display:grid;
     grid-template-columns: repeat(4, 1fr);
     gap:10px;
-    max-height:460px;
+    margin-top:12px;
+    max-height:520px;
     overflow:auto;
     padding-right:6px;
-    margin-top:12px;
   }
+  @media (max-width:980px){ .slots{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:520px){ .slots{grid-template-columns:1fr} }
+
   .slot{
     border:1px solid var(--freeLine);
     background:var(--freeBg);
-    border-radius:12px;
-    padding:10px;
+    border-radius:14px;
+    padding:12px;
     cursor:pointer;
     user-select:none;
     display:flex;
@@ -75,88 +173,143 @@
   .slot .d{font-size:12px;color:var(--muted)}
   .slot.busy{background:var(--busyBg);border-color:var(--busyLine);cursor:not-allowed}
   .slot.block{background:var(--blockBg);border-color:var(--blockLine);cursor:pointer}
-  .slot.hist{background:var(--histBg);border-color:var(--histLine);cursor:not-allowed;opacity:.75}
   .slot.pick{background:var(--pickBg);border-color:var(--pickLine);box-shadow:0 0 0 3px rgba(94,122,168,.22)}
-  .slot .actions{display:flex;gap:8px;margin-top:6px}
-  .slot .actions button{padding:8px;border-radius:10px;width:auto;margin:0;font-size:12px}
-  .slot .actions button.secondary{padding:7px}
+  .slot .actions{display:flex;gap:10px;margin-top:6px}
+  .slot .actions button{width:auto;padding:10px;border-radius:12px;font-size:12px}
 
-  @media (max-width: 980px){ .slots{grid-template-columns: repeat(2, 1fr);} }
-  @media (max-width: 520px){ .slots{grid-template-columns: 1fr;} }
+  /* Lista cards (melhor em telemóvel) */
+  .list{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    margin-top:10px;
+  }
+  .item{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    background:#0f1319;
+  }
+  .itemTop{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .time{font-weight:950}
+  .meta{color:var(--muted);font-size:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  @media (max-width:520px){ .row2{grid-template-columns:1fr} }
+
+  .inputMini{padding:10px;border-radius:12px}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<h2>Agenda do Barbeiro</h2>
+  <h2>Agenda do Barbeiro</h2>
 
-<div class="card">
-  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-    <input type="password" id="token" placeholder="Senha (ADMIN_TOKEN)" style="min-width:260px">
-    <select id="barber" style="min-width:200px">
-      <option value="Pedro">Pedro</option>
-      <option value="Joao">Joao</option>
-    </select>
-    <input type="date" id="date">
-    <button onclick="reloadAll()">Carregar</button>
-    <button class="secondary" onclick="clearDate()">Mostrar tudo</button>
-    <small id="status">—</small>
-  </div>
-
-  <hr>
-
-  <h3 style="margin:6px 6px 0">Bloquear horário</h3>
-  <small>Bloqueia (INDISPONÍVEL). Para “desbloquear” fica no histórico (status: Desbloqueado).</small><br>
-
-  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px">
-    <input type="time" id="b_time" step="1800" style="min-width:150px">
-    <input type="number" id="b_dur" value="30" min="30" step="30" style="width:130px">
-    <input type="text" id="b_notes" placeholder="Motivo (ex: Almoço, Folga, Férias)" style="min-width:320px">
-    <button onclick="createBlock()">Bloquear</button>
-  </div>
-
-  <small>💡 Dica: clica num horário LIVRE no mapa para preencher a hora.</small>
-</div>
-
-<div class="card">
-  <div class="mapTop">
-    <div>
-      <div style="font-weight:900;font-size:16px">Mapa do dia</div>
-      <small id="mapSub">—</small>
+  <!-- CONFIG -->
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Senha (ADMIN_TOKEN)</label>
+        <input type="password" id="token" placeholder="ex: barbeiro-2026">
+      </div>
+      <div>
+        <label>Barbeiro</label>
+        <select id="barber">
+          <option value="Pedro">Pedro</option>
+          <option value="Joao">Joao</option>
+        </select>
+      </div>
+      <div>
+        <label>Data</label>
+        <input type="date" id="date">
+        <small>Para “Mostrar tudo”, limpa a data.</small>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <div class="btnRow">
+          <button class="primary" onclick="reloadAll()">Carregar</button>
+          <button class="secondary" onclick="clearDate()">Mostrar tudo</button>
+        </div>
+      </div>
     </div>
-    <div>
-      <small>
+
+    <div class="status" id="status">—</div>
+
+    <div class="tabs">
+      <button class="tabBtn active" data-tab="map">Mapa</button>
+      <button class="tabBtn" data-tab="list">Lista</button>
+      <button class="tabBtn" data-tab="history">Histórico</button>
+    </div>
+  </div>
+
+  <!-- BLOQUEAR (fica sempre visível) -->
+  <div class="card">
+    <div style="font-weight:950;margin-bottom:6px">Bloquear horário</div>
+    <small>Bloqueia “INDISPONÍVEL”. “Desbloquear” guarda no histórico (status: Desbloqueado).</small>
+
+    <div class="row" style="margin-top:10px">
+      <div>
+        <label>Hora</label>
+        <input type="time" id="b_time" step="1800">
+      </div>
+      <div>
+        <label>Duração (min)</label>
+        <input type="number" id="b_dur" value="30" min="30" step="30">
+      </div>
+    </div>
+
+    <label>Motivo (opcional)</label>
+    <input id="b_notes" placeholder="Ex: almoço / folga / férias" />
+
+    <div class="btnRow">
+      <button class="primary" onclick="createBlock()">Bloquear</button>
+      <button class="secondary" onclick="fillNextHalfHour()">Hora próxima</button>
+    </div>
+
+    <small>💡 Dica: no “Mapa”, toca num horário livre para preencher a Hora.</small>
+  </div>
+
+  <!-- TAB: MAPA -->
+  <div class="card tabPanel active" id="tab-map">
+    <div class="mapTop">
+      <div>
+        <div style="font-weight:950">Mapa do dia</div>
+        <small id="mapSub">—</small>
+      </div>
+      <div class="pills">
         <span class="pill busy">OCUPADO</span>
         <span class="pill block">INDISPONÍVEL</span>
-        <span class="pill hist">HISTÓRICO</span>
-      </small>
+      </div>
     </div>
+
+    <div class="slots" id="slots"></div>
   </div>
 
-  <div class="slots" id="slots"></div>
-</div>
-
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div>
-      <div style="font-weight:900">Lista de marcações</div>
-      <small>(mostra só o barbeiro selecionado; histórico aparece com status Desbloqueado)</small>
+  <!-- TAB: LISTA -->
+  <div class="card tabPanel" id="tab-list">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+      <div>
+        <div style="font-weight:950">Lista</div>
+        <small>Marcações e bloqueios do filtro atual.</small>
+      </div>
+      <button class="secondary" style="width:auto" onclick="reloadList()">Atualizar</button>
     </div>
-    <button class="secondary" onclick="reloadList()">Atualizar lista</button>
+
+    <div class="list" id="list"></div>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Hora</th>
-        <th>Cliente</th>
-        <th>Serviço</th>
-        <th>Status</th>
-        <th>Notas</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
+  <!-- TAB: HISTÓRICO -->
+  <div class="card tabPanel" id="tab-history">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+      <div>
+        <div style="font-weight:950">Histórico</div>
+        <small>Bloqueios “Desbloqueados” e (opcional) Cancelados.</small>
+      </div>
+      <button class="secondary" style="width:auto" onclick="reloadHistory()">Atualizar</button>
+    </div>
+
+    <div class="list" id="history"></div>
+  </div>
+
 </div>
 
 <script>
@@ -173,7 +326,8 @@ const statusEl= document.getElementById("status");
 
 const slotsEl = document.getElementById("slots");
 const mapSub  = document.getElementById("mapSub");
-const tbody   = document.getElementById("tbody");
+const listEl  = document.getElementById("list");
+const histEl  = document.getElementById("history");
 
 function token(){ return tokenEl.value.trim(); }
 function barber(){ return barberEl.value.trim(); }
@@ -188,14 +342,17 @@ function todayISO(){
   const d=new Date();
   return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
 }
-
 function setTodayIfEmpty(){
   if (!dateEl.value) dateEl.value = todayISO();
 }
-
 function clearDate(){
   dateEl.value = "";
   reloadAll();
+}
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
 }
 
 async function apiGet(url){
@@ -204,7 +361,6 @@ async function apiGet(url){
   if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
   return data;
 }
-
 async function apiSend(url, method, body){
   const res = await fetch(url, {
     method,
@@ -223,112 +379,25 @@ function isBlockItem(b){
   return (b.status === "Bloqueado") || (b.service === "INDISPONIVEL");
 }
 function isHistoryItem(b){
-  return (b.status === "Desbloqueado");
+  return (b.status === "Desbloqueado") || (b.status === "Cancelado");
 }
 
 /* ---------------------------
-   LISTA
+   TABS
 --------------------------- */
-async function reloadList(){
-  const d = date();
-  const b = barber();
+document.querySelectorAll(".tabBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tabBtn").forEach(x => x.classList.remove("active"));
+    btn.classList.add("active");
 
-  const url = new URL(API_BASE + "/admin/bookings");
-  if (d) url.searchParams.set("date", d);
-  if (b) url.searchParams.set("barber", b);
-
-  statusEl.textContent = "A carregar…";
-  try{
-    const data = await apiGet(url.toString());
-    renderList(data.items || []);
-    statusEl.textContent = `OK • ${(data.items||[]).length} item(s)`;
-  }catch(ex){
-    statusEl.textContent = "Erro";
-    alert("Erro: " + ex.message);
-  }
-}
-
-function renderList(items){
-  tbody.innerHTML = "";
-
-  if(!items.length){
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="6"><small>Sem itens para o filtro atual.</small></td>`;
-    tbody.appendChild(tr);
-    return;
-  }
-
-  items.sort((a,b) => (a.time||"").localeCompare(b.time||""));
-
-  items.forEach(b => {
-    const tr = document.createElement("tr");
-    const block = isBlockItem(b);
-    const hist  = isHistoryItem(b);
-
-    const cliente = (block || hist) ? "<b>INDISPONÍVEL</b>" : escapeHtml(b.name || b.client || "");
-    const servico = (block || hist) ? "<b>INDISPONÍVEL</b>" : escapeHtml(b.service || "");
-    const notas = escapeHtml(b.notes || "");
-
-    tr.innerHTML = `
-      <td><b>${escapeHtml(b.time||"")}</b><br><small>${escapeHtml(b.date||"")}</small></td>
-      <td>${cliente}</td>
-      <td>${servico}</td>
-      <td>
-        <select onchange="updateStatus('${b.id}', this.value)">
-          ${["Marcado","Confirmado","Concluido","Cancelado","Bloqueado","Desbloqueado"].map(s =>
-            `<option value="${s}" ${(b.status||"Marcado")===s?"selected":""}>${s}</option>`
-          ).join("")}
-        </select>
-      </td>
-      <td>
-        <input value="${notas}" style="width:240px"
-               placeholder="Notas..." onchange="updateNotes('${b.id}', this.value)">
-      </td>
-      <td>
-        ${block
-          ? `<button class="danger" onclick="unblockKeepHistory('${b.id}')">Desbloquear</button>`
-          : `<button class="danger" onclick="deleteForever('${b.id}')">Apagar</button>`
-        }
-        ${hist ? `<div><small>(histórico)</small></div>` : ``}
-      </td>
-    `;
-    tbody.appendChild(tr);
+    const key = btn.dataset.tab;
+    document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
+    document.getElementById("tab-" + key).classList.add("active");
   });
-}
-
-async function updateStatus(id, status){
-  try{
-    await apiSend(`${API_BASE}/admin/bookings/${id}`, "PATCH", { status });
-    await reloadAll();
-  }catch(ex){
-    alert("Erro ao atualizar status: " + ex.message);
-  }
-}
-
-async function updateNotes(id, notes){
-  try{
-    await apiSend(`${API_BASE}/admin/bookings/${id}`, "PATCH", { notes });
-  }catch(ex){
-    alert("Erro ao atualizar notas: " + ex.message);
-  }
-}
-
-// apagar definitivo (só para limpar)
-async function deleteForever(id){
-  if(!confirm("Apagar definitivamente?")) return;
-  try{
-    await fetch(`${API_BASE}/admin/bookings/${id}`, {
-      method: "DELETE",
-      headers: { "X-Admin-Token": token() }
-    });
-    await reloadAll();
-  }catch(ex){
-    alert("Erro ao apagar: " + ex.message);
-  }
-}
+});
 
 /* ---------------------------
-   BLOQUEAR / DESBLOQUEAR (HISTÓRICO)
+   BLOQUEAR
 --------------------------- */
 async function createBlock(){
   const d = date();
@@ -356,6 +425,19 @@ async function createBlock(){
   }
 }
 
+// mete hora para a meia hora seguinte
+function fillNextHalfHour(){
+  const now = new Date();
+  const mins = now.getHours()*60 + now.getMinutes();
+  const next = Math.ceil(mins/30)*30;
+  const hh = Math.floor(next/60);
+  const mm = next%60;
+  document.getElementById("b_time").value = pad2(hh)+":"+pad2(mm);
+}
+
+/* ---------------------------
+   DESBLOQUEAR (HISTÓRICO)
+--------------------------- */
 async function unblockKeepHistory(id){
   if(!confirm("Desbloquear e guardar no histórico?")) return;
 
@@ -371,7 +453,23 @@ async function unblockKeepHistory(id){
 }
 
 /* ---------------------------
-   MAPA DO DIA
+   APAGAR DEFINITIVO (para limpar)
+--------------------------- */
+async function deleteForever(id){
+  if(!confirm("Apagar definitivamente?")) return;
+  try{
+    await fetch(`${API_BASE}/admin/bookings/${id}`, {
+      method: "DELETE",
+      headers: { "X-Admin-Token": token() }
+    });
+    await reloadAll();
+  }catch(ex){
+    alert("Erro ao apagar: " + ex.message);
+  }
+}
+
+/* ---------------------------
+   MAPA DO DIA (usa /day)
 --------------------------- */
 async function fetchDayBusy(d, b){
   const u = new URL(API_BASE + "/day");
@@ -408,34 +506,32 @@ function buildSlots(items, dur){
 
 function renderMap(slots){
   slotsEl.innerHTML = "";
-
   const picked = document.getElementById("b_time").value;
 
   for(const s of slots){
     const div = document.createElement("div");
 
-    const isBlock = s.busy && (s.busy.label === "INDISPONÍVEL");
-    const isBusy  = !!s.busy;
+    const block = s.busy && (s.busy.label === "INDISPONÍVEL");
+    const busy  = !!s.busy;
 
     div.className = "slot" +
-      (isBlock ? " block" : (isBusy ? " busy" : "")) +
-      ((!isBusy && s.time === picked) ? " pick" : "");
+      (block ? " block" : (busy ? " busy" : "")) +
+      ((!busy && s.time === picked) ? " pick" : "");
 
-    if(isBusy){
+    if(busy){
       const label = (s.busy.label || "OCUPADO");
       const reason = (s.busy.notes || s.busy.service || "").trim();
-
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — ${escapeHtml(label)}</div>
         <div class="d">${escapeHtml(reason)}</div>
-        ${isBlock ? `<div class="actions">
-            <button class="danger" onclick="unblockKeepHistory('${s.busy.id}')">Desbloquear</button>
-          </div>` : ``}
+        ${block ? `<div class="actions">
+          <button class="danger" onclick="unblockKeepHistory('${s.busy.id}')">Desbloquear</button>
+        </div>` : ""}
       `;
     }else{
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — Livre</div>
-        <div class="d">Clique para escolher hora</div>
+        <div class="d">Toque para escolher hora</div>
       `;
       div.addEventListener("click", () => {
         document.getElementById("b_time").value = s.time;
@@ -445,15 +541,6 @@ function renderMap(slots){
 
     slotsEl.appendChild(div);
   }
-}
-
-/* ---------------------------
-   MISC
---------------------------- */
-function escapeHtml(s){
-  return (s||"").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
 }
 
 async function reloadMap(){
@@ -475,12 +562,131 @@ async function reloadMap(){
   }
 }
 
+/* ---------------------------
+   LISTA (cards)
+--------------------------- */
+async function fetchAdminBookings(){
+  const d = date();
+  const b = barber();
+  const url = new URL(API_BASE + "/admin/bookings");
+  if (d) url.searchParams.set("date", d);
+  if (b) url.searchParams.set("barber", b);
+  const data = await apiGet(url.toString());
+  return data.items || [];
+}
+
+function renderCardItem(b, mode){
+  const block = isBlockItem(b);
+  const hist  = (b.status === "Desbloqueado") || (b.status === "Cancelado");
+
+  const titleLeft = `<div class="time">${escapeHtml(b.time||"")}</div>
+                     <div class="meta">${escapeHtml(b.date||"")}</div>`;
+  const titleRight = `<div class="meta">${escapeHtml(b.barber||"")}</div>
+                      <div class="meta"><b>${escapeHtml(b.status||"")}</b></div>`;
+
+  const who = (block || hist) ? "INDISPONÍVEL" : (b.name || b.client || "");
+  const svc = (block || hist) ? "INDISPONÍVEL" : (b.service || "");
+
+  const notes = (b.notes || "");
+
+  let actions = "";
+  if (block){
+    actions = `
+      <div class="btnRow" style="margin-top:10px">
+        <button class="danger" onclick="unblockKeepHistory('${b.id}')">Desbloquear</button>
+        <button class="secondary" onclick="deleteForever('${b.id}')">Apagar definitivo</button>
+      </div>
+    `;
+  } else if (mode === "list"){
+    actions = `
+      <div class="btnRow" style="margin-top:10px">
+        <button class="danger" onclick="deleteForever('${b.id}')">Apagar</button>
+        <button class="secondary" onclick="promptNotes('${b.id}', ${JSON.stringify(notes)})">Editar notas</button>
+      </div>
+    `;
+  } else {
+    actions = `
+      <div class="btnRow" style="margin-top:10px">
+        <button class="secondary" onclick="promptNotes('${b.id}', ${JSON.stringify(notes)})">Editar notas</button>
+        <button class="danger" onclick="deleteForever('${b.id}')">Apagar</button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="item">
+      <div class="itemTop">
+        <div>${titleLeft}</div>
+        <div style="text-align:right">${titleRight}</div>
+      </div>
+
+      <div class="row2">
+        <div><small>Cliente</small><div><b>${escapeHtml(who)}</b></div></div>
+        <div><small>Serviço</small><div><b>${escapeHtml(svc)}</b></div></div>
+      </div>
+
+      <div style="margin-top:10px">
+        <small>Notas</small>
+        <div class="meta">${escapeHtml(notes)}</div>
+      </div>
+
+      ${actions}
+    </div>
+  `;
+}
+
+async function promptNotes(id, current){
+  const v = prompt("Notas:", current || "");
+  if (v === null) return;
+  try{
+    await apiSend(`${API_BASE}/admin/bookings/${id}`, "PATCH", { notes: v });
+    await reloadAll();
+  }catch(ex){
+    alert("Erro a atualizar notas: " + ex.message);
+  }
+}
+
+async function reloadList(){
+  statusEl.textContent = "A carregar…";
+  try{
+    const items = await fetchAdminBookings();
+    // lista normal: tudo menos histórico desbloqueado (mas inclui bloqueados e marcados)
+    const filtered = items.filter(x => x.status !== "Desbloqueado");
+    filtered.sort((a,b) => (a.time||"").localeCompare(b.time||""));
+    listEl.innerHTML = filtered.length ? filtered.map(x => renderCardItem(x, "list")).join("") :
+      `<div class="item"><small>Sem itens.</small></div>`;
+    statusEl.textContent = `OK • ${items.length} item(s)`;
+  }catch(ex){
+    statusEl.textContent = "Erro";
+    alert("Erro: " + ex.message);
+  }
+}
+
+async function reloadHistory(){
+  statusEl.textContent = "A carregar…";
+  try{
+    const items = await fetchAdminBookings();
+    const hist = items.filter(isHistoryItem);
+    hist.sort((a,b) => (a.time||"").localeCompare(b.time||""));
+    histEl.innerHTML = hist.length ? hist.map(x => renderCardItem(x, "history")).join("") :
+      `<div class="item"><small>Sem histórico.</small></div>`;
+    statusEl.textContent = `OK • ${items.length} item(s)`;
+  }catch(ex){
+    statusEl.textContent = "Erro";
+    alert("Erro: " + ex.message);
+  }
+}
+
+/* ---------------------------
+   RELOAD ALL
+--------------------------- */
 async function reloadAll(){
   await reloadMap();
   await reloadList();
+  await reloadHistory();
 }
 
-// autorefresh (opcional)
+// autorefresh mapa
 setInterval(() => {
   if (dateEl.value) reloadMap();
 }, 60000);
@@ -492,6 +698,5 @@ reloadAll();
 dateEl.addEventListener("change", reloadAll);
 barberEl.addEventListener("change", reloadAll);
 </script>
-
 </body>
 </html>
