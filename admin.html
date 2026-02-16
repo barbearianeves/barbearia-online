@@ -22,9 +22,6 @@
     --blockBg:#142017;
     --blockLine:#2bd66a;
 
-    --pickBg:#1a2230;
-    --pickLine:#5e7aa8;
-
     --btn:#ffffff;
     --btnTxt:#000000;
     --danger:#ff5c5c;
@@ -48,7 +45,7 @@
   }
   h1{font-size:22px;margin:6px 0 4px}
   small{color:var(--muted)}
-  label{display:block;margin:10px 0 6px;font-weight:800;color:#d9deea;font-size:13px}
+  label{display:block;margin:10px 0 6px;font-weight:900;color:#d9deea;font-size:13px}
 
   input,select{
     width:100%;
@@ -71,10 +68,7 @@
     background:var(--btn);
     color:var(--btnTxt);
   }
-  button.danger{
-    background:var(--danger);
-    color:#000;
-  }
+  button.danger{ background:var(--danger); color:#000; }
 
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:700px){ .row{grid-template-columns:1fr} }
@@ -87,7 +81,7 @@
     grid-template-columns:repeat(4,1fr);
     gap:10px;
     margin-top:12px;
-    max-height:70vh;
+    max-height:75vh;
     overflow:auto;
     padding-right:6px;
   }
@@ -106,10 +100,9 @@
     gap:6px;
   }
   .slot .t{font-weight:950}
-  .slot .d{font-size:12px;color:var(--muted)}
-  .slot.busy{background:var(--busyBg);border-color:var(--busyLine);cursor:not-allowed}
+  .slot .d{font-size:12px;color:var(--muted);line-height:1.2}
+  .slot.busy{background:var(--busyBg);border-color:var(--busyLine);cursor:default}
   .slot.block{background:var(--blockBg);border-color:var(--blockLine)}
-  .slot.pick{background:var(--pickBg);border-color:var(--pickLine);box-shadow:0 0 0 3px rgba(94,122,168,.22)}
   .slot .actions{display:flex;gap:10px;margin-top:6px}
   .slot .actions button{width:auto;padding:10px;border-radius:12px;font-size:12px}
 
@@ -137,12 +130,14 @@
 <body>
 <div class="wrap">
 
-  <!-- APP (depois do login) -->
   <div id="app" class="hide">
-
     <div class="card">
       <h1>Mapa do Barbeiro</h1>
-      <small>Toque num horário livre para <b>Bloquear</b>. Toque em “Desbloquear” para voltar a abrir.</small>
+      <small>
+        <b>Livre</b> → toque para <b>Bloquear 30 min</b> •
+        <b>Ocupado</b> → podes <b>Cancelar</b> •
+        <b>Indisponível</b> → podes <b>Desbloquear</b>
+      </small>
 
       <div class="row" style="margin-top:10px">
         <div>
@@ -158,23 +153,9 @@
         </div>
       </div>
 
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label>Duração ao bloquear (min)</label>
-          <input type="number" id="dur" value="30" min="30" step="30">
-          <small>30 / 60 / 90…</small>
-        </div>
-        <div>
-          <label>Motivo (opcional)</label>
-          <input id="notes" placeholder="Ex: almoço / folga / férias">
-        </div>
-      </div>
-
       <div class="status" id="status">—</div>
-
       <div class="slots" id="slots"></div>
     </div>
-
   </div>
 
   <!-- LOGIN -->
@@ -211,8 +192,6 @@ const loginStatusEl = document.getElementById("loginStatus");
 
 const barberEl = document.getElementById("barber");
 const dateEl = document.getElementById("date");
-const durEl = document.getElementById("dur");
-const notesEl = document.getElementById("notes");
 
 const statusEl = document.getElementById("status");
 const slotsEl = document.getElementById("slots");
@@ -238,6 +217,20 @@ async function apiGet(url){
   return data;
 }
 
+async function apiPatch(url, body){
+  const res = await fetch(url, {
+    method:"PATCH",
+    headers:{
+      "Content-Type":"application/json",
+      "X-Admin-Token": token()
+    },
+    body: JSON.stringify(body || {})
+  });
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+
 async function apiPost(url, body){
   const res = await fetch(url, {
     method:"POST",
@@ -252,7 +245,7 @@ async function apiPost(url, body){
   return data;
 }
 
-function isBlock(b){
+function isBlockItem(b){
   return (b.status === "Bloqueado") || (b.service === "INDISPONIVEL");
 }
 
@@ -265,7 +258,6 @@ async function doLogin(){
 
   localStorage.setItem("admin_token", t);
 
-  // testar chamando admin/bookings (sem data = ok)
   try{
     const url = new URL(API_BASE + "/admin/bookings");
     await apiGet(url.toString());
@@ -295,13 +287,13 @@ async function fetchAdminDay(date, barber){
   return data.items || [];
 }
 
-function buildSlots(items, dur){
-  // transformar bookings em intervalos
+function buildSlots(items){
+  // Não contar histórico / cancelados para ocupar o mapa
   const booked = items
-    .filter(x => (x.status !== "Desbloqueado")) // não contar histórico
-    .filter(x => (x.status !== "Cancelado"))    // não bloquear pelo cancelado
+    .filter(x => x.status !== "Desbloqueado")
+    .filter(x => x.status !== "Cancelado")
     .map(x => {
-      const s = toMin(x.time);
+      const s = toMin((x.time||"00:00").slice(0,5));
       const e = s + (parseInt(x.dur,10) || 30);
       return { ...x, s, e };
     });
@@ -310,12 +302,14 @@ function buildSlots(items, dur){
   const end = toMin(WORK_END);
 
   const slots = [];
-  for(let t=start; t + dur <= end; t += STEP_MIN){
-    const s=t, e=t+dur;
+  for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
+    const s=t, e=t+STEP_MIN;
+
     let hit = null;
     for(const b of booked){
       if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
     }
+
     slots.push({ time: toHHMM(t), hit });
   }
   return slots;
@@ -323,34 +317,41 @@ function buildSlots(items, dur){
 
 function renderSlots(slots){
   slotsEl.innerHTML = "";
-  const dur = parseInt(durEl.value,10) || 30;
 
   for(const s of slots){
     const div = document.createElement("div");
 
-    const busy = !!s.hit && !isBlock(s.hit);
-    const block = !!s.hit && isBlock(s.hit);
+    const hit = s.hit;
+    const block = !!hit && isBlockItem(hit);
+    const busy  = !!hit && !block;
 
     div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "");
 
     if(busy){
+      const nome = hit.name || hit.client || "";
+      const serv = hit.service || "";
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — Ocupado</div>
-        <div class="d">${escapeHtml(s.hit.name || s.hit.client || "")}</div>
-        <div class="d">${escapeHtml(s.hit.service || "")}</div>
-      `;
-    } else if (block){
-      div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — Indisponível</div>
-        <div class="d">${escapeHtml(s.hit.notes || "—")}</div>
+        <div class="d">${escapeHtml(nome)}</div>
+        <div class="d">${escapeHtml(serv)}</div>
         <div class="actions">
-          <button class="danger" onclick="unblock('${s.hit.id}')">Desbloquear</button>
+          <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
       `;
-    } else {
+    }
+    else if(block){
+      div.innerHTML = `
+        <div class="t">${escapeHtml(s.time)} — Indisponível</div>
+        <div class="d">${escapeHtml(hit.notes || "—")}</div>
+        <div class="actions">
+          <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
+        </div>
+      `;
+    }
+    else{
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — Livre</div>
-        <div class="d">Toque para bloquear (${dur} min)</div>
+        <div class="d">Toque para bloquear 30 min</div>
       `;
       div.addEventListener("click", () => blockAt(s.time));
     }
@@ -362,14 +363,13 @@ function renderSlots(slots){
 async function reloadMap(){
   const d = dateEl.value;
   const b = barberEl.value;
-  const dur = parseInt(durEl.value,10) || 30;
 
   if(!d){ statusEl.textContent = "Escolhe uma data."; return; }
 
   statusEl.textContent = "A carregar…";
   try{
     const items = await fetchAdminDay(d,b);
-    const slots = buildSlots(items, dur);
+    const slots = buildSlots(items);
     renderSlots(slots);
     statusEl.textContent = `OK • ${b} • ${d}`;
   }catch(ex){
@@ -380,16 +380,14 @@ async function reloadMap(){
 async function blockAt(timeHHMM){
   const d = dateEl.value;
   const b = barberEl.value;
-  const dur = parseInt(durEl.value,10) || 30;
-  const notes = notesEl.value.trim();
 
   try{
     await apiPost(API_BASE + "/admin/block", {
       date: d,
       time: timeHHMM,
-      dur,
+      dur: 30,
       barber: b,
-      notes
+      notes: ""
     });
     await reloadMap();
   }catch(ex){
@@ -398,15 +396,21 @@ async function blockAt(timeHHMM){
 }
 
 async function unblock(id){
-  // mantém histórico (status: Desbloqueado)
   try{
-    await fetch(`${API_BASE}/admin/unblock/${id}`, {
-      method:"POST",
-      headers:{ "X-Admin-Token": token() }
-    });
+    await apiPost(`${API_BASE}/admin/unblock/${id}`, {});
     await reloadMap();
   }catch(ex){
     alert("Erro a desbloquear: " + ex.message);
+  }
+}
+
+async function cancelBooking(id){
+  if(!confirm("Cancelar esta marcação?")) return;
+  try{
+    await apiPatch(`${API_BASE}/admin/bookings/${id}`, { status: "Cancelado" });
+    await reloadMap();
+  }catch(ex){
+    alert("Erro a cancelar: " + ex.message);
   }
 }
 
@@ -416,7 +420,6 @@ async function unblock(id){
 (function boot(){
   const t = token();
   if(t){
-    // tenta auto-login
     overlayEl.classList.add("hide");
     appEl.classList.remove("hide");
     initDefaults();
@@ -426,9 +429,8 @@ async function unblock(id){
 
 dateEl.addEventListener("change", reloadMap);
 barberEl.addEventListener("change", reloadMap);
-durEl.addEventListener("change", reloadMap);
 
-// auto refresh (para ver logo bloqueios/marcações)
+// auto refresh
 setInterval(() => {
   if(!overlayEl.classList.contains("hide")) return;
   reloadMap();
