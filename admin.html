@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Área do Barbeiro</title>
+
+<style>
+body{font-family:Arial;max-width:1000px;margin:30px auto;background:#111;color:#fff}
+input,select,button{padding:8px;margin:5px}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{border-bottom:1px solid #333;padding:10px;text-align:left}
+button{cursor:pointer}
+</style>
+</head>
+<body>
+
+<h2>Agenda do Barbeiro</h2>
+
+<input type="password" id="token" placeholder="Senha do barbeiro (ADMIN_TOKEN)">
+<input type="date" id="date">
+<button onclick="loadBookings()">Carregar</button>
+
+<table>
+<thead>
+<tr>
+<th>Hora</th>
+<th>Cliente</th>
+<th>Serviço</th>
+<th>Status</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<script>
+const API_BASE = "https://barbearia-api-ki25.onrender.com"; // CONFIRMA O TEU URL
+
+function token(){
+  return document.getElementById("token").value;
+}
+
+async function loadBookings(){
+  const date = document.getElementById("date").value;
+  if(!date){ alert("Escolhe uma data"); return; }
+
+  const res = await fetch(`${API_BASE}/admin/bookings?date=${date}`, {
+    headers: { "X-Admin-Token": token() }
+  });
+
+  if(!res.ok){
+    alert("Senha errada ou erro.");
+    return;
+  }
+
+  const data = await res.json();
+  render(data.items || []);
+}
+
+function render(items){
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  items.forEach(b => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${b.time}</td>
+      <td>${b.name || ""}</td>
+      <td>${b.service}</td>
+      <td>
+        <select onchange="updateStatus('${b.id}', this.value)">
+          ${["Marcado","Confirmado","Concluido","Cancelado"].map(s =>
+            `<option ${b.status===s?"selected":""}>${s}</option>`
+          ).join("")}
+        </select>
+      </td>
+      <td>
+        <button onclick="deleteBooking('${b.id}')">Apagar</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+async function updateStatus(id, status){
+  await fetch(`${API_BASE}/admin/bookings/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Token": token()
+    },
+    body: JSON.stringify({ status })
+  });
+
+  loadBookings();
+}
+
+async function deleteBooking(id){
+  if(!confirm("Apagar marcação?")) return;
+
+  await fetch(`${API_BASE}/admin/bookings/${id}`, {
+    method: "DELETE",
+    headers: { "X-Admin-Token": token() }
+  });
+
+  loadBookings();
+}
+
+document.getElementById("date").valueAsDate = new Date();
+</script>
+
+</body>
+</html>
