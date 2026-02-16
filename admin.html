@@ -9,8 +9,9 @@
 body{font-family:Arial;max-width:1000px;margin:30px auto;background:#111;color:#fff}
 input,select,button{padding:8px;margin:5px}
 table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{border-bottom:1px solid #333;padding:10px;text-align:left}
+th,td{border-bottom:1px solid #333;padding:10px;text-align:left;vertical-align:top}
 button{cursor:pointer}
+small{opacity:.75}
 </style>
 </head>
 <body>
@@ -20,6 +21,7 @@ button{cursor:pointer}
 <input type="password" id="token" placeholder="Senha do barbeiro (ADMIN_TOKEN)">
 <input type="date" id="date">
 <button onclick="loadBookings()">Carregar</button>
+<small>(Se apagares a data e carregares, mostra tudo)</small>
 
 <table>
 <thead>
@@ -27,7 +29,9 @@ button{cursor:pointer}
 <th>Hora</th>
 <th>Cliente</th>
 <th>Serviço</th>
+<th>Barbeiro</th>
 <th>Status</th>
+<th>Notas</th>
 <th>Ações</th>
 </tr>
 </thead>
@@ -35,22 +39,26 @@ button{cursor:pointer}
 </table>
 
 <script>
-const API_BASE = "https://barbearia-api-ki25.onrender.com"; // CONFIRMA O TEU URL
+const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
 function token(){
-  return document.getElementById("token").value;
+  return document.getElementById("token").value.trim();
 }
 
 async function loadBookings(){
-  const date = document.getElementById("date").value;
-  if(!date){ alert("Escolhe uma data"); return; }
+  const date = document.getElementById("date").value; // pode ser vazio
 
-  const res = await fetch(`${API_BASE}/admin/bookings?date=${date}`, {
+  const url = date
+    ? `${API_BASE}/admin/bookings?date=${encodeURIComponent(date)}`
+    : `${API_BASE}/admin/bookings`;
+
+  const res = await fetch(url, {
     headers: { "X-Admin-Token": token() }
   });
 
   if(!res.ok){
-    alert("Senha errada ou erro.");
+    const txt = await res.text();
+    alert("Erro: " + res.status + " - " + txt);
     return;
   }
 
@@ -62,19 +70,37 @@ function render(items){
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
 
+  if(!items.length){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="7"><small>Sem marcações para o filtro atual.</small></td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
   items.forEach(b => {
     const tr = document.createElement("tr");
 
+    const cliente = (b.name || b.client || "");
+    const notas = (b.notes || "").replaceAll('"', "&quot;");
+
     tr.innerHTML = `
-      <td>${b.time}</td>
-      <td>${b.name || ""}</td>
-      <td>${b.service}</td>
+      <td>
+        <b>${b.time || ""}</b><br>
+        <small>${b.date || ""}</small>
+      </td>
+      <td>${cliente}</td>
+      <td>${b.service || ""}</td>
+      <td>${b.barber || ""}</td>
       <td>
         <select onchange="updateStatus('${b.id}', this.value)">
           ${["Marcado","Confirmado","Concluido","Cancelado"].map(s =>
-            `<option ${b.status===s?"selected":""}>${s}</option>`
+            `<option value="${s}" ${(b.status||"Marcado")===s?"selected":""}>${s}</option>`
           ).join("")}
         </select>
+      </td>
+      <td>
+        <input value="${notas}" style="width:200px"
+               placeholder="Notas..." onchange="updateNotes('${b.id}', this.value)">
       </td>
       <td>
         <button onclick="deleteBooking('${b.id}')">Apagar</button>
@@ -86,7 +112,7 @@ function render(items){
 }
 
 async function updateStatus(id, status){
-  await fetch(`${API_BASE}/admin/bookings/${id}`, {
+  const res = await fetch(`${API_BASE}/admin/bookings/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -95,20 +121,50 @@ async function updateStatus(id, status){
     body: JSON.stringify({ status })
   });
 
+  if(!res.ok){
+    const txt = await res.text();
+    alert("Erro ao atualizar status: " + res.status + " - " + txt);
+    return;
+  }
+
   loadBookings();
+}
+
+async function updateNotes(id, notes){
+  const res = await fetch(`${API_BASE}/admin/bookings/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Token": token()
+    },
+    body: JSON.stringify({ notes })
+  });
+
+  if(!res.ok){
+    const txt = await res.text();
+    alert("Erro ao atualizar notas: " + res.status + " - " + txt);
+    return;
+  }
 }
 
 async function deleteBooking(id){
   if(!confirm("Apagar marcação?")) return;
 
-  await fetch(`${API_BASE}/admin/bookings/${id}`, {
+  const res = await fetch(`${API_BASE}/admin/bookings/${id}`, {
     method: "DELETE",
     headers: { "X-Admin-Token": token() }
   });
 
+  if(!res.ok){
+    const txt = await res.text();
+    alert("Erro ao apagar: " + res.status + " - " + txt);
+    return;
+  }
+
   loadBookings();
 }
 
+// hoje por defeito (se quiseres, podes remover esta linha)
 document.getElementById("date").valueAsDate = new Date();
 </script>
 
