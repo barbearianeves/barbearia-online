@@ -3,179 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Barbearia — Área do Barbeiro</title>
-
+<title>Área do Barbeiro</title>
 <style>
   :root{
-    --bg:#0b0d10;
-    --card:#12161c;
-    --line:#2a3240;
-    --txt:#fff;
-    --muted:#aeb6c2;
+    --bg:#0b0d10; --card:#12161c; --line:#2a3240;
+    --txt:#fff; --muted:#aeb6c2;
 
-    --freeBg:#0f1319;
-    --freeLine:#2a3240;
+    --freeBg:#0f1319; --freeLine:#2a3240;
+    --busyBg:#241216; --busyLine:#7a2a3a;
+    --blockBg:#142017; --blockLine:#2bd66a;
 
-    --busyBg:#241216;
-    --busyLine:#7a2a3a;
-
-    --blockBg:#142017;
-    --blockLine:#2bd66a;
-
-    --histBg:#1a2230;
-    --histLine:#5e7aa8;
-
-    --btn:#ffffff;
-    --btnTxt:#000000;
+    --btn:#ffffff; --btnTxt:#000;
     --danger:#ff5c5c;
-    --secondary:#2a3240;
   }
-
   *{box-sizing:border-box}
-  body{
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    margin:0;
-    background:var(--bg);
-    color:var(--txt);
-    padding:16px;
-  }
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--txt);padding:16px}
   .wrap{max-width:980px;margin:0 auto}
-  .card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:16px;
-    padding:14px;
-    margin:12px 0;
-  }
-  h1{font-size:22px;margin:6px 0 4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+  h1{font-size:20px;margin:6px 0}
   small{color:var(--muted)}
-  label{display:block;margin:10px 0 6px;font-weight:900;color:#d9deea;font-size:13px}
-
-  input,select{
-    width:100%;
-    padding:12px;
-    border-radius:12px;
-    border:1px solid var(--line);
-    background:#0f1319;
-    color:#fff;
-    outline:none;
-  }
-  input:focus,select:focus{border-color:#55637d;box-shadow:0 0 0 3px rgba(85,99,125,.25)}
-
+  label{display:block;margin:10px 0 6px;font-weight:850;color:#d9deea;font-size:13px}
+  input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0f1319;color:#fff;outline:none}
+  button{width:100%;padding:12px;border-radius:12px;border:0;cursor:pointer;font-weight:950;background:var(--btn);color:var(--btnTxt)}
+  button.danger{background:var(--danger);color:#000}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:700px){ .row{grid-template-columns:1fr} }
 
-  .actionsTop{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:10px;
-    align-items:center;
-  }
-  .actionsTop button{
-    padding:12px 14px;
-    border-radius:12px;
-    border:0;
-    cursor:pointer;
-    font-weight:950;
-    background:var(--btn);
-    color:var(--btnTxt);
-  }
-  .actionsTop button.secondary{ background:var(--secondary); color:#fff; border:1px solid #3b465a; }
-  .actionsTop button.danger{ background:var(--danger); color:#000; }
-
   .status{margin-top:10px;color:var(--muted);font-size:13px}
 
-  /* MAPA */
-  .legend{
-    display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:13px
-  }
-  .pill{
-    display:inline-block;
-    padding:4px 10px;
-    border-radius:999px;
-    border:1px solid var(--line);
-  }
-  .pill.free{border-color:var(--freeLine)}
-  .pill.busy{border-color:var(--busyLine)}
-  .pill.block{border-color:var(--blockLine)}
-  .pill.hist{border-color:var(--histLine)}
-
   .slots{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:10px;
-    margin-top:12px;
-    max-height:75vh;
-    overflow:auto;
-    padding-right:6px;
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:10px; margin-top:12px; max-height:72vh; overflow:auto; padding-right:6px;
   }
   @media(max-width:980px){ .slots{grid-template-columns:repeat(2,1fr)} }
   @media(max-width:520px){ .slots{grid-template-columns:1fr} }
 
   .slot{
-    border:1px solid var(--freeLine);
-    background:var(--freeBg);
-    border-radius:14px;
-    padding:12px;
-    cursor:pointer;
-    user-select:none;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
+    border:1px solid var(--freeLine); background:var(--freeBg);
+    border-radius:14px; padding:12px; cursor:pointer; user-select:none;
+    display:flex; flex-direction:column; gap:6px;
   }
   .slot .t{font-weight:950}
-  .slot .d{font-size:12px;color:var(--muted);line-height:1.2}
-  .slot.busy{background:var(--busyBg);border-color:var(--busyLine);cursor:default}
+  .slot .d{font-size:12px;color:var(--muted)}
+  .slot.busy{background:var(--busyBg);border-color:var(--busyLine)}
   .slot.block{background:var(--blockBg);border-color:var(--blockLine)}
-  .slot.hist{background:var(--histBg);border-color:var(--histLine);cursor:default}
+  .actions{display:flex;gap:10px;margin-top:6px}
+  .actions button{width:auto;padding:10px;border-radius:12px;font-size:12px}
 
-  .slot .slotBtns{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
-  .slot .slotBtns button{
-    width:auto;
-    padding:10px 12px;
-    border-radius:12px;
-    font-size:12px;
-    border:0;
-    cursor:pointer;
-    font-weight:950;
-    background:var(--btn);
-    color:var(--btnTxt);
-  }
-  .slot .slotBtns button.danger{ background:var(--danger); color:#000; }
-  .slot .slotBtns button.secondary{ background:var(--secondary); color:#fff; border:1px solid #3b465a; }
-
-  /* LOGIN overlay */
-  .overlay{
-    position:fixed;inset:0;
-    background:rgba(0,0,0,.55);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-  }
-  .loginBox{
-    width:100%;
-    max-width:420px;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:18px;
-    padding:16px;
-  }
-  .loginBox button{
-    width:100%;
-    padding:12px;
-    border-radius:12px;
-    border:0;
-    cursor:pointer;
-    font-weight:950;
-    background:var(--btn);
-    color:var(--btnTxt);
-  }
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+  .loginBox{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
   .hide{display:none}
 </style>
 </head>
-
 <body>
 <div class="wrap">
 
@@ -183,9 +62,9 @@
     <div class="card">
       <h1>Mapa do Barbeiro</h1>
       <small>
-        <b>Livre</b> → tocar para <b>Bloquear 30 min</b> •
-        <b>Ocupado</b> → <b>Cancelar</b> ou <b>Repor</b> •
-        <b>Indisponível</b> → <b>Desbloquear</b> (vai para histórico)
+        Toque num horário <b>Livre</b> para <b>Bloquear</b>.
+        Em <b>Ocupado</b> podes <b>Cancelar</b>.
+        Em <b>Indisponível</b> podes <b>Desbloquear</b>.
       </small>
 
       <div class="row" style="margin-top:10px">
@@ -202,36 +81,19 @@
         </div>
       </div>
 
-      <div class="actionsTop">
-        <button class="secondary" id="histBtn" onclick="toggleHistory()">Histórico: OFF</button>
-        <button class="secondary" onclick="reloadMap()">Atualizar</button>
-        <button class="secondary" onclick="logout()">Sair</button>
-        <span class="status" id="status">—</span>
-      </div>
-
-      <div class="legend">
-        <span class="pill free">LIVRE</span>
-        <span class="pill busy">OCUPADO</span>
-        <span class="pill block">INDISPONÍVEL</span>
-        <span class="pill hist">HISTÓRICO</span>
-      </div>
-
+      <div class="status" id="status">—</div>
       <div class="slots" id="slots"></div>
     </div>
   </div>
 
-  <!-- LOGIN -->
   <div id="loginOverlay" class="overlay">
     <div class="loginBox">
       <h1>Entrar</h1>
-      <small>Introduz a senha do barbeiro (ADMIN_TOKEN).</small>
-
+      <small>Senha do barbeiro (ADMIN_TOKEN).</small>
       <label>Senha</label>
       <input type="password" id="token" placeholder="ex: barbeiro-2026">
-
       <div style="height:10px"></div>
       <button onclick="doLogin()">Entrar</button>
-
       <div class="status" id="loginStatus">—</div>
     </div>
   </div>
@@ -240,37 +102,26 @@
 
 <script>
 const API_BASE = "https://barbearia-api-ki25.onrender.com";
-
-// horários de trabalho
 const WORK_START = "09:00";
 const WORK_END   = "19:00";
 const STEP_MIN   = 30;
 
 const appEl = document.getElementById("app");
 const overlayEl = document.getElementById("loginOverlay");
-
 const tokenEl = document.getElementById("token");
 const loginStatusEl = document.getElementById("loginStatus");
 
 const barberEl = document.getElementById("barber");
 const dateEl = document.getElementById("date");
-
 const statusEl = document.getElementById("status");
 const slotsEl = document.getElementById("slots");
-const histBtn = document.getElementById("histBtn");
 
-function getLS(k, def=""){ try{ return localStorage.getItem(k) ?? def; }catch(e){ return def; } }
-function setLS(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
-
-function token(){ return (getLS("admin_token","")).trim(); }
-function histOn(){ return getLS("admin_hist","0") === "1"; }
-
+function token(){ return (localStorage.getItem("admin_token") || "").trim(); }
 function pad2(n){ return (n<10?"0":"")+n; }
 function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60+m; }
 function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad2(h)+":"+pad2(m); }
 function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
 function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
-
 function escapeHtml(s){
   return (s||"").replace(/[&<>"']/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -283,28 +134,10 @@ async function apiGet(url){
   if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
   return data;
 }
-
-async function apiPatch(url, body){
-  const res = await fetch(url, {
-    method:"PATCH",
-    headers:{
-      "Content-Type":"application/json",
-      "X-Admin-Token": token()
-    },
-    body: JSON.stringify(body || {})
-  });
-  const data = await res.json().catch(()=> ({}));
-  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
-  return data;
-}
-
 async function apiPost(url, body){
   const res = await fetch(url, {
     method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "X-Admin-Token": token()
-    },
+    headers:{ "Content-Type":"application/json", "X-Admin-Token": token() },
     body: JSON.stringify(body || {})
   });
   const data = await res.json().catch(()=> ({}));
@@ -312,95 +145,55 @@ async function apiPost(url, body){
   return data;
 }
 
-function isBlockItem(b){
-  return (b.status === "Bloqueado") || (b.service === "INDISPONIVEL");
+function isBlock(x){
+  return (x.status === "Bloqueado") || (x.service === "INDISPONIVEL");
+}
+function isHiddenFromMap(x){
+  return (x.status === "Cancelado") || (x.status === "Desbloqueado");
 }
 
-/* -----------------------
-   LOGIN + STATE
------------------------ */
+/* LOGIN */
 async function doLogin(){
   const t = tokenEl.value.trim();
-  if(!t){ loginStatusEl.textContent = "Escreve a senha."; return; }
-
-  setLS("admin_token", t);
+  if(!t){ loginStatusEl.textContent="Escreve a senha."; return; }
+  localStorage.setItem("admin_token", t);
 
   try{
-    const url = new URL(API_BASE + "/admin/bookings");
-    await apiGet(url.toString());
-    loginStatusEl.textContent = "✅ OK";
+    await apiGet(new URL(API_BASE + "/admin/bookings").toString());
+    loginStatusEl.textContent="✅ OK";
     overlayEl.classList.add("hide");
     appEl.classList.remove("hide");
-    initDefaults();
-    applyHistButton();
+    if(!dateEl.value) dateEl.value = todayISO();
     await reloadMap();
   }catch(ex){
     localStorage.removeItem("admin_token");
-    loginStatusEl.textContent = "❌ Senha errada ou API offline.";
+    loginStatusEl.textContent="❌ Senha errada ou API offline.";
   }
 }
 
-function initDefaults(){
-  const savedBarber = getLS("admin_barber","");
-  const savedDate = getLS("admin_date","");
-
-  if(savedBarber) barberEl.value = savedBarber;
-  if(savedDate) dateEl.value = savedDate;
-  if(!dateEl.value) dateEl.value = todayISO();
-}
-
-function logout(){
-  localStorage.removeItem("admin_token");
-  overlayEl.classList.remove("hide");
-  appEl.classList.add("hide");
-}
-
-/* -----------------------
-   HISTÓRICO
------------------------ */
-function applyHistButton(){
-  histBtn.textContent = "Histórico: " + (histOn() ? "ON" : "OFF");
-}
-function toggleHistory(){
-  setLS("admin_hist", histOn() ? "0" : "1");
-  applyHistButton();
-  reloadMap();
-}
-
-/* -----------------------
-   MAPA
------------------------ */
+/* MAPA */
 async function fetchAdminDay(date, barber){
   const url = new URL(API_BASE + "/admin/bookings");
   url.searchParams.set("date", date);
   url.searchParams.set("barber", barber);
   const data = await apiGet(url.toString());
-  return data.items || [];
+  return (data.items || []);
 }
 
 function buildSlots(items){
-  const showHist = histOn();
-
-  // normal: esconde Cancelado/Desbloqueado
-  // histórico ON: mostra tudo
-  const filtered = items.filter(x => {
-    if(showHist) return true;
-    return (x.status !== "Cancelado" && x.status !== "Desbloqueado");
-  });
-
+  const filtered = items.filter(x => !isHiddenFromMap(x));
   const booked = filtered.map(x => {
-    const s = toMin((x.time||"00:00").slice(0,5));
+    const s = toMin(x.time);
     const e = s + (parseInt(x.dur,10) || 30);
     return { ...x, s, e };
   });
 
   const start = toMin(WORK_START);
-  const end = toMin(WORK_END);
+  const end   = toMin(WORK_END);
 
   const slots = [];
-  for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
-    const s=t, e=t+STEP_MIN;
-
+  for(let t=start; t + 30 <= end; t += STEP_MIN){
+    const s=t, e=t+30;
     let hit = null;
     for(const b of booked){
       if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
@@ -412,74 +205,39 @@ function buildSlots(items){
 
 function renderSlots(slots){
   slotsEl.innerHTML = "";
-  const showHist = histOn();
 
   for(const s of slots){
-    const hit = s.hit;
     const div = document.createElement("div");
 
-    if(!hit){
-      div.className = "slot";
-      div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — Livre</div>
-        <div class="d">Toque para bloquear 30 min</div>
-      `;
-      div.addEventListener("click", () => blockAt(s.time));
-      slotsEl.appendChild(div);
-      continue;
-    }
+    const hit = s.hit;
+    const busy = !!hit && !isBlock(hit);
+    const block = !!hit && isBlock(hit);
 
-    const block = isBlockItem(hit);
-    const status = (hit.status || "Marcado");
+    div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "");
 
-    // histórico (Cancelado/Desbloqueado) só aparece quando histórico ON
-    const isHist = (status === "Cancelado" || status === "Desbloqueado");
-
-    if(block){
-      div.className = "slot block";
-      div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — Indisponível</div>
-        <div class="d">${escapeHtml(hit.notes || "—")}</div>
-        <div class="slotBtns">
-          <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
-        </div>
-      `;
-    } else if(isHist){
-      // só deve aparecer se histórico ON
-      div.className = "slot hist";
-      const nome = hit.name || hit.client || "";
-      const serv = hit.service || "";
-      div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — ${escapeHtml(status)}</div>
-        <div class="d">${escapeHtml(nome)}</div>
-        <div class="d">${escapeHtml(serv)}</div>
-        ${status === "Cancelado" ? `
-          <div class="slotBtns">
-            <button onclick="restoreBooking('${hit.id}')">Repor</button>
-          </div>
-        ` : ``}
-      `;
-      if(!showHist){
-        // segurança
-        div.className = "slot";
-        div.innerHTML = `
-          <div class="t">${escapeHtml(s.time)} — Livre</div>
-          <div class="d">Toque para bloquear 30 min</div>
-        `;
-        div.addEventListener("click", () => blockAt(s.time));
-      }
-    } else {
-      // ocupado normal (Marcado/Confirmado/Concluido)
-      div.className = "slot busy";
+    if(busy){
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — Ocupado</div>
         <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
         <div class="d">${escapeHtml(hit.service || "")}</div>
-        <div class="slotBtns">
+        <div class="actions">
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
-          <button class="secondary" onclick="restoreBooking('${hit.id}')">Repor</button>
         </div>
       `;
+    } else if (block){
+      div.innerHTML = `
+        <div class="t">${escapeHtml(s.time)} — Indisponível</div>
+        <div class="d">Bloqueado</div>
+        <div class="actions">
+          <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
+        </div>
+      `;
+    } else {
+      div.innerHTML = `
+        <div class="t">${escapeHtml(s.time)} — Livre</div>
+        <div class="d">Toque para bloquear</div>
+      `;
+      div.addEventListener("click", () => blockAt(s.time));
     }
 
     slotsEl.appendChild(div);
@@ -489,20 +247,14 @@ function renderSlots(slots){
 async function reloadMap(){
   const d = dateEl.value;
   const b = barberEl.value;
+  if(!d){ statusEl.textContent="Escolhe uma data."; return; }
 
-  setLS("admin_barber", b);
-  setLS("admin_date", d);
-
-  if(!d){ statusEl.textContent = "Escolhe uma data."; return; }
-
-  statusEl.textContent = "A carregar…";
+  statusEl.textContent="A carregar…";
   try{
     const items = await fetchAdminDay(d,b);
     const slots = buildSlots(items);
     renderSlots(slots);
-
-    const total = items.length;
-    statusEl.textContent = `OK • ${b} • ${d} • Histórico ${histOn() ? "ON" : "OFF"} • ${total} evento(s)`;
+    statusEl.textContent = `OK • ${b} • ${d}`;
   }catch(ex){
     statusEl.textContent = "Erro: " + ex.message;
   }
@@ -511,69 +263,47 @@ async function reloadMap(){
 async function blockAt(timeHHMM){
   const d = dateEl.value;
   const b = barberEl.value;
-
   try{
-    await apiPost(API_BASE + "/admin/block", {
-      date: d,
-      time: timeHHMM,
-      dur: 30,
-      barber: b,
-      notes: ""
-    });
+    await apiPost(API_BASE + "/admin/block", { date:d, time:timeHHMM, barber:b });
     await reloadMap();
   }catch(ex){
     alert("Erro a bloquear: " + ex.message);
   }
 }
 
-async function unblock(id){
-  try{
-    await apiPost(`${API_BASE}/admin/unblock/${id}`, {});
-    await reloadMap();
-  }catch(ex){
-    alert("Erro a desbloquear: " + ex.message);
-  }
-}
-
 async function cancelBooking(id){
-  if(!confirm("Cancelar esta marcação?")) return;
+  if(!confirm("Cancelar esta marcação? (fica no histórico)")) return;
   try{
-    await apiPatch(`${API_BASE}/admin/bookings/${id}`, { status: "Cancelado" });
+    await apiPost(API_BASE + "/admin/cancel/" + id, {});
     await reloadMap();
   }catch(ex){
     alert("Erro a cancelar: " + ex.message);
   }
 }
 
-async function restoreBooking(id){
-  // volta para Marcado (ou podes mudar para Confirmado se preferires)
+async function unblock(id){
+  if(!confirm("Desbloquear este horário? (fica no histórico)")) return;
   try{
-    await apiPatch(`${API_BASE}/admin/bookings/${id}`, { status: "Marcado" });
+    await apiPost(API_BASE + "/admin/unblock/" + id, {});
     await reloadMap();
   }catch(ex){
-    alert("Erro a repor: " + ex.message);
+    alert("Erro a desbloquear: " + ex.message);
   }
 }
 
-/* -----------------------
-   AUTO START
------------------------ */
+/* AUTO START */
 (function boot(){
-  applyHistButton();
-
   const t = token();
   if(t){
     overlayEl.classList.add("hide");
     appEl.classList.remove("hide");
-    initDefaults();
+    if(!dateEl.value) dateEl.value = todayISO();
     reloadMap().catch(()=>{});
   }
 })();
 
 dateEl.addEventListener("change", reloadMap);
 barberEl.addEventListener("change", reloadMap);
-
-// auto refresh
 setInterval(() => {
   if(!overlayEl.classList.contains("hide")) return;
   reloadMap();
