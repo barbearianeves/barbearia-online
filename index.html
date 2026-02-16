@@ -1,499 +1,150 @@
 <!doctype html>
 <html lang="pt">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Barbearia Neves — Marcação</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agenda — Barbeiro (Admin)</title>
   <style>
-    :root{
-      --bg:#0b0d10;
-      --card:#12161c;
-      --muted:#aeb6c2;
-      --text:#ffffff;
-      --line:#2a3240;
-      --input:#0f1319;
-      --accent:#ffffff;
-
-      --okbg:#0f2a16;
-      --okline:#2bd66a;
-      --errbg:#2a1010;
-      --errline:#ff5c5c;
-
-      --slotFree:#0f1319;
-      --slotFreeBorder:#2a3240;
-      --slotBusy:#241216;
-      --slotBusyBorder:#7a2a3a;
-      --slotPick:#1a2230;
-      --slotPickBorder:#5e7aa8;
-    }
-
-    *{box-sizing:border-box}
-    body{
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      margin:0;
-      min-height:100vh;
-      background:var(--bg);
-      color:var(--text);
-      display:flex;
-      justify-content:center;
-      padding:22px;
-    }
-
-    .wrap{width:100%; max-width:980px;}
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:18px;
-      box-shadow:0 10px 30px rgba(0,0,0,.35);
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      margin-bottom:10px;
-    }
-    .brand img{
-      width:64px;height:64px;
-      object-fit:contain;
-      border-radius:12px;
-      background:#fff;
-      padding:8px;
-    }
-    h1{margin:0;font-size:34px}
-    p{margin:6px 0 0;color:var(--muted)}
-
-    label{
-      display:block;margin-top:14px;
-      font-weight:650;color:var(--text);
-    }
-
-    input,select,textarea,button{
-      width:100%;
-      padding:12px 12px;
-      margin-top:8px;
-      font-size:16px;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:var(--input);
-      color:var(--text);
-      outline:none;
-    }
-    input::placeholder, textarea::placeholder{color:#7f8aa0}
-    input:focus,select:focus,textarea:focus{
-      border-color:#55637d;
-      box-shadow:0 0 0 3px rgba(85,99,125,.25);
-    }
-
-    .row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      align-items:end;
-    }
-
-    .hint{color:var(--muted);font-size:13px;margin-top:8px}
-
-    button{
-      cursor:pointer;
-      margin-top:16px;
-      background:var(--accent);
-      color:#000;
-      font-weight:750;
-      border:0;
-      transition:transform .06s ease;
-    }
-    button:active{transform:translateY(1px)}
-    button:disabled{opacity:.6; cursor:not-allowed}
-
-    .ok,.err{
-      padding:12px 12px;
-      border-radius:12px;
-      margin:12px 0 0;
-      display:none;
-      white-space:pre-wrap;
-    }
-    .ok{background:var(--okbg); border:1px solid var(--okline)}
-    .err{background:var(--errbg); border:1px solid var(--errline)}
-
-    .grid2{
-      display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap:16px;
-      margin-top:14px;
-    }
-
-    .agenda{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#0e1218;
-    }
-    .agendaTop{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-bottom:10px;
-    }
-    .agendaTitle{font-weight:750}
-    .small{color:var(--muted); font-size:13px}
-
-    .slots{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
-      max-height:420px;
-      overflow:auto;
-      padding-right:6px;
-    }
-    .slot{
-      border:1px solid var(--slotFreeBorder);
-      background:var(--slotFree);
-      border-radius:12px;
-      padding:10px;
-      cursor:pointer;
-      user-select:none;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
-    .slot .t{font-weight:800}
-    .slot .d{font-size:12px;color:var(--muted)}
-    .slot.busy{
-      background:var(--slotBusy);
-      border-color:var(--slotBusyBorder);
-      cursor:not-allowed;
-      opacity:.85;
-    }
-    .slot.pick{
-      background:var(--slotPick);
-      border-color:var(--slotPickBorder);
-      box-shadow:0 0 0 3px rgba(94,122,168,.22);
-    }
-
-    @media (max-width: 900px){
-      .grid2{grid-template-columns:1fr}
-      .row{grid-template-columns:1fr}
-      h1{font-size:28px}
-      .slots{grid-template-columns: 1fr}
-    }
+    body{font-family:system-ui,Arial;max-width:980px;margin:24px auto;padding:0 12px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    input,select,button{padding:10px}
+    table{width:100%;border-collapse:collapse;margin-top:14px}
+    th,td{border-bottom:1px solid #ddd;padding:10px;vertical-align:top;text-align:left}
+    small{opacity:.7}
+    .danger{background:#ffecec}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="brand">
-        <img src="logo.jpg" alt="Logo Barbearia Neves">
-        <div>
-          <h1>Barbearia Neves</h1>
-          <p>Escolhe um horário livre e confirma. A marcação entra automaticamente na agenda.</p>
-        </div>
-      </div>
+  <h1>Agenda (Barbeiro)</h1>
 
-      <div id="ok" class="ok"></div>
-      <div id="err" class="err"></div>
-
-      <div class="grid2">
-        <!-- FORM -->
-        <div>
-          <form id="f" autocomplete="on">
-            <label>Nome</label>
-            <input name="name" required placeholder="Nome do cliente">
-
-            <div class="row">
-              <div>
-                <label>Telefone</label>
-                <input name="phone" required placeholder="9xx xxx xxx" inputmode="tel">
-              </div>
-              <div>
-                <label>Email (opcional)</label>
-                <input name="email" type="email" placeholder="email@exemplo.com">
-              </div>
-            </div>
-
-            <div class="row">
-              <div>
-                <label>Serviço</label>
-                <select name="service" id="service" required>
-                  <option value="Corte">Corte</option>
-                  <option value="Barba">Barba</option>
-                  <option value="Corte+Barba">Corte+Barba</option>
-                </select>
-              </div>
-              <div>
-                <label>Barbeiro</label>
-                <select name="barber" id="barber" required>
-                  <option value="Pedro">Pedro Neves</option>
-                  <option value="Joao">João Leite</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="row">
-              <div>
-                <label>Data</label>
-                <input name="date" id="date" type="date" required>
-              </div>
-              <div>
-                <label>Hora (escolhe na agenda)</label>
-                <!-- agora é hidden, vem da grelha -->
-                <input name="time" id="time" type="text" required placeholder="Escolhe uma hora na agenda" readonly>
-              </div>
-            </div>
-
-            <label>Duração (min) — múltiplo de 30</label>
-            <input name="dur" id="dur" type="number" min="30" max="240" step="30" value="30" required>
-            <div class="hint">Só aparecem horários compatíveis com a duração (30/60/90...).</div>
-
-            <label>Notas (opcional)</label>
-            <textarea name="notes" rows="4" placeholder="Ex: atrasado 10 min, etc"></textarea>
-
-            <button id="btn" type="submit">Marcar</button>
-          </form>
-        </div>
-
-        <!-- AGENDA / SLOTS -->
-        <div class="agenda">
-          <div class="agendaTop">
-            <div>
-              <div class="agendaTitle">Agenda do dia</div>
-              <div class="small" id="agendaSub">Escolhe uma hora livre (de 30 em 30 min).</div>
-            </div>
-            <div class="small" id="agendaStatus">A carregar…</div>
-          </div>
-
-          <div class="slots" id="slots"></div>
-
-          <div class="hint" style="margin-top:10px">
-            <b>Livre</b>: podes marcar • <b>Ocupado</b>: já reservado • Clica num horário livre para preencher “Hora”.
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="row">
+    <input id="token" type="password" placeholder="Senha do barbeiro (ADMIN_TOKEN)" style="min-width:260px">
+    <input id="date" type="date">
+    <input id="barber" placeholder="Barbeiro (opcional)">
+    <button id="load">Carregar</button>
   </div>
 
-  <script>
-    // ✅ o teu Render URL
-    const API_BASE = "https://barbearia-api-ki25.onrender.com";
+  <table>
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>Cliente</th>
+        <th>Serviço</th>
+        <th>Status</th>
+        <th>Notas</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
 
-    // horários de trabalho (ajusta se quiseres)
-    const WORK_START = "09:00";
-    const WORK_END   = "19:00";
-    const STEP_MIN   = 30;
+<script>
+  // igual ao da tua bridge:
+  const API_BASE = "https://barbearia-api-ki25.onrender.com"; // muda se for diferente
 
-    const ok = document.getElementById('ok');
-    const err = document.getElementById('err');
-    const btn = document.getElementById('btn');
+  const tbody = document.getElementById("tbody");
+  const tokenEl = document.getElementById("token");
 
-    const slotsEl = document.getElementById('slots');
-    const agendaStatus = document.getElementById('agendaStatus');
+  function token(){ return tokenEl.value.trim(); }
 
-    const dateEl = document.getElementById('date');
-    const barberEl = document.getElementById('barber');
-    const durEl = document.getElementById('dur');
-    const timeEl = document.getElementById('time');
+  async function load(){
+    const date = document.getElementById("date").value;
+    const barber = document.getElementById("barber").value.trim();
 
-    function show(el, text) { el.textContent = text; el.style.display = 'block'; }
-    function hide(el) { el.style.display = 'none'; }
+    const url = new URL(API_BASE + "/admin/bookings");
+    if(date) url.searchParams.set("date", date);
+    if(barber) url.searchParams.set("barber", barber);
 
-    function pad2(n){ return (n<10 ? "0":"") + n; }
-    function toMin(hhmm){
-      const [h,m] = hhmm.split(":").map(Number);
-      return h*60+m;
-    }
-    function toHHMM(min){
-      const h = Math.floor(min/60);
-      const m = min%60;
-      return pad2(h)+":"+pad2(m);
-    }
-    function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
-
-    function setTodayIfEmpty(){
-      if (dateEl.value) return;
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = pad2(d.getMonth()+1);
-      const dd = pad2(d.getDate());
-      dateEl.value = `${y}-${m}-${dd}`;
+    const res = await fetch(url, { headers: { "X-Admin-Token": token() }});
+    if(!res.ok){
+      alert("Sem autorização ou erro. Confirma a senha (ADMIN_TOKEN).");
+      return;
     }
 
-    async function fetchDay(date, barber){
-      const u = new URL(API_BASE + "/day");
-      u.searchParams.set("date", date);
-      u.searchParams.set("barber", barber);
-      const r = await fetch(u.toString());
-      const data = await r.json().catch(()=> ({}));
-      if (!r.ok) throw new Error(data.error || ("Erro HTTP " + r.status));
-      return data.items || [];
-    }
+    const data = await res.json();
+    render(data.items || []);
+  }
 
-    function buildSlots(bookedItems, dur){
-      const booked = bookedItems.map(b => {
-        const s = toMin(b.time);
-        const e = s + (parseInt(b.dur,10) || 30);
-        return { ...b, s, e };
-      });
+  function render(items){
+    tbody.innerHTML = "";
+    items.forEach(b => {
+      const tr = document.createElement("tr");
+      const st = (b.status || "Marcado").toLowerCase();
+      if(st === "cancelado") tr.classList.add("danger");
 
-      const start = toMin(WORK_START);
-      const end   = toMin(WORK_END);
+      tr.innerHTML = `
+        <td><b>${b.time||""}</b><br><small>${b.date||""}</small><br><small>id: ${b.id||""}</small></td>
+        <td>${b.name||""}<br><small>${b.phone||""}</small><br><small>${b.client||""}</small></td>
+        <td>${b.service||""}<br><small>${b.barber||""}</small></td>
+        <td>
+          <select data-id="${b.id}" class="status">
+            ${["Marcado","Confirmado","Concluido","Cancelado"].map(s =>
+              `<option value="${s}" ${String(b.status||"")===s?"selected":""}>${s}</option>`
+            ).join("")}
+          </select>
+        </td>
+        <td><input data-id="${b.id}" class="notes" value="${escapeHtml(b.notes||"")}" placeholder="Notas..." style="width:240px"></td>
+        <td class="row">
+          <button data-id="${b.id}" class="save">Guardar</button>
+          <button data-id="${b.id}" class="del">Apagar</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
 
-      const slots = [];
-      for (let t = start; t + dur <= end; t += STEP_MIN){
-        const s = t, e = t + dur;
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;");
+  }
 
-        let busy = null;
-        for (const b of booked){
-          if (overlaps(s,e,b.s,b.e)){
-            busy = b;
-            break;
-          }
-        }
+  async function save(id){
+    const status = document.querySelector(`.status[data-id="${id}"]`).value;
+    const notes  = document.querySelector(`.notes[data-id="${id}"]`).value;
 
-        slots.push({
-          time: toHHMM(t),
-          busy,
-        });
-      }
-      return slots;
-    }
-
-    function renderSlots(slots){
-      slotsEl.innerHTML = "";
-      const picked = timeEl.value;
-
-      if (!slots.length){
-        slotsEl.innerHTML = `<div class="small">Sem horários dentro do horário de trabalho.</div>`;
-        return;
-      }
-
-      for (const s of slots){
-        const div = document.createElement("div");
-        div.className = "slot" + (s.busy ? " busy" : "") + (!s.busy && s.time === picked ? " pick" : "");
-
-        if (s.busy){
-          div.innerHTML = `
-            <div class="t">${s.time} — Ocupado</div>
-            <div class="d">${escapeHtml(s.busy.name || "")} • ${escapeHtml(s.busy.service || "")}</div>
-          `;
-        } else {
-          div.innerHTML = `
-            <div class="t">${s.time} — Livre</div>
-            <div class="d">Clique para escolher</div>
-          `;
-          div.addEventListener("click", () => {
-            timeEl.value = s.time;
-            // re-render para marcar selecionado
-            renderSlots(slots.map(x => ({...x})));
-          });
-        }
-
-        slotsEl.appendChild(div);
-      }
-    }
-
-    function escapeHtml(s){
-      return (s||"").replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-    }
-
-    async function refreshAgenda(){
-      setTodayIfEmpty();
-      agendaStatus.textContent = "A carregar…";
-
-      const date = dateEl.value;
-      const barber = barberEl.value;
-      const dur = parseInt(durEl.value,10) || 30;
-
-      // limpa hora se já não for válida
-      timeEl.value = "";
-
-      try{
-        const items = await fetchDay(date, barber);
-        const slots = buildSlots(items, dur);
-        renderSlots(slots);
-        agendaStatus.textContent = `${items.length} marcação(ões) • ${barber} • ${date}`;
-      }catch(ex){
-        slotsEl.innerHTML = "";
-        agendaStatus.textContent = "Erro a carregar";
-        show(err, "❌ Erro ao carregar agenda: " + ex.message);
-      }
-    }
-
-    // Atualiza agenda quando muda data/barbeiro/duração
-    dateEl.addEventListener("change", refreshAgenda);
-    barberEl.addEventListener("change", refreshAgenda);
-    durEl.addEventListener("change", refreshAgenda);
-
-    // Submeter
-    document.getElementById('f').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hide(err);
-      // ok NÃO some sozinho — fica até próxima marcação
-      btn.disabled = true;
-
-      const fd = new FormData(e.target);
-      const payload = Object.fromEntries(fd.entries());
-
-      // precisa ter hora escolhida
-      if (!payload.time || payload.time.length < 5){
-        btn.disabled = false;
-        show(err, "❌ Escolhe uma hora livre na agenda.");
-        return;
-      }
-      payload.time = payload.time.slice(0,5);
-
-      // dur múltiplo de 30
-      payload.dur = parseInt(payload.dur,10) || 30;
-      if (payload.dur % 30 !== 0){
-        btn.disabled = false;
-        show(err, "❌ Duração tem de ser múltiplo de 30 (30, 60, 90…).");
-        return;
-      }
-
-      try {
-        const r = await fetch(API_BASE + "/book", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify(payload)
-        });
-        const data = await r.json().catch(()=> ({}));
-        if (!r.ok) throw new Error(data.error || ("Erro HTTP " + r.status));
-
-        // ✅ ID aparece e NÃO desaparece
-        show(ok,
-          "✅ Marcação confirmada!\n" +
-          "ID: " + (data.id || "(sem id)") + "\n" +
-          "Data: " + payload.date + "  Hora: " + payload.time + "\n" +
-          "Barbeiro: " + payload.barber + "  Serviço: " + payload.service
-        );
-
-        // mantém nome/telefone/email se quiseres (para marcar outra)
-        const keepName = payload.name;
-        const keepPhone = payload.phone;
-        const keepEmail = payload.email;
-
-        e.target.reset();
-        setTodayIfEmpty();
-        document.querySelector('input[name="name"]').value = keepName || "";
-        document.querySelector('input[name="phone"]').value = keepPhone || "";
-        document.querySelector('input[name="email"]').value = keepEmail || "";
-
-        // recarrega agenda para já marcar ocupado
-        await refreshAgenda();
-
-      } catch (ex) {
-        show(err, "❌ Não foi possível marcar: " + ex.message);
-      } finally {
-        btn.disabled = false;
-      }
+    const res = await fetch(API_BASE + "/admin/bookings/" + id, {
+      method: "PATCH",
+      headers: {
+        "Content-Type":"application/json",
+        "X-Admin-Token": token(),
+      },
+      body: JSON.stringify({ status, notes })
     });
 
-    // arranque
-    setTodayIfEmpty();
-    refreshAgenda();
-  </script>
+    if(!res.ok){
+      alert("Erro ao guardar (ou senha errada).");
+      return;
+    }
+    await load();
+  }
+
+  async function del(id){
+    if(!confirm("Apagar esta marcação?")) return;
+
+    const res = await fetch(API_BASE + "/admin/bookings/" + id, {
+      method: "DELETE",
+      headers: { "X-Admin-Token": token() }
+    });
+
+    if(!res.ok){
+      alert("Erro ao apagar (ou senha errada).");
+      return;
+    }
+    await load();
+  }
+
+  document.getElementById("load").addEventListener("click", load);
+  document.addEventListener("click", (e) => {
+    if(e.target.classList.contains("save")) save(e.target.dataset.id);
+    if(e.target.classList.contains("del")) del(e.target.dataset.id);
+  });
+
+  // data de hoje por defeito
+  document.getElementById("date").valueAsDate = new Date();
+</script>
+
 </body>
 </html>
