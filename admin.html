@@ -12,6 +12,8 @@ table{width:100%;border-collapse:collapse;margin-top:20px}
 th,td{border-bottom:1px solid #333;padding:10px;text-align:left;vertical-align:top}
 button{cursor:pointer}
 small{opacity:.75}
+hr{border:0;border-top:1px solid #333;margin:14px 0}
+h3{margin:10px 5px}
 </style>
 </head>
 <body>
@@ -22,6 +24,20 @@ small{opacity:.75}
 <input type="date" id="date">
 <button onclick="loadBookings()">Carregar</button>
 <small>(Se apagares a data e carregares, mostra tudo)</small>
+
+<hr>
+
+<h3>Bloquear horário (folga / almoço / indisponível)</h3>
+
+<input type="date" id="b_date">
+<input type="time" id="b_time" step="1800">
+<input type="number" id="b_dur" value="30" min="30" step="30" style="width:120px">
+<select id="b_barber" style="width:200px">
+  <option value="Pedro">Pedro</option>
+  <option value="Joao">Joao</option>
+</select>
+<input type="text" id="b_notes" placeholder="Motivo (ex: Almoço, Folga)" style="width:260px">
+<button onclick="createBlock()">Bloquear</button>
 
 <table>
 <thead>
@@ -79,17 +95,20 @@ function render(items){
 
   items.forEach(b => {
     const tr = document.createElement("tr");
-    const cliente = (b.name || b.client || "");
+
+    const isBlock = (b.status === "Bloqueado") || (b.service === "INDISPONIVEL");
+    const cliente = isBlock ? "<b>INDISPONÍVEL</b>" : (b.name || b.client || "");
+    const servico = isBlock ? "<b>INDISPONÍVEL</b>" : (b.service || "");
     const notas = (b.notes || "").replaceAll('"', "&quot;");
 
     tr.innerHTML = `
       <td><b>${b.time || ""}</b><br><small>${b.date || ""}</small></td>
       <td>${cliente}</td>
-      <td>${b.service || ""}</td>
+      <td>${servico}</td>
       <td>${b.barber || ""}</td>
       <td>
         <select onchange="updateStatus('${b.id}', this.value)">
-          ${["Marcado","Confirmado","Concluido","Cancelado"].map(s =>
+          ${["Marcado","Confirmado","Concluido","Cancelado","Bloqueado"].map(s =>
             `<option value="${s}" ${(b.status||"Marcado")===s?"selected":""}>${s}</option>`
           ).join("")}
         </select>
@@ -143,7 +162,7 @@ async function updateNotes(id, notes){
 }
 
 async function deleteBooking(id){
-  if(!confirm("Apagar marcação?")) return;
+  if(!confirm("Apagar?")) return;
 
   const res = await fetch(`${API_BASE}/admin/bookings/${id}`, {
     method: "DELETE",
@@ -159,7 +178,41 @@ async function deleteBooking(id){
   loadBookings();
 }
 
+// ✅ Criar bloqueio
+async function createBlock(){
+  const date = document.getElementById("b_date").value;
+  const time = document.getElementById("b_time").value;
+  const dur = parseInt(document.getElementById("b_dur").value, 10) || 30;
+  const barber = document.getElementById("b_barber").value.trim();
+  const notes = document.getElementById("b_notes").value.trim();
+
+  if(!date || !time || !barber){
+    alert("Preenche data, hora e barbeiro.");
+    return;
+  }
+
+  const res = await fetch(`${API_BASE}/admin/block`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Token": token()
+    },
+    body: JSON.stringify({ date, time: time.slice(0,5), dur, barber, notes })
+  });
+
+  if(!res.ok){
+    const txt = await res.text();
+    alert("Erro a bloquear: " + res.status + " - " + txt);
+    return;
+  }
+
+  alert("✅ Horário bloqueado!");
+  loadBookings();
+}
+
+// defaults
 document.getElementById("date").valueAsDate = new Date();
+document.getElementById("b_date").valueAsDate = new Date();
 </script>
 
 </body>
