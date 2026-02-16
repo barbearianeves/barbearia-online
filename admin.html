@@ -79,15 +79,11 @@ function render(items){
 
   items.forEach(b => {
     const tr = document.createElement("tr");
-
     const cliente = (b.name || b.client || "");
     const notas = (b.notes || "").replaceAll('"', "&quot;");
 
     tr.innerHTML = `
-      <td>
-        <b>${b.time || ""}</b><br>
-        <small>${b.date || ""}</small>
-      </td>
+      <td><b>${b.time || ""}</b><br><small>${b.date || ""}</small></td>
       <td>${cliente}</td>
       <td>${b.service || ""}</td>
       <td>${b.barber || ""}</td>
@@ -106,7 +102,6 @@ function render(items){
         <button onclick="deleteBooking('${b.id}')">Apagar</button>
       </td>
     `;
-
     tbody.appendChild(tr);
   });
 }
@@ -164,7 +159,6 @@ async function deleteBooking(id){
   loadBookings();
 }
 
-// hoje por defeito (se quiseres, podes remover esta linha)
 document.getElementById("date").valueAsDate = new Date();
 </script>
 
