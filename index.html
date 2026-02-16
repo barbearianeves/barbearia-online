@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="pt">
 <head>
@@ -197,7 +196,6 @@
       <div id="err" class="err"></div>
 
       <div class="grid2">
-        <!-- FORM -->
         <div>
           <form id="f" autocomplete="on">
             <label>Nome</label>
@@ -239,7 +237,6 @@
               </div>
               <div>
                 <label>Hora (escolhe na agenda)</label>
-                <!-- agora é hidden, vem da grelha -->
                 <input name="time" id="time" type="text" required placeholder="Escolhe uma hora na agenda" readonly>
               </div>
             </div>
@@ -255,7 +252,6 @@
           </form>
         </div>
 
-        <!-- AGENDA / SLOTS -->
         <div class="agenda">
           <div class="agendaTop">
             <div>
@@ -268,7 +264,7 @@
           <div class="slots" id="slots"></div>
 
           <div class="hint" style="margin-top:10px">
-            <b>Livre</b>: podes marcar • <b>Ocupado</b>: já reservado • Clica num horário livre para preencher “Hora”.
+            <b>Livre</b>: podes marcar • <b>Ocupado/Indisponível</b>: não dá para marcar.
           </div>
         </div>
       </div>
@@ -276,10 +272,8 @@
   </div>
 
   <script>
-    // ✅ o teu Render URL
     const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
-    // horários de trabalho (ajusta se quiseres)
     const WORK_START = "09:00";
     const WORK_END   = "19:00";
     const STEP_MIN   = 30;
@@ -311,13 +305,18 @@
     }
     function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
 
+    function todayISO(){
+      const d = new Date();
+      return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
+    }
+    function nowMinutes(){
+      const d = new Date();
+      return d.getHours()*60 + d.getMinutes();
+    }
+
     function setTodayIfEmpty(){
       if (dateEl.value) return;
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = pad2(d.getMonth()+1);
-      const dd = pad2(d.getDate());
-      dateEl.value = `${y}-${m}-${dd}`;
+      dateEl.value = todayISO();
     }
 
     async function fetchDay(date, barber){
@@ -330,7 +329,7 @@
       return data.items || [];
     }
 
-    function buildSlots(bookedItems, dur){
+    function buildSlots(bookedItems, dur, dateSelected){
       const booked = bookedItems.map(b => {
         const s = toMin(b.time);
         const e = s + (parseInt(b.dur,10) || 30);
@@ -340,8 +339,15 @@
       const start = toMin(WORK_START);
       const end   = toMin(WORK_END);
 
+      if (dateSelected < todayISO()) return [];
+
+      const isToday = (dateSelected === todayISO());
+      const nowMin = nowMinutes();
+
       const slots = [];
       for (let t = start; t + dur <= end; t += STEP_MIN){
+        if (isToday && t < nowMin) continue;
+
         const s = t, e = t + dur;
 
         let busy = null;
@@ -352,10 +358,7 @@
           }
         }
 
-        slots.push({
-          time: toHHMM(t),
-          busy,
-        });
+        slots.push({ time: toHHMM(t), busy });
       }
       return slots;
     }
@@ -365,7 +368,7 @@
       const picked = timeEl.value;
 
       if (!slots.length){
-        slotsEl.innerHTML = `<div class="small">Sem horários dentro do horário de trabalho.</div>`;
+        slotsEl.innerHTML = `<div class="small">Sem horários disponíveis (ou a data já passou).</div>`;
         return;
       }
 
@@ -374,9 +377,12 @@
         div.className = "slot" + (s.busy ? " busy" : "") + (!s.busy && s.time === picked ? " pick" : "");
 
         if (s.busy){
+          const label = s.busy.label || "OCUPADO";
+          const reason = (s.busy.notes || s.busy.service || "").trim();
+
           div.innerHTML = `
-            <div class="t">${s.time} — Ocupado</div>
-            <div class="d">${escapeHtml(s.busy.name || "")} • ${escapeHtml(s.busy.service || "")}</div>
+            <div class="t">${s.time} — ${escapeHtml(label)}</div>
+            <div class="d">${escapeHtml(reason)}</div>
           `;
         } else {
           div.innerHTML = `
@@ -385,7 +391,6 @@
           `;
           div.addEventListener("click", () => {
             timeEl.value = s.time;
-            // re-render para marcar selecionado
             renderSlots(slots.map(x => ({...x})));
           });
         }
@@ -408,14 +413,13 @@
       const barber = barberEl.value;
       const dur = parseInt(durEl.value,10) || 30;
 
-      // limpa hora se já não for válida
       timeEl.value = "";
 
       try{
         const items = await fetchDay(date, barber);
-        const slots = buildSlots(items, dur);
+        const slots = buildSlots(items, dur, date);
         renderSlots(slots);
-        agendaStatus.textContent = `${items.length} marcação(ões) • ${barber} • ${date}`;
+        agendaStatus.textContent = `${items.length} item(s) • ${barber} • ${date}`;
       }catch(ex){
         slotsEl.innerHTML = "";
         agendaStatus.textContent = "Erro a carregar";
@@ -423,22 +427,18 @@
       }
     }
 
-    // Atualiza agenda quando muda data/barbeiro/duração
     dateEl.addEventListener("change", refreshAgenda);
     barberEl.addEventListener("change", refreshAgenda);
     durEl.addEventListener("change", refreshAgenda);
 
-    // Submeter
     document.getElementById('f').addEventListener('submit', async (e) => {
       e.preventDefault();
       hide(err);
-      // ok NÃO some sozinho — fica até próxima marcação
       btn.disabled = true;
 
       const fd = new FormData(e.target);
       const payload = Object.fromEntries(fd.entries());
 
-      // precisa ter hora escolhida
       if (!payload.time || payload.time.length < 5){
         btn.disabled = false;
         show(err, "❌ Escolhe uma hora livre na agenda.");
@@ -446,7 +446,6 @@
       }
       payload.time = payload.time.slice(0,5);
 
-      // dur múltiplo de 30
       payload.dur = parseInt(payload.dur,10) || 30;
       if (payload.dur % 30 !== 0){
         btn.disabled = false;
@@ -463,7 +462,6 @@
         const data = await r.json().catch(()=> ({}));
         if (!r.ok) throw new Error(data.error || ("Erro HTTP " + r.status));
 
-        // ✅ ID aparece e NÃO desaparece
         show(ok,
           "✅ Marcação confirmada!\n" +
           "ID: " + (data.id || "(sem id)") + "\n" +
@@ -471,7 +469,6 @@
           "Barbeiro: " + payload.barber + "  Serviço: " + payload.service
         );
 
-        // mantém nome/telefone/email se quiseres (para marcar outra)
         const keepName = payload.name;
         const keepPhone = payload.phone;
         const keepEmail = payload.email;
@@ -482,7 +479,6 @@
         document.querySelector('input[name="phone"]').value = keepPhone || "";
         document.querySelector('input[name="email"]').value = keepEmail || "";
 
-        // recarrega agenda para já marcar ocupado
         await refreshAgenda();
 
       } catch (ex) {
@@ -492,9 +488,14 @@
       }
     });
 
-    // arranque
     setTodayIfEmpty();
     refreshAgenda();
+
+    setInterval(() => {
+      if (dateEl.value === todayISO()){
+        refreshAgenda();
+      }
+    }, 60000);
   </script>
 </body>
 </html>
