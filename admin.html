@@ -47,7 +47,7 @@
   .slot .d{font-size:12px;color:var(--muted)}
   .slot.busy{background:var(--busyBg);border-color:var(--busyLine)}
   .slot.block{background:var(--blockBg);border-color:var(--blockLine)}
-  .actions{display:flex;gap:10px;margin-top:6px}
+  .actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
   .actions button{width:auto;padding:10px;border-radius:12px;font-size:12px}
 
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
@@ -63,7 +63,7 @@
       <h1>Mapa do Barbeiro</h1>
       <small>
         Toque num horário <b>Livre</b> para <b>Bloquear</b>.
-        Em <b>Ocupado</b> podes <b>Cancelar</b> ou <b>Validar + Email</b>.
+        Em <b>Ocupado</b> podes <b>Cancelar</b>, <b>Validar</b> e abrir <b>Outlook</b> com o email já feito.
         Em <b>Indisponível</b> podes <b>Desbloquear</b>.
       </small>
 
@@ -221,7 +221,9 @@ function renderSlots(slots){
         <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
         <div class="d">${escapeHtml(hit.service || "")}</div>
         <div class="actions">
-          <button onclick="validateAndEmail('${hit.id}')">✅ Validar + 📧 Email</button>
+          <button onclick="validateOnly('${hit.id}')">✅ Validar</button>
+          <button onclick="openOutlookEmail('${hit.id}')">📧 Abrir Outlook</button>
+          <button onclick="validateThenOutlook('${hit.id}')">✅+📧</button>
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
       `;
@@ -292,23 +294,91 @@ async function unblock(id){
   }
 }
 
-/* ✅ VALIDAR + EMAIL (novo)
-   Isto chama um endpoint novo na API:
-   POST /admin/validate_and_email/<id>
-   body: { status: "Chegou" } (ou Concluido / EmAtendimento)
-*/
-async function validateAndEmail(id){
-  const newStatus = "Chegou"; // muda aqui se quiseres outro default
-
-  if(!confirm(`Validar esta marcação e enviar email ao cliente?\n\nNovo estado: ${newStatus}`)) return;
+/* =========================
+   ✅ VALIDAR (sem SMTP)
+   Nota: eu faço fallback se ainda não existir /admin/validate/
+   ========================= */
+async function validateOnly(id){
+  const newStatus = "Chegou";
+  if(!confirm(`Validar esta marcação?\n\nNovo estado: ${newStatus}`)) return;
 
   try{
-    const r = await apiPost(API_BASE + "/admin/validate_and_email/" + id, { status: newStatus });
-    alert("✅ OK: " + (r.message || "validado e email enviado"));
+    try{
+      await apiPost(API_BASE + "/admin/validate/" + id, { status: newStatus });
+    }catch(e){
+      // fallback caso ainda só tenhas o validate_and_email
+      await apiPost(API_BASE + "/admin/validate_and_email/" + id, { status: newStatus });
+    }
+
+    alert("✅ Validado!");
     await reloadMap();
   }catch(ex){
-    alert("Erro ao validar/enviar email: " + ex.message);
+    alert("Erro ao validar: " + ex.message);
   }
+}
+
+/* =========================
+   📧 Outlook no iPhone
+   - abre a app do Outlook a compor email
+   - se não abrir, faz fallback para mailto:
+   ========================= */
+async function openOutlookEmail(id){
+  try{
+    const d = dateEl.value;
+    const b = barberEl.value;
+    const items = await fetchAdminDay(d,b);
+    const hit = items.find(x => x.id === id);
+    if(!hit){ alert("Não encontrei a marcação."); return; }
+
+    const to = (hit.email || "").trim();
+    if(!to){
+      alert("Este cliente não tem email guardado.");
+      return;
+    }
+
+    const subject = `Marcação validada - ${hit.date} ${hit.time}`;
+    const body =
+`Olá ${hit.name || ""},
+
+A sua marcação foi validada com sucesso!
+
+Data: ${hit.date}
+Hora: ${hit.time}
+Serviço: ${hit.service}
+Barbeiro: ${hit.barber}
+
+Obrigado pela preferência!
+Barbearia`;
+
+    // Outlook deep link
+    const outlookUrl =
+      "ms-outlook://compose?to=" + encodeURIComponent(to) +
+      "&subject=" + encodeURIComponent(subject) +
+      "&body=" + encodeURIComponent(body);
+
+    // Fallback: mailto
+    const mailtoUrl =
+      "mailto:" + encodeURIComponent(to) +
+      "?subject=" + encodeURIComponent(subject) +
+      "&body=" + encodeURIComponent(body);
+
+    // tenta Outlook
+    window.location.href = outlookUrl;
+
+    // se Outlook não estiver instalado / não abrir, tenta mailto ao fim de 600ms
+    setTimeout(() => {
+      window.location.href = mailtoUrl;
+    }, 600);
+
+  }catch(ex){
+    alert("Erro a preparar email: " + ex.message);
+  }
+}
+
+/* ✅+📧 num clique */
+async function validateThenOutlook(id){
+  await validateOnly(id);
+  await openOutlookEmail(id);
 }
 
 /* AUTO START */
