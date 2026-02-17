@@ -63,7 +63,7 @@
       <h1>Mapa do Barbeiro</h1>
       <small>
         Toque num horário <b>Livre</b> para <b>Bloquear</b>.
-        Em <b>Ocupado</b> podes <b>Cancelar</b>.
+        Em <b>Ocupado</b> podes <b>Cancelar</b> ou <b>Validar + Email</b>.
         Em <b>Indisponível</b> podes <b>Desbloquear</b>.
       </small>
 
@@ -221,6 +221,7 @@ function renderSlots(slots){
         <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
         <div class="d">${escapeHtml(hit.service || "")}</div>
         <div class="actions">
+          <button onclick="validateAndEmail('${hit.id}')">✅ Validar + 📧 Email</button>
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
       `;
@@ -288,6 +289,25 @@ async function unblock(id){
     await reloadMap();
   }catch(ex){
     alert("Erro a desbloquear: " + ex.message);
+  }
+}
+
+/* ✅ VALIDAR + EMAIL (novo)
+   Isto chama um endpoint novo na API:
+   POST /admin/validate_and_email/<id>
+   body: { status: "Chegou" } (ou Concluido / EmAtendimento)
+*/
+async function validateAndEmail(id){
+  const newStatus = "Chegou"; // muda aqui se quiseres outro default
+
+  if(!confirm(`Validar esta marcação e enviar email ao cliente?\n\nNovo estado: ${newStatus}`)) return;
+
+  try{
+    const r = await apiPost(API_BASE + "/admin/validate_and_email/" + id, { status: newStatus });
+    alert("✅ OK: " + (r.message || "validado e email enviado"));
+    await reloadMap();
+  }catch(ex){
+    alert("Erro ao validar/enviar email: " + ex.message);
   }
 }
 
