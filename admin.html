@@ -63,7 +63,7 @@
       <h1>Mapa do Barbeiro</h1>
       <small>
         Toque num horário <b>Livre</b> para <b>Bloquear</b>.
-        Em <b>Ocupado</b> podes <b>Cancelar</b>, <b>Validar</b> e abrir <b>SMS (iPhone)</b> já preenchido.
+        Em <b>Ocupado</b> tens só: <b>Cancelar</b>, <b>Email (Outlook)</b>, <b>SMS (iPhone)</b>.
         Em <b>Indisponível</b> podes <b>Desbloquear</b>.
       </small>
 
@@ -106,8 +106,8 @@ const WORK_START = "09:00";
 const WORK_END   = "19:00";
 const STEP_MIN   = 30;
 
-// ✅ fallback para testes (tu pediste usar este número)
-const TEST_PHONE_FALLBACK = "916634329";
+// ✅ (Opcional) fallback só para testes. Se não quiseres, mete "".
+const TEST_PHONE_FALLBACK = "";
 
 const appEl = document.getElementById("app");
 const overlayEl = document.getElementById("loginOverlay");
@@ -118,6 +118,10 @@ const barberEl = document.getElementById("barber");
 const dateEl = document.getElementById("date");
 const statusEl = document.getElementById("status");
 const slotsEl = document.getElementById("slots");
+
+// ✅ cache do dia (booking REAL vindo do /admin/bookings)
+let DAY_ITEMS_CACHE = [];        // array de bookings
+let DAY_ITEMS_BY_ID = {};        // id -> booking
 
 function token(){ return (localStorage.getItem("admin_token") || "").trim(); }
 function pad2(n){ return (n<10?"0":"")+n; }
@@ -153,6 +157,18 @@ function isBlock(x){
 }
 function isHiddenFromMap(x){
   return (x.status === "Cancelado") || (x.status === "Desbloqueado");
+}
+
+function rebuildCache(items){
+  DAY_ITEMS_CACHE = Array.isArray(items) ? items : [];
+  DAY_ITEMS_BY_ID = {};
+  for(const it of DAY_ITEMS_CACHE){
+    if(it && it.id) DAY_ITEMS_BY_ID[it.id] = it;
+  }
+}
+
+function getBookingById(id){
+  return DAY_ITEMS_BY_ID[id] || null;
 }
 
 /* LOGIN */
@@ -219,14 +235,14 @@ function renderSlots(slots){
     div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "");
 
     if(busy){
+      // ✅ aqui mostramos nome/serviço do HIT, mas os botões usam o CACHE REAL pelo id
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — Ocupado</div>
         <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
         <div class="d">${escapeHtml(hit.service || "")}</div>
         <div class="actions">
-          <button onclick="validateOnly('${hit.id}')">✅ Validar</button>
+          <button onclick="openOutlookEmail('${hit.id}')">📧 Outlook</button>
           <button onclick="openSMSForBooking('${hit.id}')">📩 SMS (iPhone)</button>
-          <button onclick="validateThenSMS('${hit.id}')">✅+📩</button>
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
       `;
@@ -258,6 +274,10 @@ async function reloadMap(){
   statusEl.textContent="A carregar…";
   try{
     const items = await fetchAdminDay(d,b);
+
+    // ✅ refresh cache SEMPRE
+    rebuildCache(items);
+
     const slots = buildSlots(items);
     renderSlots(slots);
     statusEl.textContent = `OK • ${b} • ${d}`;
@@ -298,59 +318,91 @@ async function unblock(id){
 }
 
 /* =========================
-   ✅ VALIDAR (sem depender de SMTP)
-   Usa /admin/validate/<id> se existir, senão faz fallback para /admin/validate_and_email/<id>
+   📧 OUTLOOK (usa booking REAL do cache)
    ========================= */
-async function validateOnly(id){
-  const newStatus = "Chegou";
-  if(!confirm(`Validar esta marcação?\n\nNovo estado: ${newStatus}`)) return;
+function makeEmailText(hit){
+  const subject = `Marcação validada - ${hit.date} ${hit.time}`;
+  const body =
+`Olá ${hit.name || ""},
 
-  try{
-    try{
-      await apiPost(API_BASE + "/admin/validate/" + id, { status: newStatus });
-    }catch(e){
-      // fallback: se ainda só tiveres validate_and_email
-      await apiPost(API_BASE + "/admin/validate_and_email/" + id, { status: newStatus });
-    }
-    alert("✅ Validado!");
-    await reloadMap();
-  }catch(ex){
-    alert("Erro ao validar: " + ex.message);
+A sua marcação foi validada com sucesso ✅
+
+Data: ${hit.date}
+Hora: ${hit.time}
+Serviço: ${hit.service}
+Barbeiro: ${hit.barber}
+
+Obrigado pela preferência!
+Barbearia`;
+  return {subject, body};
+}
+
+async function openOutlookEmail(id){
+  const hit = getBookingById(id);
+  if(!hit){
+    alert("Não encontrei a marcação (cache). Tenta atualizar a página.");
+    return;
   }
+
+  const to = (hit.email || "").trim();
+  if(!to){
+    // ✅ Debug: mostra o que veio do servidor para perceber porque está vazio
+    alert("Este cliente não tem email guardado.\n\nDados do booking:\n" + JSON.stringify({
+      id: hit.id, name: hit.name, phone: hit.phone, email: hit.email, service: hit.service, date: hit.date, time: hit.time
+    }, null, 2));
+    return;
+  }
+
+  const {subject, body} = makeEmailText(hit);
+
+  const outlookUrl =
+    "ms-outlook://compose?to=" + encodeURIComponent(to) +
+    "&subject=" + encodeURIComponent(subject) +
+    "&body=" + encodeURIComponent(body);
+
+  const mailtoUrl =
+    "mailto:" + encodeURIComponent(to) +
+    "?subject=" + encodeURIComponent(subject) +
+    "&body=" + encodeURIComponent(body);
+
+  // tenta Outlook primeiro
+  window.location.href = outlookUrl;
+
+  // fallback mailto
+  setTimeout(() => {
+    window.location.href = mailtoUrl;
+  }, 600);
 }
 
 /* =========================
-   📩 SMS (Opção A) — iPhone
-   Abre app Mensagens com body preenchido
+   📩 SMS (iPhone) — usa booking REAL do cache
    ========================= */
 function normalizePhone(p){
   let s = (p || "").trim();
-  // remove espaços, hífens, parênteses
   s = s.replace(/[^\d+]/g, "");
-  // se vier tipo "916..." sem +351, mantém assim (iPhone aceita)
   return s;
 }
 
 function openSMS(phone, message){
   const num = normalizePhone(phone);
   const body = encodeURIComponent(message);
-
-  // iPhone: sms:<num>&body=<...>
-  // (alguns Android usam ?body=... mas no teu caso é iPhone)
   window.location.href = `sms:${num}&body=${body}`;
 }
 
 async function openSMSForBooking(id){
-  try{
-    const d = dateEl.value;
-    const b = barberEl.value;
-    const items = await fetchAdminDay(d,b);
-    const hit = items.find(x => x.id === id);
-    if(!hit){ alert("Não encontrei a marcação."); return; }
+  const hit = getBookingById(id);
+  if(!hit){
+    alert("Não encontrei a marcação (cache). Tenta atualizar a página.");
+    return;
+  }
 
-    const phone = (hit.phone || hit.tel || "").trim() || TEST_PHONE_FALLBACK;
+  const phone = (hit.phone || hit.tel || "").trim() || TEST_PHONE_FALLBACK;
+  if(!phone){
+    alert("Este cliente não tem telefone guardado.");
+    return;
+  }
 
-    const msg =
+  const msg =
 `Olá ${hit.name || ""}, a sua marcação foi validada ✅
 
 Data: ${hit.date}
@@ -361,17 +413,7 @@ Barbeiro: ${hit.barber}
 Obrigado!
 Barbearia`;
 
-    openSMS(phone, msg);
-
-  }catch(ex){
-    alert("Erro a preparar SMS: " + ex.message);
-  }
-}
-
-/* ✅ + 📩 num clique */
-async function validateThenSMS(id){
-  await validateOnly(id);
-  await openSMSForBooking(id);
+  openSMS(phone, msg);
 }
 
 /* AUTO START */
