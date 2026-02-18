@@ -63,7 +63,7 @@
       <h1>Mapa do Barbeiro</h1>
       <small>
         Toque num horário <b>Livre</b> para <b>Bloquear</b>.
-        Em <b>Ocupado</b> podes <b>Cancelar</b>, <b>Validar</b> e abrir <b>Outlook</b> com o email já feito.
+        Em <b>Ocupado</b> podes <b>Cancelar</b>, <b>Validar</b> e abrir <b>SMS (iPhone)</b> já preenchido.
         Em <b>Indisponível</b> podes <b>Desbloquear</b>.
       </small>
 
@@ -105,6 +105,9 @@ const API_BASE = "https://barbearia-api-ki25.onrender.com";
 const WORK_START = "09:00";
 const WORK_END   = "19:00";
 const STEP_MIN   = 30;
+
+// ✅ fallback para testes (tu pediste usar este número)
+const TEST_PHONE_FALLBACK = "916634329";
 
 const appEl = document.getElementById("app");
 const overlayEl = document.getElementById("loginOverlay");
@@ -222,8 +225,8 @@ function renderSlots(slots){
         <div class="d">${escapeHtml(hit.service || "")}</div>
         <div class="actions">
           <button onclick="validateOnly('${hit.id}')">✅ Validar</button>
-          <button onclick="openOutlookEmail('${hit.id}')">📧 Abrir Outlook</button>
-          <button onclick="validateThenOutlook('${hit.id}')">✅+📧</button>
+          <button onclick="openSMSForBooking('${hit.id}')">📩 SMS (iPhone)</button>
+          <button onclick="validateThenSMS('${hit.id}')">✅+📩</button>
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
       `;
@@ -295,8 +298,8 @@ async function unblock(id){
 }
 
 /* =========================
-   ✅ VALIDAR (sem SMTP)
-   Nota: eu faço fallback se ainda não existir /admin/validate/
+   ✅ VALIDAR (sem depender de SMTP)
+   Usa /admin/validate/<id> se existir, senão faz fallback para /admin/validate_and_email/<id>
    ========================= */
 async function validateOnly(id){
   const newStatus = "Chegou";
@@ -306,10 +309,9 @@ async function validateOnly(id){
     try{
       await apiPost(API_BASE + "/admin/validate/" + id, { status: newStatus });
     }catch(e){
-      // fallback caso ainda só tenhas o validate_and_email
+      // fallback: se ainda só tiveres validate_and_email
       await apiPost(API_BASE + "/admin/validate_and_email/" + id, { status: newStatus });
     }
-
     alert("✅ Validado!");
     await reloadMap();
   }catch(ex){
@@ -318,11 +320,27 @@ async function validateOnly(id){
 }
 
 /* =========================
-   📧 Outlook no iPhone
-   - abre a app do Outlook a compor email
-   - se não abrir, faz fallback para mailto:
+   📩 SMS (Opção A) — iPhone
+   Abre app Mensagens com body preenchido
    ========================= */
-async function openOutlookEmail(id){
+function normalizePhone(p){
+  let s = (p || "").trim();
+  // remove espaços, hífens, parênteses
+  s = s.replace(/[^\d+]/g, "");
+  // se vier tipo "916..." sem +351, mantém assim (iPhone aceita)
+  return s;
+}
+
+function openSMS(phone, message){
+  const num = normalizePhone(phone);
+  const body = encodeURIComponent(message);
+
+  // iPhone: sms:<num>&body=<...>
+  // (alguns Android usam ?body=... mas no teu caso é iPhone)
+  window.location.href = `sms:${num}&body=${body}`;
+}
+
+async function openSMSForBooking(id){
   try{
     const d = dateEl.value;
     const b = barberEl.value;
@@ -330,55 +348,30 @@ async function openOutlookEmail(id){
     const hit = items.find(x => x.id === id);
     if(!hit){ alert("Não encontrei a marcação."); return; }
 
-    const to = (hit.email || "").trim();
-    if(!to){
-      alert("Este cliente não tem email guardado.");
-      return;
-    }
+    const phone = (hit.phone || hit.tel || "").trim() || TEST_PHONE_FALLBACK;
 
-    const subject = `Marcação validada - ${hit.date} ${hit.time}`;
-    const body =
-`Olá ${hit.name || ""},
-
-A sua marcação foi validada com sucesso!
+    const msg =
+`Olá ${hit.name || ""}, a sua marcação foi validada ✅
 
 Data: ${hit.date}
 Hora: ${hit.time}
 Serviço: ${hit.service}
 Barbeiro: ${hit.barber}
 
-Obrigado pela preferência!
+Obrigado!
 Barbearia`;
 
-    // Outlook deep link
-    const outlookUrl =
-      "ms-outlook://compose?to=" + encodeURIComponent(to) +
-      "&subject=" + encodeURIComponent(subject) +
-      "&body=" + encodeURIComponent(body);
-
-    // Fallback: mailto
-    const mailtoUrl =
-      "mailto:" + encodeURIComponent(to) +
-      "?subject=" + encodeURIComponent(subject) +
-      "&body=" + encodeURIComponent(body);
-
-    // tenta Outlook
-    window.location.href = outlookUrl;
-
-    // se Outlook não estiver instalado / não abrir, tenta mailto ao fim de 600ms
-    setTimeout(() => {
-      window.location.href = mailtoUrl;
-    }, 600);
+    openSMS(phone, msg);
 
   }catch(ex){
-    alert("Erro a preparar email: " + ex.message);
+    alert("Erro a preparar SMS: " + ex.message);
   }
 }
 
-/* ✅+📧 num clique */
-async function validateThenOutlook(id){
+/* ✅ + 📩 num clique */
+async function validateThenSMS(id){
   await validateOnly(id);
-  await openOutlookEmail(id);
+  await openSMSForBooking(id);
 }
 
 /* AUTO START */
