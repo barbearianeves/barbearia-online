@@ -278,7 +278,7 @@
 
     // ✅ 10–17 e 45min
     const WORK_START = "10:00";
-    const WORK_END   = "17:00";
+    const WORK_END   = "17:30";
     const STEP_MIN   = 45;
     const FIXED_DUR  = 45;
 
@@ -441,12 +441,7 @@
 
       const fd = new FormData(e.target);
       const payload = Object.fromEntries(fd.entries());
-
-      if (!payload.time || payload.time.length < 5){
-        btn.disabled = false;
-        show(err, "❌ Escolhe um horário livre na agenda.");
-        return;
-      }
+      
       payload.time = payload.time.slice(0,5);
 
       // fixo 45
