@@ -54,10 +54,6 @@
   .loginBox{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
   .hide{display:none}
 
-  .pill{
-    display:inline-block; padding:4px 8px; border:1px solid var(--line);
-    border-radius:999px; font-size:12px; color:var(--muted);
-  }
   .dbg{
     margin-top:8px; padding:10px; border:1px dashed var(--line);
     border-radius:12px; font-size:12px; color:var(--muted); white-space:pre-wrap;
@@ -116,38 +112,35 @@ const DEBUG_ON_MISSING = true;
 const TEST_PHONE_FALLBACK = "916634329";
 
 /* =========================
-   HORÁRIOS (por dia)
-   - 2ª-6ª: 10:00-20:00 com almoço 12:30-14:00
-   - Sáb:  09:00-14:00 (sem almoço)
-   - Dom:  fechado (não mostra nada)
+   HORÁRIOS (condizente com o cliente)
+   - 2ª-6ª: 10:00-12:30 e 14:00-20:00
+   - Sáb:  09:00-14:00
+   - Dom:  fechado
    ========================= */
 function getScheduleForDate(dateISO){
-  // dateISO: "YYYY-MM-DD"
   const [y,m,d] = dateISO.split("-").map(Number);
   const dt = new Date(y, m-1, d);
   const dow = dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
 
-  // Domingo
   if(dow === 0){
-    return { closed:true };
+    return { closed:true, segments: [] };
   }
 
-  // Sábado
   if(dow === 6){
     return {
       closed:false,
-      start:"09:00",
-      end:"14:00",
-      breaks: [] // sem almoço ao sábado (como pediste)
+      segments: [
+        { start:"09:00", end:"14:00" }
+      ]
     };
   }
 
-  // 2ª a 6ª
   return {
     closed:false,
-    start:"10:00",
-    end:"20:00",
-    breaks: [{ start:"12:30", end:"14:00" }]
+    segments: [
+      { start:"10:00", end:"12:30" },
+      { start:"14:00", end:"20:00" }
+    ]
   };
 }
 
@@ -242,29 +235,34 @@ function buildSlots(items, schedule){
     return { ...x, s, e };
   });
 
-  const start = toMin(schedule.start);
-  const end   = toMin(schedule.end);
-  const breaks = (schedule.breaks || []).map(b => ({ s: toMin(b.start), e: toMin(b.end) }));
-
+  const segments = schedule.segments || [];
   const slots = [];
-  for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
-    const s=t, e=t+STEP_MIN;
 
-    // remove slots que caem no almoço (ou qualquer break)
-    const inBreak = breaks.some(br => overlaps(s,e,br.s,br.e));
-    if(inBreak) continue;
+  for(const seg of segments){
+    const start = toMin(seg.start);
+    const end   = toMin(seg.end);
 
-    let hit = null;
-    for(const b of booked){
-      if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
+    for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
+      const s=t, e=t+STEP_MIN;
+
+      let hit = null;
+      for(const b of booked){
+        if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
+      }
+      slots.push({ time: toHHMM(t), hit });
     }
-    slots.push({ time: toHHMM(t), hit });
   }
+
   return slots;
 }
 
 function renderSlots(slots){
   slotsEl.innerHTML = "";
+
+  if(!slots.length){
+    slotsEl.innerHTML = `<div class="status">Sem horários (domingo fechado ou data inválida).</div>`;
+    return;
+  }
 
   for(const s of slots){
     const div = document.createElement("div");
@@ -314,18 +312,18 @@ async function reloadMap(){
 
   const schedule = getScheduleForDate(d);
 
-  // Domingo: não mostra nada (slots vazios) + status fechado
   if(schedule.closed){
     slotsEl.innerHTML = "";
     statusEl.textContent = `Fechado • ${b} • ${d}`;
     return;
   }
 
+  const segText = (schedule.segments || []).map(s => `${s.start}–${s.end}`).join(" • ");
+
   statusEl.textContent="A carregar…";
   try{
     const items = await fetchAdminDay(d,b);
 
-    // cache por id -> booking completo (evita “buscar de novo” e falhar)
     currentItemsById = new Map();
     for(const it of items){
       if(it && it.id) currentItemsById.set(it.id, it);
@@ -333,7 +331,8 @@ async function reloadMap(){
 
     const slots = buildSlots(items, schedule);
     renderSlots(slots);
-    statusEl.textContent = `OK • ${b} • ${d} • ${schedule.start}–${schedule.end}`;
+
+    statusEl.textContent = `OK • ${b} • ${d} • ${segText}`;
   }catch(ex){
     statusEl.textContent = "Erro: " + ex.message;
   }
@@ -372,22 +371,17 @@ async function unblock(id){
 
 /* =========================
    helpers: obter booking “bem”
-   - 1) cache (do /admin/bookings)
-   - 2) tentar endpoint direto /admin/booking/<id> (se existir)
    ========================= */
 async function getBookingSafe(id){
   let hit = currentItemsById.get(id) || null;
   if(hit) return hit;
 
-  // tenta endpoint (se existir)
   try{
     const data = await apiGet(API_BASE + "/admin/booking/" + id);
     if(data && data.item) return data.item;
     if(data && data.booking) return data.booking;
     if(data && data.id) return data;
-  }catch(e){
-    // ignora: endpoint pode não existir
-  }
+  }catch(e){}
   return null;
 }
 
@@ -449,8 +443,6 @@ async function openSMS(id){
   if(!hit){ alert("Não encontrei a marcação."); return; }
 
   let phone = (hit.phone || "").trim();
-
-  // fallback só para testes (depois tiras)
   if(!phone) phone = TEST_PHONE_FALLBACK;
 
   if(!phone){
@@ -469,7 +461,6 @@ Barbeiro: ${hit.barber}
 
 Obrigado!`;
 
-  // iOS: sms:<num>&body=...
   const smsUrl = "sms:" + encodeURIComponent(phone) + "&body=" + encodeURIComponent(msg);
   window.location.href = smsUrl;
 }
