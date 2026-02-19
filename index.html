@@ -244,10 +244,7 @@
                 <label>Data</label>
                 <input name="date" id="date" type="date" required>
               </div>
-              <div>
-                <label>Hora</label>
-                <input name="time" id="time" type="text" required placeholder="Escolhe um horário à direita" readonly>
-              </div>
+              <!-- ✅ Removido: campo Hora -->
             </div>
 
             <button id="btn" type="submit">Marcar</button>
@@ -276,7 +273,7 @@
   <script>
     const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
-    // ✅ 10–17 e 45min
+    // ✅ 10–17:30 e 45min
     const WORK_START = "10:00";
     const WORK_END   = "17:30";
     const STEP_MIN   = 45;
@@ -291,7 +288,9 @@
 
     const dateEl = document.getElementById('date');
     const barberEl = document.getElementById('barber');
-    const timeEl = document.getElementById('time');
+
+    // ✅ substitui o input #time por uma variável interna
+    let pickedTime = "";
 
     function show(el, text) { el.textContent = text; el.style.display = 'block'; }
     function hide(el) { el.style.display = 'none'; }
@@ -374,7 +373,7 @@
 
     function renderSlots(slots){
       slotsEl.innerHTML = "";
-      const picked = timeEl.value;
+      const picked = pickedTime;
 
       if (!slots.length){
         slotsEl.innerHTML = `<div class="small">Sem horários disponíveis (ou a data já passou).</div>`;
@@ -399,8 +398,8 @@
             <div class="d">Clique para escolher</div>
           `;
           div.addEventListener("click", () => {
-            timeEl.value = s.time;
-            renderSlots(slots.map(x => ({...x})));
+            pickedTime = s.time;       // ✅ guarda escolha
+            renderSlots(slots.map(x => ({...x}))); // re-render para marcar o pick
           });
         }
 
@@ -415,8 +414,8 @@
       const date = dateEl.value;
       const barber = barberEl.value;
 
-      // sempre limpar para obrigar a escolher
-      timeEl.value = "";
+      // ✅ limpar seleção para obrigar a escolher
+      pickedTime = "";
 
       try{
         const items = await fetchDay(date, barber);
@@ -439,10 +438,18 @@
       hide(ok);
       btn.disabled = true;
 
+      // ✅ validação: tem de escolher horário
+      if (!pickedTime){
+        show(err, "❌ Escolhe um horário livre na agenda.");
+        btn.disabled = false;
+        return;
+      }
+
       const fd = new FormData(e.target);
       const payload = Object.fromEntries(fd.entries());
-      
-      payload.time = payload.time.slice(0,5);
+
+      // ✅ hora vem da seleção (não de input)
+      payload.time = pickedTime.slice(0,5);
 
       // fixo 45
       payload.dur = FIXED_DUR;
