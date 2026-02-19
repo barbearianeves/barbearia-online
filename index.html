@@ -135,7 +135,6 @@
       gap:10px;
       margin-bottom:10px;
     }
-    .agendaTitle{font-weight:750}
     .small{color:var(--muted); font-size:13px}
 
     .slots{
@@ -179,6 +178,7 @@
       font-size:12px;
       color:var(--muted);
       margin-top:8px;
+      line-height:1.35;
     }
 
     @media (max-width: 900px){
@@ -197,7 +197,11 @@
         <div>
           <h1>Barbearia Neves</h1>
           <p>Escolhe um horário livre e confirma. A marcação entra automaticamente na agenda.</p>
-          <div class="pill">Horário: 10:00–17:00 • Intervalos: 45 min</div>
+          <div class="pill">
+            2ª–6ª: 10:00–12:30 • 14:00–20:00<br>
+            Sábado: 09:00–14:00 • Domingo: Fechado<br>
+            Intervalos: 45 min
+          </div>
         </div>
       </div>
 
@@ -244,7 +248,7 @@
                 <label>Data</label>
                 <input name="date" id="date" type="date" required>
               </div>
-              <!-- ✅ Removido: campo Hora -->
+              <!-- campo Hora removido -->
             </div>
 
             <button id="btn" type="submit">Marcar</button>
@@ -258,8 +262,7 @@
 
           <div class="slots" id="slots"></div>
 
-          <div class="small" style="margin-top:10px">
-          </div>
+          <div class="small" style="margin-top:10px"></div>
         </div>
       </div>
     </div>
@@ -268,9 +271,7 @@
   <script>
     const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
-    // ✅ 10–17:30 e 45min
-    const WORK_START = "10:00";
-    const WORK_END   = "17:30";
+    // Intervalos / duração (mantém)
     const STEP_MIN   = 45;
     const FIXED_DUR  = 45;
 
@@ -284,7 +285,7 @@
     const dateEl = document.getElementById('date');
     const barberEl = document.getElementById('barber');
 
-    // ✅ substitui o input #time por uma variável interna
+    // horário escolhido na agenda
     let pickedTime = "";
 
     function show(el, text) { el.textContent = text; el.style.display = 'block'; }
@@ -310,10 +311,36 @@
       const d = new Date();
       return d.getHours()*60 + d.getMinutes();
     }
-
     function setTodayIfEmpty(){
       if (dateEl.value) return;
       dateEl.value = todayISO();
+    }
+
+    function getWeekday(dateISO){
+      // dateISO = "YYYY-MM-DD"
+      const [y,m,d] = dateISO.split("-").map(Number);
+      const dt = new Date(y, m-1, d);
+      return dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
+    }
+
+    // ✅ Horários semanais (segmentos)
+    // retorna array de segmentos: [{start:"HH:MM", end:"HH:MM"}, ...]
+    function getWorkSegments(dateISO){
+      const wd = getWeekday(dateISO);
+
+      // Domingo
+      if (wd === 0) return [];
+
+      // Sábado
+      if (wd === 6) return [
+        { start: "09:00", end: "14:00" }
+      ];
+
+      // 2ª–6ª
+      return [
+        { start: "10:00", end: "12:30" },
+        { start: "14:00", end: "20:00" }
+      ];
     }
 
     async function fetchDay(date, barber){
@@ -327,36 +354,44 @@
     }
 
     function buildSlots(bookedItems, dur, dateSelected){
+      // não mostrar para datas passadas
+      if (dateSelected < todayISO()) return [];
+
+      const segments = getWorkSegments(dateSelected);
+      if (!segments.length) return []; // domingo fechado
+
       const booked = bookedItems.map(b => {
         const s = toMin(b.time);
         const e = s + (parseInt(b.dur,10) || dur);
         return { ...b, s, e };
       });
 
-      const start = toMin(WORK_START);
-      const end   = toMin(WORK_END);
-
-      if (dateSelected < todayISO()) return [];
-
       const isToday = (dateSelected === todayISO());
       const nowMin = nowMinutes();
 
       const slots = [];
-      for (let t = start; t + dur <= end; t += STEP_MIN){
-        if (isToday && t < nowMin) continue;
 
-        const s = t, e = t + dur;
+      for (const seg of segments){
+        const segStart = toMin(seg.start);
+        const segEnd   = toMin(seg.end);
 
-        let busy = null;
-        for (const b of booked){
-          if (overlaps(s,e,b.s,b.e)){
-            busy = b;
-            break;
+        for (let t = segStart; t + dur <= segEnd; t += STEP_MIN){
+          if (isToday && t < nowMin) continue;
+
+          const s = t, e = t + dur;
+
+          let busy = null;
+          for (const b of booked){
+            if (overlaps(s,e,b.s,b.e)){
+              busy = b;
+              break;
+            }
           }
-        }
 
-        slots.push({ time: toHHMM(t), busy });
+          slots.push({ time: toHHMM(t), busy });
+        }
       }
+
       return slots;
     }
 
@@ -371,7 +406,7 @@
       const picked = pickedTime;
 
       if (!slots.length){
-        slotsEl.innerHTML = `<div class="small">Sem horários disponíveis (ou a data já passou).</div>`;
+        slotsEl.innerHTML = `<div class="small">Sem horários disponíveis (domingo fechado ou a data já passou).</div>`;
         return;
       }
 
@@ -393,8 +428,8 @@
             <div class="d">Clique para escolher</div>
           `;
           div.addEventListener("click", () => {
-            pickedTime = s.time;       // ✅ guarda escolha
-            renderSlots(slots.map(x => ({...x}))); // re-render para marcar o pick
+            pickedTime = s.time;
+            renderSlots(slots.map(x => ({...x})));
           });
         }
 
@@ -409,14 +444,20 @@
       const date = dateEl.value;
       const barber = barberEl.value;
 
-      // ✅ limpar seleção para obrigar a escolher
+      // limpar seleção para obrigar a escolher
       pickedTime = "";
 
       try{
         const items = await fetchDay(date, barber);
         const slots = buildSlots(items, FIXED_DUR, date);
         renderSlots(slots);
-        agendaStatus.textContent = `${items.length} item(s) • ${barber} • ${date}`;
+
+        const segs = getWorkSegments(date);
+        const segText = segs.length
+          ? segs.map(s => `${s.start}–${s.end}`).join(" • ")
+          : "Fechado";
+
+        agendaStatus.textContent = `${items.length} item(s) • ${barber} • ${date} • ${segText}`;
       }catch(ex){
         slotsEl.innerHTML = "";
         agendaStatus.textContent = "Erro a carregar";
@@ -433,7 +474,7 @@
       hide(ok);
       btn.disabled = true;
 
-      // ✅ validação: tem de escolher horário
+      // validação: tem de escolher horário
       if (!pickedTime){
         show(err, "❌ Escolhe um horário livre na agenda.");
         btn.disabled = false;
@@ -443,7 +484,7 @@
       const fd = new FormData(e.target);
       const payload = Object.fromEntries(fd.entries());
 
-      // ✅ hora vem da seleção (não de input)
+      // hora vem da seleção
       payload.time = pickedTime.slice(0,5);
 
       // fixo 45
