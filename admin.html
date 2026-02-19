@@ -107,8 +107,6 @@
    CONFIG
    ========================= */
 const API_BASE    = "https://barbearia-api-ki25.onrender.com";
-const WORK_START  = "10:00";
-const WORK_END    = "17:30"; // ✅ para o último slot ser 16:45
 const STEP_MIN    = 45;
 
 // true -> mostra debug quando falta email/telefone
@@ -116,6 +114,42 @@ const DEBUG_ON_MISSING = true;
 
 // fallback: se faltar telefone no booking, podes usar este para testar (muda depois)
 const TEST_PHONE_FALLBACK = "916634329";
+
+/* =========================
+   HORÁRIOS (por dia)
+   - 2ª-6ª: 10:00-20:00 com almoço 12:30-14:00
+   - Sáb:  09:00-14:00 (sem almoço)
+   - Dom:  fechado (não mostra nada)
+   ========================= */
+function getScheduleForDate(dateISO){
+  // dateISO: "YYYY-MM-DD"
+  const [y,m,d] = dateISO.split("-").map(Number);
+  const dt = new Date(y, m-1, d);
+  const dow = dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
+
+  // Domingo
+  if(dow === 0){
+    return { closed:true };
+  }
+
+  // Sábado
+  if(dow === 6){
+    return {
+      closed:false,
+      start:"09:00",
+      end:"14:00",
+      breaks: [] // sem almoço ao sábado (como pediste)
+    };
+  }
+
+  // 2ª a 6ª
+  return {
+    closed:false,
+    start:"10:00",
+    end:"20:00",
+    breaks: [{ start:"12:30", end:"14:00" }]
+  };
+}
 
 /* ========================= */
 const appEl = document.getElementById("app");
@@ -198,7 +232,9 @@ async function fetchAdminDay(date, barber){
   return (data.items || []);
 }
 
-function buildSlots(items){
+function buildSlots(items, schedule){
+  if(schedule?.closed) return [];
+
   const filtered = items.filter(x => !isHiddenFromMap(x));
   const booked = filtered.map(x => {
     const s = toMin(x.time);
@@ -206,12 +242,18 @@ function buildSlots(items){
     return { ...x, s, e };
   });
 
-  const start = toMin(WORK_START);
-  const end   = toMin(WORK_END);
+  const start = toMin(schedule.start);
+  const end   = toMin(schedule.end);
+  const breaks = (schedule.breaks || []).map(b => ({ s: toMin(b.start), e: toMin(b.end) }));
 
   const slots = [];
   for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
     const s=t, e=t+STEP_MIN;
+
+    // remove slots que caem no almoço (ou qualquer break)
+    const inBreak = breaks.some(br => overlaps(s,e,br.s,br.e));
+    if(inBreak) continue;
+
     let hit = null;
     for(const b of booked){
       if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
@@ -270,6 +312,15 @@ async function reloadMap(){
   const b = barberEl.value;
   if(!d){ statusEl.textContent="Escolhe uma data."; return; }
 
+  const schedule = getScheduleForDate(d);
+
+  // Domingo: não mostra nada (slots vazios) + status fechado
+  if(schedule.closed){
+    slotsEl.innerHTML = "";
+    statusEl.textContent = `Fechado • ${b} • ${d}`;
+    return;
+  }
+
   statusEl.textContent="A carregar…";
   try{
     const items = await fetchAdminDay(d,b);
@@ -280,9 +331,9 @@ async function reloadMap(){
       if(it && it.id) currentItemsById.set(it.id, it);
     }
 
-    const slots = buildSlots(items);
+    const slots = buildSlots(items, schedule);
     renderSlots(slots);
-    statusEl.textContent = `OK • ${b} • ${d}`;
+    statusEl.textContent = `OK • ${b} • ${d} • ${schedule.start}–${schedule.end}`;
   }catch(ex){
     statusEl.textContent = "Erro: " + ex.message;
   }
