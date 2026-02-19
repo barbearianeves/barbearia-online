@@ -53,6 +53,15 @@
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
   .loginBox{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
   .hide{display:none}
+
+  .pill{
+    display:inline-block; padding:4px 8px; border:1px solid var(--line);
+    border-radius:999px; font-size:12px; color:var(--muted);
+  }
+  .dbg{
+    margin-top:8px; padding:10px; border:1px dashed var(--line);
+    border-radius:12px; font-size:12px; color:var(--muted); white-space:pre-wrap;
+  }
 </style>
 </head>
 <body>
@@ -62,9 +71,11 @@
     <div class="card">
       <h1>Mapa do Barbeiro</h1>
       <small>
-        Toque num horário <b>Livre</b> para <b>Bloquear</b>.
-        Em <b>Ocupado</b> tens só: <b>Cancelar</b>, <b>Email (Outlook)</b>, <b>SMS (iPhone)</b>.
+        <span class="pill">Horário: 10:00–17:00</span>
+        <span class="pill">Intervalos: 45 min</span><br><br>
+        Em <b>Ocupado</b> tens: <b>Outlook</b>, <b>SMS</b> e <b>Cancelar</b>.
         Em <b>Indisponível</b> podes <b>Desbloquear</b>.
+        Em <b>Livre</b> podes <b>Bloquear</b>.
       </small>
 
       <div class="row" style="margin-top:10px">
@@ -101,14 +112,21 @@
 </div>
 
 <script>
-const API_BASE = "https://barbearia-api-ki25.onrender.com";
-const WORK_START = "09:00";
-const WORK_END   = "19:00";
-const STEP_MIN   = 30;
+/* =========================
+   CONFIG
+   ========================= */
+const API_BASE    = "https://barbearia-api-ki25.onrender.com";
+const WORK_START  = "10:00";
+const WORK_END    = "17:00";
+const STEP_MIN    = 45;
 
-// ✅ (Opcional) fallback só para testes. Se não quiseres, mete "".
-const TEST_PHONE_FALLBACK = "";
+// true -> mostra debug quando falta email/telefone
+const DEBUG_ON_MISSING = true;
 
+// fallback: se faltar telefone no booking, podes usar este para testar (muda depois)
+const TEST_PHONE_FALLBACK = "916634329";
+
+/* ========================= */
 const appEl = document.getElementById("app");
 const overlayEl = document.getElementById("loginOverlay");
 const tokenEl = document.getElementById("token");
@@ -119,9 +137,7 @@ const dateEl = document.getElementById("date");
 const statusEl = document.getElementById("status");
 const slotsEl = document.getElementById("slots");
 
-// ✅ cache do dia (booking REAL vindo do /admin/bookings)
-let DAY_ITEMS_CACHE = [];        // array de bookings
-let DAY_ITEMS_BY_ID = {};        // id -> booking
+let currentItemsById = new Map();
 
 function token(){ return (localStorage.getItem("admin_token") || "").trim(); }
 function pad2(n){ return (n<10?"0":"")+n; }
@@ -159,19 +175,9 @@ function isHiddenFromMap(x){
   return (x.status === "Cancelado") || (x.status === "Desbloqueado");
 }
 
-function rebuildCache(items){
-  DAY_ITEMS_CACHE = Array.isArray(items) ? items : [];
-  DAY_ITEMS_BY_ID = {};
-  for(const it of DAY_ITEMS_CACHE){
-    if(it && it.id) DAY_ITEMS_BY_ID[it.id] = it;
-  }
-}
-
-function getBookingById(id){
-  return DAY_ITEMS_BY_ID[id] || null;
-}
-
-/* LOGIN */
+/* =========================
+   LOGIN
+   ========================= */
 async function doLogin(){
   const t = tokenEl.value.trim();
   if(!t){ loginStatusEl.textContent="Escreve a senha."; return; }
@@ -190,7 +196,9 @@ async function doLogin(){
   }
 }
 
-/* MAPA */
+/* =========================
+   MAPA
+   ========================= */
 async function fetchAdminDay(date, barber){
   const url = new URL(API_BASE + "/admin/bookings");
   url.searchParams.set("date", date);
@@ -203,7 +211,7 @@ function buildSlots(items){
   const filtered = items.filter(x => !isHiddenFromMap(x));
   const booked = filtered.map(x => {
     const s = toMin(x.time);
-    const e = s + (parseInt(x.dur,10) || 30);
+    const e = s + (parseInt(x.dur,10) || STEP_MIN);
     return { ...x, s, e };
   });
 
@@ -211,8 +219,8 @@ function buildSlots(items){
   const end   = toMin(WORK_END);
 
   const slots = [];
-  for(let t=start; t + 30 <= end; t += STEP_MIN){
-    const s=t, e=t+30;
+  for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
+    const s=t, e=t+STEP_MIN;
     let hit = null;
     for(const b of booked){
       if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
@@ -235,16 +243,16 @@ function renderSlots(slots){
     div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "");
 
     if(busy){
-      // ✅ aqui mostramos nome/serviço do HIT, mas os botões usam o CACHE REAL pelo id
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — Ocupado</div>
         <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
         <div class="d">${escapeHtml(hit.service || "")}</div>
         <div class="actions">
           <button onclick="openOutlookEmail('${hit.id}')">📧 Outlook</button>
-          <button onclick="openSMSForBooking('${hit.id}')">📩 SMS (iPhone)</button>
+          <button onclick="openSMS('${hit.id}')">📱 SMS (iPhone)</button>
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
+        <div class="dbg hide" id="dbg_${hit.id}"></div>
       `;
     } else if (block){
       div.innerHTML = `
@@ -275,8 +283,11 @@ async function reloadMap(){
   try{
     const items = await fetchAdminDay(d,b);
 
-    // ✅ refresh cache SEMPRE
-    rebuildCache(items);
+    // cache por id -> booking completo (evita “buscar de novo” e falhar)
+    currentItemsById = new Map();
+    for(const it of items){
+      if(it && it.id) currentItemsById.set(it.id, it);
+    }
 
     const slots = buildSlots(items);
     renderSlots(slots);
@@ -318,14 +329,53 @@ async function unblock(id){
 }
 
 /* =========================
-   📧 OUTLOOK (usa booking REAL do cache)
+   helpers: obter booking “bem”
+   - 1) cache (do /admin/bookings)
+   - 2) tentar endpoint direto /admin/booking/<id> (se existir)
    ========================= */
-function makeEmailText(hit){
+async function getBookingSafe(id){
+  let hit = currentItemsById.get(id) || null;
+  if(hit) return hit;
+
+  // tenta endpoint (se existir)
+  try{
+    const data = await apiGet(API_BASE + "/admin/booking/" + id);
+    if(data && data.item) return data.item;
+    if(data && data.booking) return data.booking;
+    if(data && data.id) return data;
+  }catch(e){
+    // ignora: endpoint pode não existir
+  }
+  return null;
+}
+
+function showDebug(id, obj){
+  if(!DEBUG_ON_MISSING) return;
+  const el = document.getElementById("dbg_" + id);
+  if(!el) return;
+  el.classList.remove("hide");
+  el.textContent = "DEBUG booking:\n" + JSON.stringify(obj, null, 2);
+}
+
+/* =========================
+   📧 Outlook / mailto
+   ========================= */
+async function openOutlookEmail(id){
+  const hit = await getBookingSafe(id);
+  if(!hit){ alert("Não encontrei a marcação."); return; }
+
+  const to = (hit.email || "").trim();
+  if(!to){
+    showDebug(id, hit);
+    alert("Este cliente não tem email guardado (na API).");
+    return;
+  }
+
   const subject = `Marcação validada - ${hit.date} ${hit.time}`;
   const body =
 `Olá ${hit.name || ""},
 
-A sua marcação foi validada com sucesso ✅
+A sua marcação foi validada com sucesso!
 
 Data: ${hit.date}
 Hora: ${hit.time}
@@ -333,27 +383,7 @@ Serviço: ${hit.service}
 Barbeiro: ${hit.barber}
 
 Obrigado pela preferência!
-Barbearia Neves`;
-  return {subject, body};
-}
-
-async function openOutlookEmail(id){
-  const hit = getBookingById(id);
-  if(!hit){
-    alert("Não encontrei a marcação (cache). Tenta atualizar a página.");
-    return;
-  }
-
-  const to = (hit.email || "").trim();
-  if(!to){
-    // ✅ Debug: mostra o que veio do servidor para perceber porque está vazio
-    alert("Este cliente não tem email guardado.\n\nDados do booking:\n" + JSON.stringify({
-      id: hit.id, name: hit.name, phone: hit.phone, email: hit.email, service: hit.service, date: hit.date, time: hit.time
-    }, null, 2));
-    return;
-  }
-
-  const {subject, body} = makeEmailText(hit);
+Barbearia`;
 
   const outlookUrl =
     "ms-outlook://compose?to=" + encodeURIComponent(to) +
@@ -365,40 +395,25 @@ async function openOutlookEmail(id){
     "?subject=" + encodeURIComponent(subject) +
     "&body=" + encodeURIComponent(body);
 
-  // tenta Outlook primeiro
   window.location.href = outlookUrl;
-
-  // fallback mailto
-  setTimeout(() => {
-    window.location.href = mailtoUrl;
-  }, 600);
+  setTimeout(() => { window.location.href = mailtoUrl; }, 600);
 }
 
 /* =========================
-   📩 SMS (iPhone) — usa booking REAL do cache
+   📱 SMS no iPhone (Messages)
    ========================= */
-function normalizePhone(p){
-  let s = (p || "").trim();
-  s = s.replace(/[^\d+]/g, "");
-  return s;
-}
+async function openSMS(id){
+  const hit = await getBookingSafe(id);
+  if(!hit){ alert("Não encontrei a marcação."); return; }
 
-function openSMS(phone, message){
-  const num = normalizePhone(phone);
-  const body = encodeURIComponent(message);
-  window.location.href = `sms:${num}&body=${body}`;
-}
+  let phone = (hit.phone || "").trim();
 
-async function openSMSForBooking(id){
-  const hit = getBookingById(id);
-  if(!hit){
-    alert("Não encontrei a marcação (cache). Tenta atualizar a página.");
-    return;
-  }
+  // fallback só para testes (depois tiras)
+  if(!phone) phone = TEST_PHONE_FALLBACK;
 
-  const phone = (hit.phone || hit.tel || "").trim() || TEST_PHONE_FALLBACK;
   if(!phone){
-    alert("Este cliente não tem telefone guardado.");
+    showDebug(id, hit);
+    alert("Este cliente não tem telemóvel guardado (na API).");
     return;
   }
 
@@ -410,10 +425,11 @@ Hora: ${hit.time}
 Serviço: ${hit.service}
 Barbeiro: ${hit.barber}
 
-Obrigado!
-Barbearia Neves`;
+Obrigado!`;
 
-  openSMS(phone, msg);
+  // iOS: sms:<num>&body=...
+  const smsUrl = "sms:" + encodeURIComponent(phone) + "&body=" + encodeURIComponent(msg);
+  window.location.href = smsUrl;
 }
 
 /* AUTO START */
