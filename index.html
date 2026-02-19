@@ -248,7 +248,6 @@
                 <label>Data</label>
                 <input name="date" id="date" type="date" required>
               </div>
-              <!-- campo Hora removido -->
             </div>
 
             <button id="btn" type="submit">Marcar</button>
@@ -271,7 +270,7 @@
   <script>
     const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
-    // Intervalos / duração (mantém)
+    // Slots / duração
     const STEP_MIN   = 45;
     const FIXED_DUR  = 45;
 
@@ -285,7 +284,6 @@
     const dateEl = document.getElementById('date');
     const barberEl = document.getElementById('barber');
 
-    // horário escolhido na agenda
     let pickedTime = "";
 
     function show(el, text) { el.textContent = text; el.style.display = 'block'; }
@@ -311,20 +309,19 @@
       const d = new Date();
       return d.getHours()*60 + d.getMinutes();
     }
+
     function setTodayIfEmpty(){
       if (dateEl.value) return;
       dateEl.value = todayISO();
     }
 
     function getWeekday(dateISO){
-      // dateISO = "YYYY-MM-DD"
       const [y,m,d] = dateISO.split("-").map(Number);
       const dt = new Date(y, m-1, d);
-      return dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
+      return dt.getDay(); // 0=Dom,...6=Sáb
     }
 
-    // ✅ Horários semanais (segmentos)
-    // retorna array de segmentos: [{start:"HH:MM", end:"HH:MM"}, ...]
+    // ✅ mesma regra usada no admin (segmentos)
     function getWorkSegments(dateISO){
       const wd = getWeekday(dateISO);
 
@@ -354,11 +351,10 @@
     }
 
     function buildSlots(bookedItems, dur, dateSelected){
-      // não mostrar para datas passadas
       if (dateSelected < todayISO()) return [];
 
       const segments = getWorkSegments(dateSelected);
-      if (!segments.length) return []; // domingo fechado
+      if (!segments.length) return [];
 
       const booked = bookedItems.map(b => {
         const s = toMin(b.time);
@@ -370,7 +366,6 @@
       const nowMin = nowMinutes();
 
       const slots = [];
-
       for (const seg of segments){
         const segStart = toMin(seg.start);
         const segEnd   = toMin(seg.end);
@@ -444,7 +439,6 @@
       const date = dateEl.value;
       const barber = barberEl.value;
 
-      // limpar seleção para obrigar a escolher
       pickedTime = "";
 
       try{
@@ -474,7 +468,6 @@
       hide(ok);
       btn.disabled = true;
 
-      // validação: tem de escolher horário
       if (!pickedTime){
         show(err, "❌ Escolhe um horário livre na agenda.");
         btn.disabled = false;
@@ -484,13 +477,8 @@
       const fd = new FormData(e.target);
       const payload = Object.fromEntries(fd.entries());
 
-      // hora vem da seleção
       payload.time = pickedTime.slice(0,5);
-
-      // fixo 45
       payload.dur = FIXED_DUR;
-
-      // sem notas
       payload.notes = "";
 
       try {
@@ -532,7 +520,6 @@
     setTodayIfEmpty();
     refreshAgenda();
 
-    // refresca a cada minuto se for hoje
     setInterval(() => {
       if (dateEl.value === todayISO()){
         refreshAgenda();
