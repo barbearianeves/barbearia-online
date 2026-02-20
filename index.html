@@ -181,6 +181,23 @@
       line-height:1.35;
     }
 
+    .overlay{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      display:flex; align-items:center; justify-content:center;
+      padding:16px;
+      z-index:10;
+    }
+    .box{
+      width:100%; max-width:440px;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+    }
+    .hide{display:none}
+    .hint{color:var(--muted); font-size:13px; margin-top:8px}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
     @media (max-width: 900px){
       .grid2{grid-template-columns:1fr}
       .row{grid-template-columns:1fr}
@@ -210,32 +227,33 @@
 
       <div class="grid2">
         <div>
+          <!-- Dados do cliente (bloqueado até login) -->
           <form id="f" autocomplete="on">
             <label>Nome</label>
-            <input name="name" required placeholder="Nome do cliente">
+            <input name="name" id="name" required placeholder="Nome do cliente" disabled>
 
             <div class="row">
               <div>
                 <label>Telefone</label>
-                <input name="phone" required placeholder="9xx xxx xxx" inputmode="tel">
+                <input name="phone" id="phone" required placeholder="9xx xxx xxx" inputmode="tel" disabled>
               </div>
               <div>
                 <label>Email (opcional)</label>
-                <input name="email" type="email" placeholder="email@exemplo.com">
+                <input name="email" id="email" type="email" placeholder="email@exemplo.com" disabled>
               </div>
             </div>
 
             <div class="row">
               <div>
                 <label>Serviço</label>
-                <select name="service" id="service" required>
+                <select name="service" id="service" required disabled>
                   <option value="Corte">Corte 13€</option>
                   <option value="Corte+Barba">Corte+Barba 15€</option>
                 </select>
               </div>
               <div>
                 <label>Barbeiro</label>
-                <select name="barber" id="barber" required>
+                <select name="barber" id="barber" required disabled>
                   <option value="Pedro">Pedro Neves</option>
                   <option value="Joao">João Leite</option>
                 </select>
@@ -245,11 +263,12 @@
             <div class="row">
               <div>
                 <label>Data</label>
-                <input name="date" id="date" type="date" required>
+                <input name="date" id="date" type="date" required disabled>
               </div>
             </div>
 
-            <button id="btn" type="submit">Marcar</button>
+            <button id="btn" type="submit" disabled>Marcar</button>
+            <div class="hint">Primeiro entra com o teu telemóvel. (não cria duplicados)</div>
           </form>
         </div>
 
@@ -259,10 +278,35 @@
           </div>
 
           <div class="slots" id="slots"></div>
-
           <div class="small" style="margin-top:10px"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- LOGIN OVERLAY -->
+  <div id="loginOverlay" class="overlay">
+    <div class="box">
+      <h2 style="margin:0 0 6px">Entrar</h2>
+      <div class="small">Usa o teu número. Se já existir, entra. Se não existir, cria.</div>
+
+      <label>Telemóvel</label>
+      <input id="loginPhone" placeholder="916 634 329" inputmode="tel">
+
+      <button id="btnSendCode" style="margin-top:12px">Receber código</button>
+
+      <div id="codeArea" class="hide">
+        <label>Código (6 dígitos)</label>
+        <input id="loginCode" class="mono" placeholder="123456" inputmode="numeric">
+        <button id="btnVerify" style="margin-top:12px">Confirmar</button>
+
+        <!-- Só para testes enquanto não tens SMS real -->
+        <div class="hint">
+          <b>Modo teste:</b> o “SMS” aparece aqui: <span id="fakeSms" class="mono"></span>
+        </div>
+      </div>
+
+      <div class="hint" id="loginStatus">—</div>
     </div>
   </div>
 
@@ -283,7 +327,27 @@
     const dateEl = document.getElementById('date');
     const barberEl = document.getElementById('barber');
 
+    const nameEl = document.getElementById('name');
+    const phoneEl = document.getElementById('phone');
+    const emailEl = document.getElementById('email');
+    const serviceEl = document.getElementById('service');
+
+    // login UI
+    const overlay = document.getElementById('loginOverlay');
+    const loginPhoneEl = document.getElementById('loginPhone');
+    const btnSendCode = document.getElementById('btnSendCode');
+    const codeArea = document.getElementById('codeArea');
+    const loginCodeEl = document.getElementById('loginCode');
+    const btnVerify = document.getElementById('btnVerify');
+    const loginStatus = document.getElementById('loginStatus');
+    const fakeSms = document.getElementById('fakeSms');
+
     let pickedTime = "";
+    let session = {
+      client_id: "",
+      phone_e164: "",
+      challenge_id: ""
+    };
 
     function show(el, text) { el.textContent = text; el.style.display = 'block'; }
     function hide(el) { el.style.display = 'none'; }
@@ -320,23 +384,72 @@
       return dt.getDay(); // 0=Dom,...6=Sáb
     }
 
-    // ✅ mesma regra usada no admin (segmentos)
     function getWorkSegments(dateISO){
       const wd = getWeekday(dateISO);
+      if (wd === 0) return []; // domingo
+      if (wd === 6) return [{ start: "09:00", end: "14:00" }]; // sábado
+      return [{ start: "10:00", end: "12:30" }, { start: "14:00", end: "20:00" }]; // 2ª-6ª
+    }
 
-      // Domingo
-      if (wd === 0) return [];
+    function escapeHtml(s){
+      return (s||"").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
 
-      // Sábado
-      if (wd === 6) return [
-        { start: "09:00", end: "14:00" }
-      ];
+    // ============ NORMALIZA TEL ============
+    // - aceita "916 634 329" / "00351..." / "+351..." / "916..."
+    // - guarda como +351XXXXXXXXX por defeito
+    function normalizePhoneToE164(raw){
+      let s = (raw || "").trim();
+      s = s.replace(/[^\d+]/g, ""); // remove espaços, traços
+      if (!s) return "";
 
-      // 2ª–6ª
-      return [
-        { start: "10:00", end: "12:30" },
-        { start: "14:00", end: "20:00" }
-      ];
+      if (s.startsWith("00")) s = "+" + s.slice(2);
+      if (s.startsWith("+")) {
+        // ok
+      } else {
+        // se for 9 dígitos PT assume +351
+        const digits = s.replace(/\D/g,"");
+        if (digits.length === 9) s = "+351" + digits;
+        else s = "+" + digits; // fallback
+      }
+
+      // valida mínimo
+      const only = s.replace(/\D/g,"");
+      if (only.length < 9) return "";
+      return s;
+    }
+
+    function enableApp(){
+      // desbloqueia form
+      [nameEl, phoneEl, emailEl, serviceEl, barberEl, dateEl, btn].forEach(x => x.disabled = false);
+    }
+
+    function saveSession(){
+      localStorage.setItem("client_session", JSON.stringify(session));
+    }
+    function loadSession(){
+      try{
+        const s = JSON.parse(localStorage.getItem("client_session") || "{}");
+        if (s && s.client_id && s.phone_e164) return s;
+      }catch(_){}
+      return null;
+    }
+    function clearSession(){
+      localStorage.removeItem("client_session");
+      session = {client_id:"", phone_e164:"", challenge_id:""};
+    }
+
+    async function apiPost(url, body){
+      const r = await fetch(url, {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body || {})
+      });
+      const data = await r.json().catch(()=> ({}));
+      if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+      return data;
     }
 
     async function fetchDay(date, barber){
@@ -389,12 +502,6 @@
       return slots;
     }
 
-    function escapeHtml(s){
-      return (s||"").replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
-    }
-
     function renderSlots(slots){
       slotsEl.innerHTML = "";
       const picked = pickedTime;
@@ -411,7 +518,6 @@
         if (s.busy){
           const label = s.busy.label || "OCUPADO";
           const reason = (s.busy.notes || s.busy.service || "").trim();
-
           div.innerHTML = `
             <div class="t">${s.time} — ${escapeHtml(label)}</div>
             <div class="d">${escapeHtml(reason)}</div>
@@ -426,7 +532,6 @@
             renderSlots(slots.map(x => ({...x})));
           });
         }
-
         slotsEl.appendChild(div);
       }
     }
@@ -446,9 +551,7 @@
         renderSlots(slots);
 
         const segs = getWorkSegments(date);
-        const segText = segs.length
-          ? segs.map(s => `${s.start}–${s.end}`).join(" • ")
-          : "Fechado";
+        const segText = segs.length ? segs.map(s => `${s.start}–${s.end}`).join(" • ") : "Fechado";
 
         agendaStatus.textContent = `${items.length} item(s) • ${barber} • ${date} • ${segText}`;
       }catch(ex){
@@ -458,14 +561,97 @@
       }
     }
 
-    dateEl.addEventListener("change", refreshAgenda);
-    barberEl.addEventListener("change", refreshAgenda);
+    // ============ LOGIN FLOW ============
+    // Endpoint esperado:
+    // POST /client/start_login  { phone: "+351..." }
+    // -> { ok:true, challenge_id:"...", otp_debug:"123456" }  (otp_debug só em modo teste)
+    //
+    // POST /client/verify_login { challenge_id:"...", code:"123456", name?, email? }
+    // -> { ok:true, client:{ id, nome, telefone, email } , created: true/false }
+    //
+    async function startLogin(){
+      loginStatus.textContent = "A enviar código…";
+      fakeSms.textContent = "";
+      codeArea.classList.add("hide");
 
+      const p = normalizePhoneToE164(loginPhoneEl.value);
+      if (!p){
+        loginStatus.textContent = "Escreve um número válido.";
+        return;
+      }
+
+      try{
+        const r = await apiPost(API_BASE + "/client/start_login", { phone: p });
+        session.phone_e164 = p;
+        session.challenge_id = r.challenge_id || "";
+        saveSession();
+
+        codeArea.classList.remove("hide");
+        loginStatus.textContent = "Código enviado. (modo teste mostra aqui)";
+        if (r.otp_debug) fakeSms.textContent = r.otp_debug; // só em dev
+      }catch(ex){
+        loginStatus.textContent = "Erro: " + ex.message;
+      }
+    }
+
+    async function verifyLogin(){
+      loginStatus.textContent = "A validar…";
+
+      const code = (loginCodeEl.value || "").trim();
+      if (code.length < 4){
+        loginStatus.textContent = "Escreve o código.";
+        return;
+      }
+      if (!session.challenge_id){
+        loginStatus.textContent = "Tens de pedir o código primeiro.";
+        return;
+      }
+
+      try{
+        const r = await apiPost(API_BASE + "/client/verify_login", {
+          challenge_id: session.challenge_id,
+          code
+        });
+
+        const c = r.client || {};
+        session.client_id = c.id || c.client_id || "";
+        session.phone_e164 = c.telefone || c.phone || session.phone_e164;
+
+        if (!session.client_id){
+          throw new Error("Login OK mas API não devolveu client_id.");
+        }
+
+        // preencher form com dados do cliente
+        nameEl.value = c.nome || c.name || "";
+        phoneEl.value = (c.telefone || c.phone || "").replace(/^\+351/, ""); // mostra simples
+        emailEl.value = c.email || "";
+
+        saveSession();
+        enableApp();
+        overlay.classList.add("hide");
+        loginStatus.textContent = "✅ OK";
+
+        // agenda
+        setTodayIfEmpty();
+        await refreshAgenda();
+
+      }catch(ex){
+        loginStatus.textContent = "Erro: " + ex.message;
+      }
+    }
+
+    // ============ SUBMIT BOOKING ============
     document.getElementById('f').addEventListener('submit', async (e) => {
       e.preventDefault();
       hide(err);
       hide(ok);
       btn.disabled = true;
+
+      if (!session.client_id){
+        show(err, "❌ Tens de entrar com o telemóvel primeiro.");
+        btn.disabled = false;
+        return;
+      }
 
       if (!pickedTime){
         show(err, "❌ Escolhe um horário livre na agenda.");
@@ -473,14 +659,38 @@
         return;
       }
 
-      const fd = new FormData(e.target);
-      const payload = Object.fromEntries(fd.entries());
+      const payload = {
+        name: (nameEl.value || "").trim(),
+        phone: normalizePhoneToE164(phoneEl.value) || session.phone_e164,
+        email: (emailEl.value || "").trim(),
+        service: serviceEl.value,
+        barber: barberEl.value,
+        date: dateEl.value,
+        time: pickedTime.slice(0,5),
+        dur: FIXED_DUR,
+        notes: "",
 
-      payload.time = pickedTime.slice(0,5);
-      payload.dur = FIXED_DUR;
-      payload.notes = "";
+        // ✅ ligação ao cliente (para a app C reconhecer)
+        client_id: session.client_id,
+        client: (nameEl.value || "").trim()
+      };
 
-      try {
+      if (!payload.name || !payload.phone || !payload.date){
+        show(err, "❌ Falta nome/telefone/data.");
+        btn.disabled = false;
+        return;
+      }
+
+      try{
+        // (Opcional mas recomendado)
+        // atualizar dados do cliente antes de marcar (não cria duplicados; usa telefone como chave)
+        await apiPost(API_BASE + "/client/upsert", {
+          id: session.client_id,
+          phone: payload.phone,
+          name: payload.name,
+          email: payload.email
+        }).catch(()=>{});
+
         const r = await fetch(API_BASE + "/book", {
           method: "POST",
           headers: {"Content-Type":"application/json"},
@@ -492,34 +702,60 @@
         show(ok,
           "✅ Marcação confirmada!\n" +
           "ID: " + (data.id || "(sem id)") + "\n" +
+          "Cliente: " + payload.name + " (" + payload.phone + ")\n" +
           "Data: " + payload.date + "  Hora: " + payload.time + "\n" +
           "Barbeiro: " + payload.barber + "  Serviço: " + payload.service + "\n" +
           "Duração: 45 min"
         );
 
-        const keepName = payload.name;
-        const keepPhone = payload.phone;
-        const keepEmail = payload.email;
-
-        e.target.reset();
-        setTodayIfEmpty();
-        document.querySelector('input[name="name"]').value = keepName || "";
-        document.querySelector('input[name="phone"]').value = keepPhone || "";
-        document.querySelector('input[name="email"]').value = keepEmail || "";
-
         await refreshAgenda();
-
-      } catch (ex) {
+      }catch(ex){
         show(err, "❌ Não foi possível marcar: " + ex.message);
-      } finally {
+      }finally{
         btn.disabled = false;
       }
     });
 
-    setTodayIfEmpty();
-    refreshAgenda();
+    // ============ BOOT ============
+    btnSendCode.addEventListener("click", startLogin);
+    btnVerify.addEventListener("click", verifyLogin);
+
+    dateEl.addEventListener("change", refreshAgenda);
+    barberEl.addEventListener("change", refreshAgenda);
+
+    (async function boot(){
+      // tenta sessão anterior
+      const s = loadSession();
+      if (s){
+        session = s;
+        // tenta “auto-login” simples: pede dados do cliente pelo id
+        // endpoint recomendado:
+        // GET /client/<id> -> { ok:true, client:{...} }
+        try{
+          const r = await fetch(API_BASE + "/client/" + encodeURIComponent(session.client_id));
+          const data = await r.json().catch(()=> ({}));
+          if (r.ok && data.client){
+            const c = data.client;
+            nameEl.value = c.nome || c.name || "";
+            phoneEl.value = (c.telefone || c.phone || "").replace(/^\+351/, "");
+            emailEl.value = c.email || "";
+            enableApp();
+            overlay.classList.add("hide");
+          } else {
+            clearSession();
+          }
+        }catch(_){
+          clearSession();
+        }
+      }
+
+      // se não tiver sessão, fica no overlay
+      setTodayIfEmpty();
+      await refreshAgenda();
+    })();
 
     setInterval(() => {
+      if (!overlay.classList.contains("hide") ) return;
       if (dateEl.value === todayISO()){
         refreshAgenda();
       }
