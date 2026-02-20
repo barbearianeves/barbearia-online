@@ -189,7 +189,7 @@
       z-index:10;
     }
     .box{
-      width:100%; max-width:440px;
+      width:100%; max-width:460px;
       background:var(--card);
       border:1px solid var(--line);
       border-radius:18px;
@@ -198,6 +198,18 @@
     .hide{display:none}
     .hint{color:var(--muted); font-size:13px; margin-top:8px}
     .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+
+    .sep{height:1px;background:var(--line);margin:14px 0}
+    .tag{
+      display:inline-block;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:4px 8px;
+      font-size:12px;
+      color:var(--muted);
+      margin-top:10px;
+    }
+
     @media (max-width: 900px){
       .grid2{grid-template-columns:1fr}
       .row{grid-template-columns:1fr}
@@ -219,6 +231,7 @@
             Sábado: 09:00–14:00 • Domingo: Fechado<br>
             Intervalos: 45 min
           </div>
+          <div id="who" class="tag">Não autenticado</div>
         </div>
       </div>
 
@@ -227,7 +240,6 @@
 
       <div class="grid2">
         <div>
-          <!-- Dados do cliente (bloqueado até login) -->
           <form id="f" autocomplete="on">
             <label>Nome</label>
             <input name="name" id="name" required placeholder="Nome do cliente" disabled>
@@ -235,7 +247,7 @@
             <div class="row">
               <div>
                 <label>Telefone</label>
-                <input name="phone" id="phone" required placeholder="9xx xxx xxx" inputmode="tel" disabled>
+                <input name="phone" id="phone" required placeholder="916 634 329" inputmode="tel" disabled>
               </div>
               <div>
                 <label>Email (opcional)</label>
@@ -268,7 +280,14 @@
             </div>
 
             <button id="btn" type="submit" disabled>Marcar</button>
-            <div class="hint">Primeiro entra com o teu telemóvel. (não cria duplicados)</div>
+
+            <button id="btnLogout" type="button" style="margin-top:10px" disabled>
+              Sair / mudar número
+            </button>
+
+            <div class="hint" id="formHint">
+              Primeiro entra com o teu telemóvel. Se já existir, não volta a pedir dados.
+            </div>
           </form>
         </div>
 
@@ -278,7 +297,6 @@
           </div>
 
           <div class="slots" id="slots"></div>
-          <div class="small" style="margin-top:10px"></div>
         </div>
       </div>
     </div>
@@ -288,7 +306,10 @@
   <div id="loginOverlay" class="overlay">
     <div class="box">
       <h2 style="margin:0 0 6px">Entrar</h2>
-      <div class="small">Usa o teu número. Se já existir, entra. Se não existir, cria.</div>
+      <div class="small">
+        Usa o teu telemóvel. Se já existir, entra e preenche automático.
+        Se não existir, crias só uma vez.
+      </div>
 
       <label>Telemóvel</label>
       <input id="loginPhone" placeholder="916 634 329" inputmode="tel">
@@ -300,10 +321,24 @@
         <input id="loginCode" class="mono" placeholder="123456" inputmode="numeric">
         <button id="btnVerify" style="margin-top:12px">Confirmar</button>
 
-        <!-- Só para testes enquanto não tens SMS real -->
         <div class="hint">
-          <b>Modo teste:</b> o “SMS” aparece aqui: <span id="fakeSms" class="mono"></span>
+          <b>Modo teste:</b> “SMS” aparece aqui: <span id="fakeSms" class="mono"></span>
         </div>
+      </div>
+
+      <!-- CREATE PROFILE (só se for novo) -->
+      <div id="createArea" class="hide">
+        <div class="sep"></div>
+        <h3 style="margin:0 0 6px">Primeira vez aqui</h3>
+        <div class="small">Falta só o teu nome (email opcional). Depois não volta a perguntar.</div>
+
+        <label>Nome</label>
+        <input id="createName" placeholder="Ex: Enrique Santos">
+
+        <label>Email (opcional)</label>
+        <input id="createEmail" placeholder="email@exemplo.com" type="email">
+
+        <button id="btnCreate" style="margin-top:12px">Criar perfil</button>
       </div>
 
       <div class="hint" id="loginStatus">—</div>
@@ -319,7 +354,9 @@
 
     const ok = document.getElementById('ok');
     const err = document.getElementById('err');
+
     const btn = document.getElementById('btn');
+    const btnLogout = document.getElementById('btnLogout');
 
     const slotsEl = document.getElementById('slots');
     const agendaStatus = document.getElementById('agendaStatus');
@@ -331,6 +368,8 @@
     const phoneEl = document.getElementById('phone');
     const emailEl = document.getElementById('email');
     const serviceEl = document.getElementById('service');
+    const whoEl = document.getElementById('who');
+    const formHint = document.getElementById('formHint');
 
     // login UI
     const overlay = document.getElementById('loginOverlay');
@@ -342,15 +381,22 @@
     const loginStatus = document.getElementById('loginStatus');
     const fakeSms = document.getElementById('fakeSms');
 
+    // create UI
+    const createArea = document.getElementById('createArea');
+    const createNameEl = document.getElementById('createName');
+    const createEmailEl = document.getElementById('createEmail');
+    const btnCreate = document.getElementById('btnCreate');
+
     let pickedTime = "";
     let session = {
       client_id: "",
       phone_e164: "",
-      challenge_id: ""
+      challenge_id: "",
+      is_new: false
     };
 
-    function show(el, text) { el.textContent = text; el.style.display = 'block'; }
-    function hide(el) { el.style.display = 'none'; }
+    function showMsg(el, text) { el.textContent = text; el.style.display = 'block'; }
+    function hideMsg(el) { el.style.display = 'none'; }
 
     function pad2(n){ return (n<10 ? "0":"") + n; }
     function toMin(hhmm){
@@ -381,14 +427,14 @@
     function getWeekday(dateISO){
       const [y,m,d] = dateISO.split("-").map(Number);
       const dt = new Date(y, m-1, d);
-      return dt.getDay(); // 0=Dom,...6=Sáb
+      return dt.getDay();
     }
 
     function getWorkSegments(dateISO){
       const wd = getWeekday(dateISO);
-      if (wd === 0) return []; // domingo
-      if (wd === 6) return [{ start: "09:00", end: "14:00" }]; // sábado
-      return [{ start: "10:00", end: "12:30" }, { start: "14:00", end: "20:00" }]; // 2ª-6ª
+      if (wd === 0) return [];
+      if (wd === 6) return [{ start: "09:00", end: "14:00" }];
+      return [{ start: "10:00", end: "12:30" }, { start: "14:00", end: "20:00" }];
     }
 
     function escapeHtml(s){
@@ -397,35 +443,32 @@
       }[c]));
     }
 
-    // ============ NORMALIZA TEL ============
-    // - aceita "916 634 329" / "00351..." / "+351..." / "916..."
-    // - guarda como +351XXXXXXXXX por defeito
+    // ============ PHONE NORMALIZE ============
     function normalizePhoneToE164(raw){
       let s = (raw || "").trim();
-      s = s.replace(/[^\d+]/g, ""); // remove espaços, traços
+      s = s.replace(/[^\d+]/g, "");
       if (!s) return "";
 
       if (s.startsWith("00")) s = "+" + s.slice(2);
-      if (s.startsWith("+")) {
-        // ok
-      } else {
-        // se for 9 dígitos PT assume +351
+
+      if (!s.startsWith("+")) {
         const digits = s.replace(/\D/g,"");
         if (digits.length === 9) s = "+351" + digits;
-        else s = "+" + digits; // fallback
+        else s = "+" + digits;
       }
 
-      // valida mínimo
       const only = s.replace(/\D/g,"");
       if (only.length < 9) return "";
       return s;
     }
 
-    function enableApp(){
-      // desbloqueia form
-      [nameEl, phoneEl, emailEl, serviceEl, barberEl, dateEl, btn].forEach(x => x.disabled = false);
+    function phoneToDisplay(e164){
+      const s = (e164 || "").trim();
+      if (s.startsWith("+351") && s.length >= 13) return s.slice(4);
+      return s.replace(/^\+/, "");
     }
 
+    // ============ SESSION ============
     function saveSession(){
       localStorage.setItem("client_session", JSON.stringify(session));
     }
@@ -438,7 +481,47 @@
     }
     function clearSession(){
       localStorage.removeItem("client_session");
-      session = {client_id:"", phone_e164:"", challenge_id:""};
+      session = {client_id:"", phone_e164:"", challenge_id:"", is_new:false};
+    }
+
+    // ============ UI LOCK/UNLOCK ============
+    function lockAll(){
+      [nameEl, phoneEl, emailEl, serviceEl, barberEl, dateEl, btn, btnLogout].forEach(x => x.disabled = true);
+      whoEl.textContent = "Não autenticado";
+    }
+
+    function unlockBookingUI(){
+      // Cliente já autenticado:
+      // - Nome/telefone/email ficam VISÍVEIS mas bloqueados (não pergunta outra vez)
+      // - Só serviço/barbeiro/data/marcar ficam ativos
+      nameEl.disabled = true;
+      phoneEl.disabled = true;
+      emailEl.disabled = true;
+
+      serviceEl.disabled = false;
+      barberEl.disabled = false;
+      dateEl.disabled = false;
+      btn.disabled = false;
+      btnLogout.disabled = false;
+
+      whoEl.textContent = "Cliente: " + (nameEl.value || "—") + " • " + (phoneEl.value || "—");
+      formHint.textContent = "Dados do cliente preenchidos automaticamente. (sem duplicados)";
+    }
+
+    function showOverlayLogin(){
+      overlay.classList.remove("hide");
+      codeArea.classList.add("hide");
+      createArea.classList.add("hide");
+      loginStatus.textContent = "—";
+      fakeSms.textContent = "";
+      loginCodeEl.value = "";
+      session.challenge_id = "";
+      session.is_new = false;
+      saveSession();
+    }
+
+    function hideOverlay(){
+      overlay.classList.add("hide");
     }
 
     async function apiPost(url, body){
@@ -452,6 +535,14 @@
       return data;
     }
 
+    async function apiGet(url){
+      const r = await fetch(url);
+      const data = await r.json().catch(()=> ({}));
+      if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+      return data;
+    }
+
+    // ============ AGENDA ============
     async function fetchDay(date, barber){
       const u = new URL(API_BASE + "/day");
       u.searchParams.set("date", date);
@@ -552,27 +643,30 @@
 
         const segs = getWorkSegments(date);
         const segText = segs.length ? segs.map(s => `${s.start}–${s.end}`).join(" • ") : "Fechado";
-
         agendaStatus.textContent = `${items.length} item(s) • ${barber} • ${date} • ${segText}`;
       }catch(ex){
         slotsEl.innerHTML = "";
         agendaStatus.textContent = "Erro a carregar";
-        show(err, "❌ Erro ao carregar agenda: " + ex.message);
+        showMsg(err, "❌ Erro ao carregar agenda: " + ex.message);
       }
     }
 
     // ============ LOGIN FLOW ============
-    // Endpoint esperado:
-    // POST /client/start_login  { phone: "+351..." }
-    // -> { ok:true, challenge_id:"...", otp_debug:"123456" }  (otp_debug só em modo teste)
+    // Esperado na API:
+    // POST /client/start_login  { phone:"+351..." }
+    // -> { ok:true, challenge_id:"...", otp_debug:"123456" }
     //
-    // POST /client/verify_login { challenge_id:"...", code:"123456", name?, email? }
-    // -> { ok:true, client:{ id, nome, telefone, email } , created: true/false }
+    // POST /client/verify_login { challenge_id:"...", code:"123456" }
+    // -> { ok:true, client:{ id, nome, telefone, email }, existing:true/false }
     //
+    // POST /client/upsert  { id, phone, name, email }  (só usado quando novo)
+    //
+    // GET  /client/<id> -> { ok:true, client:{...} }
     async function startLogin(){
       loginStatus.textContent = "A enviar código…";
       fakeSms.textContent = "";
       codeArea.classList.add("hide");
+      createArea.classList.add("hide");
 
       const p = normalizePhoneToE164(loginPhoneEl.value);
       if (!p){
@@ -584,11 +678,12 @@
         const r = await apiPost(API_BASE + "/client/start_login", { phone: p });
         session.phone_e164 = p;
         session.challenge_id = r.challenge_id || "";
+        session.is_new = false;
         saveSession();
 
         codeArea.classList.remove("hide");
-        loginStatus.textContent = "Código enviado. (modo teste mostra aqui)";
-        if (r.otp_debug) fakeSms.textContent = r.otp_debug; // só em dev
+        loginStatus.textContent = "Código enviado.";
+        if (r.otp_debug) fakeSms.textContent = r.otp_debug;
       }catch(ex){
         loginStatus.textContent = "Erro: " + ex.message;
       }
@@ -596,6 +691,7 @@
 
     async function verifyLogin(){
       loginStatus.textContent = "A validar…";
+      createArea.classList.add("hide");
 
       const code = (loginCodeEl.value || "").trim();
       if (code.length < 4){
@@ -614,54 +710,114 @@
         });
 
         const c = r.client || {};
+        const existing = !!(r.existing ?? r.exists ?? r.found ?? false);
+
         session.client_id = c.id || c.client_id || "";
         session.phone_e164 = c.telefone || c.phone || session.phone_e164;
+        session.is_new = !existing;
 
         if (!session.client_id){
           throw new Error("Login OK mas API não devolveu client_id.");
         }
 
-        // preencher form com dados do cliente
+        // Preenche sempre o que vier
         nameEl.value = c.nome || c.name || "";
-        phoneEl.value = (c.telefone || c.phone || "").replace(/^\+351/, ""); // mostra simples
+        phoneEl.value = phoneToDisplay(session.phone_e164);
         emailEl.value = c.email || "";
 
         saveSession();
-        enableApp();
-        overlay.classList.add("hide");
-        loginStatus.textContent = "✅ OK";
 
-        // agenda
-        setTodayIfEmpty();
-        await refreshAgenda();
+        if (existing && nameEl.value){
+          // ✅ cliente existe: não pede mais nada
+          loginStatus.textContent = "✅ Cliente reconhecido.";
+          hideOverlay();
+          unlockBookingUI();
+          await refreshAgenda();
+          return;
+        }
+
+        // ✅ cliente NÃO existe: pedir só 1 vez o nome (email opcional)
+        loginStatus.textContent = "Primeira vez — cria o teu perfil.";
+        createNameEl.value = nameEl.value || "";
+        createEmailEl.value = emailEl.value || "";
+        createArea.classList.remove("hide");
 
       }catch(ex){
         loginStatus.textContent = "Erro: " + ex.message;
       }
     }
 
-    // ============ SUBMIT BOOKING ============
-    document.getElementById('f').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hide(err);
-      hide(ok);
-      btn.disabled = true;
+    async function createProfile(){
+      loginStatus.textContent = "A criar perfil…";
 
-      if (!session.client_id){
-        show(err, "❌ Tens de entrar com o telemóvel primeiro.");
-        btn.disabled = false;
+      const nm = (createNameEl.value || "").trim();
+      const em = (createEmailEl.value || "").trim();
+
+      if (!nm){
+        loginStatus.textContent = "Escreve o teu nome.";
+        return;
+      }
+      if (!session.client_id || !session.phone_e164){
+        loginStatus.textContent = "Sessão inválida. Volta a entrar.";
         return;
       }
 
+      try{
+        // ✅ cria/atualiza o cliente (telefone é a chave -> sem duplicados)
+        await apiPost(API_BASE + "/client/upsert", {
+          id: session.client_id,
+          phone: session.phone_e164,
+          name: nm,
+          email: em
+        });
+
+        // lê de volta (garante dados)
+        const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
+        const c = rr.client || {};
+
+        nameEl.value = c.nome || c.name || nm;
+        phoneEl.value = phoneToDisplay(c.telefone || c.phone || session.phone_e164);
+        emailEl.value = c.email || em;
+
+        session.is_new = false;
+        saveSession();
+
+        loginStatus.textContent = "✅ Perfil criado.";
+        hideOverlay();
+        unlockBookingUI();
+        await refreshAgenda();
+      }catch(ex){
+        loginStatus.textContent = "Erro: " + ex.message;
+      }
+    }
+
+    function logout(){
+      clearSession();
+      lockAll();
+      showOverlayLogin();
+    }
+
+    // ============ BOOKING ============
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMsg(err);
+      hideMsg(ok);
+      btn.disabled = true;
+
+      if (!session.client_id){
+        showMsg(err, "❌ Tens de entrar primeiro.");
+        btn.disabled = false;
+        return;
+      }
       if (!pickedTime){
-        show(err, "❌ Escolhe um horário livre na agenda.");
+        showMsg(err, "❌ Escolhe um horário livre na agenda.");
         btn.disabled = false;
         return;
       }
 
       const payload = {
         name: (nameEl.value || "").trim(),
-        phone: normalizePhoneToE164(phoneEl.value) || session.phone_e164,
+        phone: session.phone_e164, // ✅ não pergunta outra vez: vem da sessão
         email: (emailEl.value || "").trim(),
         service: serviceEl.value,
         barber: barberEl.value,
@@ -670,27 +826,17 @@
         dur: FIXED_DUR,
         notes: "",
 
-        // ✅ ligação ao cliente (para a app C reconhecer)
         client_id: session.client_id,
         client: (nameEl.value || "").trim()
       };
 
       if (!payload.name || !payload.phone || !payload.date){
-        show(err, "❌ Falta nome/telefone/data.");
+        showMsg(err, "❌ Falta nome/telefone/data.");
         btn.disabled = false;
         return;
       }
 
       try{
-        // (Opcional mas recomendado)
-        // atualizar dados do cliente antes de marcar (não cria duplicados; usa telefone como chave)
-        await apiPost(API_BASE + "/client/upsert", {
-          id: session.client_id,
-          phone: payload.phone,
-          name: payload.name,
-          email: payload.email
-        }).catch(()=>{});
-
         const r = await fetch(API_BASE + "/book", {
           method: "POST",
           headers: {"Content-Type":"application/json"},
@@ -699,7 +845,7 @@
         const data = await r.json().catch(()=> ({}));
         if (!r.ok) throw new Error(data.error || ("Erro HTTP " + r.status));
 
-        show(ok,
+        showMsg(ok,
           "✅ Marcação confirmada!\n" +
           "ID: " + (data.id || "(sem id)") + "\n" +
           "Cliente: " + payload.name + " (" + payload.phone + ")\n" +
@@ -710,7 +856,7 @@
 
         await refreshAgenda();
       }catch(ex){
-        show(err, "❌ Não foi possível marcar: " + ex.message);
+        showMsg(err, "❌ Não foi possível marcar: " + ex.message);
       }finally{
         btn.disabled = false;
       }
@@ -719,43 +865,44 @@
     // ============ BOOT ============
     btnSendCode.addEventListener("click", startLogin);
     btnVerify.addEventListener("click", verifyLogin);
+    btnCreate.addEventListener("click", createProfile);
+    btnLogout.addEventListener("click", logout);
 
     dateEl.addEventListener("change", refreshAgenda);
     barberEl.addEventListener("change", refreshAgenda);
 
     (async function boot(){
+      lockAll();
+
       // tenta sessão anterior
       const s = loadSession();
       if (s){
         session = s;
-        // tenta “auto-login” simples: pede dados do cliente pelo id
-        // endpoint recomendado:
-        // GET /client/<id> -> { ok:true, client:{...} }
         try{
-          const r = await fetch(API_BASE + "/client/" + encodeURIComponent(session.client_id));
-          const data = await r.json().catch(()=> ({}));
-          if (r.ok && data.client){
-            const c = data.client;
+          const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
+          const c = rr.client || {};
+          if (c && (c.nome || c.name)){
             nameEl.value = c.nome || c.name || "";
-            phoneEl.value = (c.telefone || c.phone || "").replace(/^\+351/, "");
+            phoneEl.value = phoneToDisplay(c.telefone || c.phone || session.phone_e164);
             emailEl.value = c.email || "";
-            enableApp();
-            overlay.classList.add("hide");
+            hideOverlay();
+            unlockBookingUI();
           } else {
-            clearSession();
+            logout();
           }
         }catch(_){
-          clearSession();
+          logout();
         }
+      } else {
+        showOverlayLogin();
       }
 
-      // se não tiver sessão, fica no overlay
       setTodayIfEmpty();
       await refreshAgenda();
     })();
 
     setInterval(() => {
-      if (!overlay.classList.contains("hide") ) return;
+      if (!overlay.classList.contains("hide")) return;
       if (dateEl.value === todayISO()){
         refreshAgenda();
       }
