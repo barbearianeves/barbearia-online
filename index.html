@@ -247,7 +247,7 @@
             <div class="row">
               <div>
                 <label>Telefone</label>
-                <input name="phone" id="phone" required placeholder="916 634 329" inputmode="tel" disabled>
+                <input name="phone" id="phone" required placeholder="9xxxxxxx" inputmode="tel" disabled>
               </div>
               <div>
                 <label>Email (opcional)</label>
@@ -295,7 +295,6 @@
           <div class="agendaTop">
             <div class="small" id="agendaStatus">A carregar…</div>
           </div>
-
           <div class="slots" id="slots"></div>
         </div>
       </div>
@@ -312,7 +311,7 @@
       </div>
 
       <label>Telemóvel</label>
-      <input id="loginPhone" placeholder="916 634 329" inputmode="tel">
+      <input id="loginPhone" placeholder="9xxxxxxx" inputmode="tel">
 
       <button id="btnSendCode" style="margin-top:12px">Receber código</button>
 
@@ -390,7 +389,8 @@
     let pickedTime = "";
     let session = {
       client_id: "",
-      phone_e164: "",
+      phone_e164: "",     // interno
+      phone9: "",         // interno
       challenge_id: "",
       is_new: false
     };
@@ -443,57 +443,58 @@
       }[c]));
     }
 
-    // ============ PHONE NORMALIZE ============
-    function normalizePhoneToE164(raw){
-      let s = (raw || "").trim();
-      s = s.replace(/[^\d+]/g, "");
-      if (!s) return "";
-
-      if (s.startsWith("00")) s = "+" + s.slice(2);
-
-      if (!s.startsWith("+")) {
-        const digits = s.replace(/\D/g,"");
-        if (digits.length === 9) s = "+351" + digits;
-        else s = "+" + digits;
-      }
-
-      const only = s.replace(/\D/g,"");
-      if (only.length < 9) return "";
-      return s;
+    // =========================
+    // ✅ PHONE HELPERS (UI SEM NUMERO REAL)
+    // =========================
+    function phoneTo9(raw){
+      const digits = (raw || "").replace(/\D/g,"");
+      let d = digits;
+      if (d.startsWith("351") && d.length >= 12) d = d.slice(3);
+      if (d.length > 9) d = d.slice(-9);
+      return d.length === 9 ? d : "";
     }
 
-    function phoneToDisplay(e164){
-      const s = (e164 || "").trim();
-      if (s.startsWith("+351") && s.length >= 13) return s.slice(4);
-      return s.replace(/^\+/, "");
+    function toE164From9(phone9){
+      const p9 = phoneTo9(phone9);
+      return p9 ? ("+351" + p9) : "";
+    }
+
+    function maskPhone9(phone9){
+      const p9 = phoneTo9(phone9);
+      if (!p9) return "9xxxxxxx";
+      return p9[0] + "xxxxxxx"; // ex: 9xxxxxxx
     }
 
     // ============ SESSION ============
     function saveSession(){
-      localStorage.setItem("client_session", JSON.stringify(session));
+      localStorage.setItem("client_session", JSON.stringify({
+        client_id: session.client_id,
+        phone_e164: session.phone_e164,
+        phone9: session.phone9
+      }));
     }
     function loadSession(){
       try{
         const s = JSON.parse(localStorage.getItem("client_session") || "{}");
-        if (s && s.client_id && s.phone_e164) return s;
+        if (s && s.client_id && (s.phone_e164 || s.phone9)) return s;
       }catch(_){}
       return null;
     }
     function clearSession(){
       localStorage.removeItem("client_session");
-      session = {client_id:"", phone_e164:"", challenge_id:"", is_new:false};
+      session = {client_id:"", phone_e164:"", phone9:"", challenge_id:"", is_new:false};
     }
 
     // ============ UI LOCK/UNLOCK ============
     function lockAll(){
       [nameEl, phoneEl, emailEl, serviceEl, barberEl, dateEl, btn, btnLogout].forEach(x => x.disabled = true);
       whoEl.textContent = "Não autenticado";
+      nameEl.value = "";
+      phoneEl.value = "";
+      emailEl.value = "";
     }
 
     function unlockBookingUI(){
-      // Cliente já autenticado:
-      // - Nome/telefone/email ficam VISÍVEIS mas bloqueados (não pergunta outra vez)
-      // - Só serviço/barbeiro/data/marcar ficam ativos
       nameEl.disabled = true;
       phoneEl.disabled = true;
       emailEl.disabled = true;
@@ -504,7 +505,8 @@
       btn.disabled = false;
       btnLogout.disabled = false;
 
-      whoEl.textContent = "Cliente: " + (nameEl.value || "—") + " • " + (phoneEl.value || "—");
+      // ✅ não mostrar numero real
+      whoEl.textContent = "Cliente: " + (nameEl.value || "—") + " • " + maskPhone9(session.phone9 || phoneEl.value);
       formHint.textContent = "Dados do cliente preenchidos automaticamente. (sem duplicados)";
     }
 
@@ -517,7 +519,6 @@
       loginCodeEl.value = "";
       session.challenge_id = "";
       session.is_new = false;
-      saveSession();
     }
 
     function hideOverlay(){
@@ -652,34 +653,29 @@
     }
 
     // ============ LOGIN FLOW ============
-    // Esperado na API:
-    // POST /client/start_login  { phone:"+351..." }
-    // -> { ok:true, challenge_id:"...", otp_debug:"123456" }
-    //
-    // POST /client/verify_login { challenge_id:"...", code:"123456" }
-    // -> { ok:true, client:{ id, nome, telefone, email }, existing:true/false }
-    //
-    // POST /client/upsert  { id, phone, name, email }  (só usado quando novo)
-    //
-    // GET  /client/<id> -> { ok:true, client:{...} }
     async function startLogin(){
       loginStatus.textContent = "A enviar código…";
       fakeSms.textContent = "";
       codeArea.classList.add("hide");
       createArea.classList.add("hide");
 
-      const p = normalizePhoneToE164(loginPhoneEl.value);
-      if (!p){
-        loginStatus.textContent = "Escreve um número válido.";
+      // ✅ só 9 dígitos PT
+      const p9 = phoneTo9(loginPhoneEl.value);
+      if (!p9){
+        loginStatus.textContent = "Escreve um número PT válido (9 dígitos).";
         return;
       }
 
       try{
-        const r = await apiPost(API_BASE + "/client/start_login", { phone: p });
-        session.phone_e164 = p;
+        // manda para API (compatível): E164
+        const e164 = toE164From9(p9);
+
+        const r = await apiPost(API_BASE + "/client/start_login", { phone: e164 });
+
+        session.phone9 = p9;
+        session.phone_e164 = e164;
         session.challenge_id = r.challenge_id || "";
         session.is_new = false;
-        saveSession();
 
         codeArea.classList.remove("hide");
         loginStatus.textContent = "Código enviado.";
@@ -710,20 +706,30 @@
         });
 
         const c = r.client || {};
-        const existing = !!(r.existing ?? r.exists ?? r.found ?? false);
+
+        // ✅ compatível com APIs antigas: existing / exists / found / created
+        const existing =
+          (typeof r.existing === "boolean") ? r.existing :
+          (typeof r.exists === "boolean") ? r.exists :
+          (typeof r.found === "boolean") ? r.found :
+          (typeof r.created === "boolean") ? !r.created :
+          false;
 
         session.client_id = c.id || c.client_id || "";
-        session.phone_e164 = c.telefone || c.phone || session.phone_e164;
-        session.is_new = !existing;
+        const phoneFromApi = c.telefone || c.phone || session.phone_e164;
+
+        // guarda ambos
+        session.phone_e164 = (phoneFromApi && phoneFromApi.startsWith("+")) ? phoneFromApi : session.phone_e164;
+        session.phone9 = phoneTo9(phoneFromApi) || session.phone9;
 
         if (!session.client_id){
           throw new Error("Login OK mas API não devolveu client_id.");
         }
 
-        // Preenche sempre o que vier
+        // preencher UI (mas telefone mascarado)
         nameEl.value = c.nome || c.name || "";
-        phoneEl.value = phoneToDisplay(session.phone_e164);
         emailEl.value = c.email || "";
+        phoneEl.value = maskPhone9(session.phone9);
 
         saveSession();
 
@@ -736,7 +742,7 @@
           return;
         }
 
-        // ✅ cliente NÃO existe: pedir só 1 vez o nome (email opcional)
+        // novo (sem nome): pedir só uma vez
         loginStatus.textContent = "Primeira vez — cria o teu perfil.";
         createNameEl.value = nameEl.value || "";
         createEmailEl.value = emailEl.value || "";
@@ -763,7 +769,6 @@
       }
 
       try{
-        // ✅ cria/atualiza o cliente (telefone é a chave -> sem duplicados)
         await apiPost(API_BASE + "/client/upsert", {
           id: session.client_id,
           phone: session.phone_e164,
@@ -771,15 +776,19 @@
           email: em
         });
 
-        // lê de volta (garante dados)
         const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
         const c = rr.client || {};
 
         nameEl.value = c.nome || c.name || nm;
-        phoneEl.value = phoneToDisplay(c.telefone || c.phone || session.phone_e164);
         emailEl.value = c.email || em;
 
-        session.is_new = false;
+        // atualizar phone9/e164 (mas UI mascarada)
+        const phoneFromApi = c.telefone || c.phone || session.phone_e164;
+        session.phone_e164 = (phoneFromApi && phoneFromApi.startsWith("+")) ? phoneFromApi : session.phone_e164;
+        session.phone9 = phoneTo9(phoneFromApi) || session.phone9;
+
+        phoneEl.value = maskPhone9(session.phone9);
+
         saveSession();
 
         loginStatus.textContent = "✅ Perfil criado.";
@@ -815,9 +824,10 @@
         return;
       }
 
+      // ✅ enviar para API o telefone real (E164), mas nunca mostrar no UI
       const payload = {
         name: (nameEl.value || "").trim(),
-        phone: session.phone_e164, // ✅ não pergunta outra vez: vem da sessão
+        phone: session.phone_e164,
         email: (emailEl.value || "").trim(),
         service: serviceEl.value,
         barber: barberEl.value,
@@ -825,7 +835,6 @@
         time: pickedTime.slice(0,5),
         dur: FIXED_DUR,
         notes: "",
-
         client_id: session.client_id,
         client: (nameEl.value || "").trim()
       };
@@ -848,7 +857,7 @@
         showMsg(ok,
           "✅ Marcação confirmada!\n" +
           "ID: " + (data.id || "(sem id)") + "\n" +
-          "Cliente: " + payload.name + " (" + payload.phone + ")\n" +
+          "Cliente: " + payload.name + " (" + maskPhone9(session.phone9) + ")\n" +
           "Data: " + payload.date + "  Hora: " + payload.time + "\n" +
           "Barbeiro: " + payload.barber + "  Serviço: " + payload.service + "\n" +
           "Duração: 45 min"
@@ -874,17 +883,29 @@
     (async function boot(){
       lockAll();
 
-      // tenta sessão anterior
+      // ✅ tenta sessão anterior
       const s = loadSession();
       if (s){
-        session = s;
+        session.client_id = s.client_id || "";
+        session.phone_e164 = s.phone_e164 || "";
+        session.phone9 = s.phone9 || phoneTo9(s.phone_e164);
+
         try{
+          // confirma no servidor que existe mesmo
           const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
           const c = rr.client || {};
+
           if (c && (c.nome || c.name)){
             nameEl.value = c.nome || c.name || "";
-            phoneEl.value = phoneToDisplay(c.telefone || c.phone || session.phone_e164);
             emailEl.value = c.email || "";
+
+            const phoneFromApi = c.telefone || c.phone || session.phone_e164;
+            session.phone_e164 = (phoneFromApi && phoneFromApi.startsWith("+")) ? phoneFromApi : session.phone_e164;
+            session.phone9 = phoneTo9(phoneFromApi) || session.phone9;
+
+            // UI mascarada
+            phoneEl.value = maskPhone9(session.phone9);
+
             hideOverlay();
             unlockBookingUI();
           } else {
