@@ -6,98 +6,181 @@
   <title>Barbearia Neves — Marcação</title>
   <style>
     :root{
-      --bg:#0b0d10; --card:#12161c; --muted:#aeb6c2; --text:#ffffff;
-      --line:#2a3240; --input:#0f1319; --accent:#ffffff;
-      --okbg:#0f2a16; --okline:#2bd66a; --errbg:#2a1010; --errline:#ff5c5c;
-      --slotFree:#0f1319; --slotFreeBorder:#2a3240;
-      --slotBusy:#241216; --slotBusyBorder:#7a2a3a;
-      --slotPick:#1a2230; --slotPickBorder:#5e7aa8;
+      --bg:#0b0d10;
+      --card:#12161c;
+      --muted:#aeb6c2;
+      --text:#ffffff;
+      --line:#2a3240;
+      --input:#0f1319;
+      --accent:#ffffff;
+
+      --okbg:#0f2a16;
+      --okline:#2bd66a;
+      --errbg:#2a1010;
+      --errline:#ff5c5c;
+
+      --slotFree:#0f1319;
+      --slotFreeBorder:#2a3240;
+      --slotBusy:#241216;
+      --slotBusyBorder:#7a2a3a;
+      --slotPick:#1a2230;
+      --slotPickBorder:#5e7aa8;
     }
+
     *{box-sizing:border-box}
     body{
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      margin:0; min-height:100vh; background:var(--bg); color:var(--text);
-      display:flex; justify-content:center; padding:22px;
+      margin:0;
+      min-height:100vh;
+      background:var(--bg);
+      color:var(--text);
+      display:flex;
+      justify-content:center;
+      padding:22px;
     }
+
     .wrap{width:100%; max-width:980px;}
     .card{
-      background:var(--card); border:1px solid var(--line);
-      border-radius:16px; padding:18px;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:18px;
       box-shadow:0 10px 30px rgba(0,0,0,.35);
     }
-    .brand{display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:10px;
+    }
     .brand img{
-      width:64px;height:64px;object-fit:contain;border-radius:12px;
-      background:#fff;padding:8px;
+      width:64px;height:64px;
+      object-fit:contain;
+      border-radius:12px;
+      background:#fff;
+      padding:8px;
     }
     h1{margin:0;font-size:34px}
     p{margin:6px 0 0;color:var(--muted)}
-    label{display:block;margin-top:14px;font-weight:650;color:var(--text);}
+
+    label{
+      display:block;margin-top:14px;
+      font-weight:650;color:var(--text);
+    }
+
     input,select,button{
-      width:100%; padding:12px; margin-top:8px; font-size:16px;
-      border-radius:12px; border:1px solid var(--line);
-      background:var(--input); color:var(--text); outline:none;
+      width:100%;
+      padding:12px 12px;
+      margin-top:8px;
+      font-size:16px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:var(--input);
+      color:var(--text);
+      outline:none;
     }
     input::placeholder{color:#7f8aa0}
-    input:focus,select:focus{border-color:#55637d;box-shadow:0 0 0 3px rgba(85,99,125,.25)}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;}
+    input:focus,select:focus{
+      border-color:#55637d;
+      box-shadow:0 0 0 3px rgba(85,99,125,.25);
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      align-items:end;
+    }
+
     button{
-      cursor:pointer; margin-top:16px; background:var(--accent); color:#000;
-      font-weight:750; border:0; transition:transform .06s ease;
+      cursor:pointer;
+      margin-top:16px;
+      background:var(--accent);
+      color:#000;
+      font-weight:750;
+      border:0;
+      transition:transform .06s ease;
     }
     button:active{transform:translateY(1px)}
     button:disabled{opacity:.6; cursor:not-allowed}
+
     .ok,.err{
-      padding:12px; border-radius:12px; margin:12px 0 0;
-      display:none; white-space:pre-wrap;
+      padding:12px 12px;
+      border-radius:12px;
+      margin:12px 0 0;
+      display:none;
+      white-space:pre-wrap;
     }
     .ok{background:var(--okbg); border:1px solid var(--okline)}
     .err{background:var(--errbg); border:1px solid var(--errline)}
-    .grid2{display:grid;grid-template-columns: 1.1fr .9fr;gap:16px;margin-top:14px;}
-    .agenda{border:1px solid var(--line);border-radius:14px;padding:12px;background:#0e1218;}
-    .agendaTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:16px;
+      margin-top:14px;
+    }
+
+    .agenda{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      background:#0e1218;
+    }
+    .agendaTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
     .small{color:var(--muted); font-size:13px}
+
     .slots{
-      display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;
-      max-height:420px; overflow:auto; padding-right:6px;
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:10px;
+      max-height:420px;
+      overflow:auto;
+      padding-right:6px;
     }
     .slot{
-      border:1px solid var(--slotFreeBorder); background:var(--slotFree);
-      border-radius:12px; padding:10px; cursor:pointer; user-select:none;
-      display:flex; flex-direction:column; gap:6px;
+      border:1px solid var(--slotFreeBorder);
+      background:var(--slotFree);
+      border-radius:12px;
+      padding:10px;
+      cursor:pointer;
+      user-select:none;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
     }
     .slot .t{font-weight:800}
     .slot .d{font-size:12px;color:var(--muted)}
     .slot.busy{
-      background:var(--slotBusy); border-color:var(--slotBusyBorder);
-      cursor:not-allowed; opacity:.85;
+      background:var(--slotBusy);
+      border-color:var(--slotBusyBorder);
+      cursor:not-allowed;
+      opacity:.85;
     }
     .slot.pick{
-      background:var(--slotPick); border-color:var(--slotPickBorder);
+      background:var(--slotPick);
+      border-color:var(--slotPickBorder);
       box-shadow:0 0 0 3px rgba(94,122,168,.22);
     }
+
     .pill{
-      display:inline-block; padding:4px 8px; border:1px solid var(--line);
-      border-radius:999px; font-size:12px; color:var(--muted);
-      margin-top:8px; line-height:1.35;
+      display:inline-block;
+      padding:4px 8px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+      line-height:1.35;
     }
-    .overlay{
-      position:fixed; inset:0; background:rgba(0,0,0,.55);
-      display:flex; align-items:center; justify-content:center;
-      padding:16px; z-index:10;
-    }
-    .box{
-      width:100%; max-width:460px; background:var(--card);
-      border:1px solid var(--line); border-radius:18px; padding:16px;
-    }
-    .hide{display:none}
-    .hint{color:var(--muted); font-size:13px; margin-top:8px}
-    .sep{height:1px;background:var(--line);margin:14px 0}
-    .tag{
-      display:inline-block; border:1px solid var(--line);
-      border-radius:999px; padding:4px 8px; font-size:12px;
-      color:var(--muted); margin-top:10px;
-    }
+
     @media (max-width: 900px){
       .grid2{grid-template-columns:1fr}
       .row{grid-template-columns:1fr}
@@ -113,13 +196,12 @@
         <img src="logo.jpg" alt="Logo Barbearia Neves">
         <div>
           <h1>Barbearia Neves</h1>
-          <p>Escolha um horário livre</p>
+          <p>Escolhe um horário livre e confirma. A marcação entra automaticamente na agenda.</p>
           <div class="pill">
             2ª–6ª: 10:00–12:30 • 14:00–20:00<br>
             Sábado: 09:00–14:00 • Domingo: Fechado<br>
             Intervalos: 45 min
           </div>
-          <div id="who" class="tag">Não autenticado</div>
         </div>
       </div>
 
@@ -130,32 +212,33 @@
         <div>
           <form id="f" autocomplete="on">
             <label>Nome</label>
-            <input name="name" id="name" required placeholder="Nome do cliente" disabled>
+            <input name="name" required placeholder="Nome do cliente">
 
             <div class="row">
               <div>
                 <label>Telefone</label>
-                <input name="phone" id="phone" required placeholder="9xxxxxxx" inputmode="tel" disabled>
+                <input name="phone" required placeholder="9xx xxx xxx" inputmode="tel">
               </div>
               <div>
                 <label>Email (opcional)</label>
-                <input name="email" id="email" type="email" placeholder="email@exemplo.com" disabled>
+                <input name="email" type="email" placeholder="email@exemplo.com">
               </div>
             </div>
 
             <div class="row">
               <div>
                 <label>Serviço</label>
-                <select name="service" id="service" required disabled>
-                  <option value="Corte">Corte 13€</option>
-                  <option value="Corte+Barba">Corte+Barba 15€</option>
+                <select name="service" id="service" required>
+                  <option value="Corte">Corte</option>
+                  <option value="Barba">Barba</option>
+                  <option value="Corte+Barba">Corte+Barba</option>
                 </select>
               </div>
               <div>
                 <label>Barbeiro</label>
-                <select name="barber" id="barber" required disabled>
-                  <option value="Pedro">Pedro</option>
-                  <option value="Joao">João</option>
+                <select name="barber" id="barber" required>
+                  <option value="Pedro">Pedro Neves</option>
+                  <option value="Joao">João Leite</option>
                 </select>
               </div>
             </div>
@@ -163,19 +246,11 @@
             <div class="row">
               <div>
                 <label>Data</label>
-                <input name="date" id="date" type="date" required disabled>
+                <input name="date" id="date" type="date" required>
               </div>
             </div>
 
-            <button id="btn" type="submit" disabled>Marcar</button>
-
-            <button id="btnLogout" type="button" style="margin-top:10px" disabled>
-              Sair / mudar número
-            </button>
-
-            <div class="hint" id="formHint">
-              Primeiro entra com o teu telemóvel. Se já existir, não volta a pedir dados.
-            </div>
+            <button id="btn" type="submit">Marcar</button>
           </form>
         </div>
 
@@ -183,57 +258,25 @@
           <div class="agendaTop">
             <div class="small" id="agendaStatus">A carregar…</div>
           </div>
+
           <div class="slots" id="slots"></div>
+
+          <div class="small" style="margin-top:10px"></div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- LOGIN OVERLAY (SEM CÓDIGO) -->
-  <div id="loginOverlay" class="overlay">
-    <div class="box">
-      <h2 style="margin:0 0 6px">Entrar</h2>
-      <div class="small">
-        Escreve só o teu telemóvel.<br>
-        Se já existir, entramos e preenche automático.<br>
-        Se não existir, crias o perfil uma vez.
-      </div>
-
-      <label>Telemóvel</label>
-      <input id="loginPhone" placeholder="9xxxxxxx" inputmode="tel">
-
-      <button id="btnLogin" style="margin-top:12px">Continuar</button>
-
-      <!-- CREATE PROFILE (só se for novo ou sem nome) -->
-      <div id="createArea" class="hide">
-        <div class="sep"></div>
-        <h3 style="margin:0 0 6px">Primeira vez aqui</h3>
-        <div class="small">Falta só o teu nome (email opcional). Depois não volta a perguntar.</div>
-
-        <label>Nome</label>
-        <input id="createName" placeholder="Ex: Cliente">
-
-        <label>Email (opcional)</label>
-        <input id="createEmail" placeholder="email@exemplo.com" type="email">
-
-        <button id="btnCreate" style="margin-top:12px">Criar perfil</button>
-      </div>
-
-      <div class="hint" id="loginStatus">—</div>
     </div>
   </div>
 
   <script>
     const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
+    // Slots / duração
     const STEP_MIN   = 45;
     const FIXED_DUR  = 45;
 
     const ok = document.getElementById('ok');
     const err = document.getElementById('err');
-
     const btn = document.getElementById('btn');
-    const btnLogout = document.getElementById('btnLogout');
 
     const slotsEl = document.getElementById('slots');
     const agendaStatus = document.getElementById('agendaStatus');
@@ -241,37 +284,21 @@
     const dateEl = document.getElementById('date');
     const barberEl = document.getElementById('barber');
 
-    const nameEl = document.getElementById('name');
-    const phoneEl = document.getElementById('phone');
-    const emailEl = document.getElementById('email');
-    const serviceEl = document.getElementById('service');
-    const whoEl = document.getElementById('who');
-    const formHint = document.getElementById('formHint');
-
-    // login UI
-    const overlay = document.getElementById('loginOverlay');
-    const loginPhoneEl = document.getElementById('loginPhone');
-    const btnLogin = document.getElementById('btnLogin');
-    const loginStatus = document.getElementById('loginStatus');
-
-    // create UI
-    const createArea = document.getElementById('createArea');
-    const createNameEl = document.getElementById('createName');
-    const createEmailEl = document.getElementById('createEmail');
-    const btnCreate = document.getElementById('btnCreate');
-
     let pickedTime = "";
-    let session = {
-      client_id: "",
-      phone9: ""
-    };
 
-    function showMsg(el, text) { el.textContent = text; el.style.display = 'block'; }
-    function hideMsg(el) { el.style.display = 'none'; }
+    function show(el, text) { el.textContent = text; el.style.display = 'block'; }
+    function hide(el) { el.style.display = 'none'; }
 
     function pad2(n){ return (n<10 ? "0":"") + n; }
-    function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60+m; }
-    function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad2(h)+":"+pad2(m); }
+    function toMin(hhmm){
+      const [h,m] = hhmm.split(":").map(Number);
+      return h*60+m;
+    }
+    function toHHMM(min){
+      const h = Math.floor(min/60);
+      const m = min%60;
+      return pad2(h)+":"+pad2(m);
+    }
     function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
 
     function todayISO(){
@@ -282,117 +309,37 @@
       const d = new Date();
       return d.getHours()*60 + d.getMinutes();
     }
+
     function setTodayIfEmpty(){
       if (dateEl.value) return;
       dateEl.value = todayISO();
     }
+
     function getWeekday(dateISO){
       const [y,m,d] = dateISO.split("-").map(Number);
       const dt = new Date(y, m-1, d);
-      return dt.getDay();
+      return dt.getDay(); // 0=Dom,...6=Sáb
     }
+
+    // ✅ mesma regra usada no admin (segmentos)
     function getWorkSegments(dateISO){
       const wd = getWeekday(dateISO);
+
+      // Domingo
       if (wd === 0) return [];
-      if (wd === 6) return [{ start: "09:00", end: "14:00" }];
-      return [{ start: "10:00", end: "12:30" }, { start: "14:00", end: "20:00" }];
-    }
-    function escapeHtml(s){
-      return (s||"").replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[c]));
+
+      // Sábado
+      if (wd === 6) return [
+        { start: "09:00", end: "14:00" }
+      ];
+
+      // 2ª–6ª
+      return [
+        { start: "10:00", end: "12:30" },
+        { start: "14:00", end: "20:00" }
+      ];
     }
 
-    // =========================
-    // PHONE HELPERS (UI nunca mostra número real)
-    // =========================
-    function phoneTo9(raw){
-      const digits = (raw || "").replace(/\D/g,"");
-      let d = digits;
-      if (d.startsWith("351") && d.length >= 12) d = d.slice(3);
-      if (d.length > 9) d = d.slice(-9);
-      return d.length === 9 ? d : "";
-    }
-    function maskPhone9(phone9){
-      const p9 = phoneTo9(phone9);
-      if (!p9) return "9xxxxxxx";
-      return p9[0] + "xxxxxxx";
-    }
-
-    // ============ SESSION ============
-    function saveSession(){
-      localStorage.setItem("client_session", JSON.stringify({
-        client_id: session.client_id,
-        phone9: session.phone9
-      }));
-    }
-    function loadSession(){
-      try{
-        const s = JSON.parse(localStorage.getItem("client_session") || "{}");
-        if (s && s.client_id && s.phone9) return s;
-      }catch(_){}
-      return null;
-    }
-    function clearSession(){
-      localStorage.removeItem("client_session");
-      session = {client_id:"", phone9:""};
-    }
-
-    // ============ UI LOCK/UNLOCK ============
-    function lockAll(){
-      [nameEl, phoneEl, emailEl, serviceEl, barberEl, dateEl, btn, btnLogout].forEach(x => x.disabled = true);
-      whoEl.textContent = "Não autenticado";
-      nameEl.value = "";
-      phoneEl.value = "";
-      emailEl.value = "";
-    }
-
-    function unlockBookingUI(){
-      nameEl.disabled = true;
-      phoneEl.disabled = true;
-      emailEl.disabled = true;
-
-      serviceEl.disabled = false;
-      barberEl.disabled = false;
-      dateEl.disabled = false;
-      btn.disabled = false;
-      btnLogout.disabled = false;
-
-      whoEl.textContent = "Cliente: " + (nameEl.value || "—") + " • " + maskPhone9(session.phone9);
-      formHint.textContent = "Dados do cliente preenchidos automaticamente. (sem duplicados)";
-    }
-
-    function showOverlayLogin(){
-      overlay.classList.remove("hide");
-      createArea.classList.add("hide");
-      loginStatus.textContent = "—";
-      loginPhoneEl.value = "";
-      createNameEl.value = "";
-      createEmailEl.value = "";
-    }
-    function hideOverlay(){
-      overlay.classList.add("hide");
-    }
-
-    async function apiPost(url, body){
-      const r = await fetch(url, {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(body || {})
-      });
-      const data = await r.json().catch(()=> ({}));
-      if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
-      return data;
-    }
-
-    async function apiGet(url){
-      const r = await fetch(url);
-      const data = await r.json().catch(()=> ({}));
-      if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
-      return data;
-    }
-
-    // ============ AGENDA ============
     async function fetchDay(date, barber){
       const u = new URL(API_BASE + "/day");
       u.searchParams.set("date", date);
@@ -430,12 +377,23 @@
 
           let busy = null;
           for (const b of booked){
-            if (overlaps(s,e,b.s,b.e)){ busy = b; break; }
+            if (overlaps(s,e,b.s,b.e)){
+              busy = b;
+              break;
+            }
           }
+
           slots.push({ time: toHHMM(t), busy });
         }
       }
+
       return slots;
+    }
+
+    function escapeHtml(s){
+      return (s||"").replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
     }
 
     function renderSlots(slots){
@@ -454,6 +412,7 @@
         if (s.busy){
           const label = s.busy.label || "OCUPADO";
           const reason = (s.busy.notes || s.busy.service || "").trim();
+
           div.innerHTML = `
             <div class="t">${s.time} — ${escapeHtml(label)}</div>
             <div class="d">${escapeHtml(reason)}</div>
@@ -468,6 +427,7 @@
             renderSlots(slots.map(x => ({...x})));
           });
         }
+
         slotsEl.appendChild(div);
       }
     }
@@ -487,155 +447,41 @@
         renderSlots(slots);
 
         const segs = getWorkSegments(date);
-        const segText = segs.length ? segs.map(s => `${s.start}–${s.end}`).join(" • ") : "Fechado";
+        const segText = segs.length
+          ? segs.map(s => `${s.start}–${s.end}`).join(" • ")
+          : "Fechado";
+
         agendaStatus.textContent = `${items.length} item(s) • ${barber} • ${date} • ${segText}`;
       }catch(ex){
         slotsEl.innerHTML = "";
         agendaStatus.textContent = "Erro a carregar";
-        showMsg(err, "❌ Erro ao carregar agenda: " + ex.message);
+        show(err, "❌ Erro ao carregar agenda: " + ex.message);
       }
     }
 
-    // =========================
-    // LOGIN SIMPLES (SEM OTP)
-    // =========================
-    async function doLoginSimple(){
-      loginStatus.textContent = "A verificar…";
-      createArea.classList.add("hide");
+    dateEl.addEventListener("change", refreshAgenda);
+    barberEl.addEventListener("change", refreshAgenda);
 
-      const p9 = phoneTo9(loginPhoneEl.value);
-      if (!p9){
-        loginStatus.textContent = "Escreve um número PT válido (9 dígitos).";
-        return;
-      }
-
-      try{
-        // ✅ chama a nova rota da API
-        const r = await apiPost(API_BASE + "/client/login", { phone: p9 });
-
-        const c = r.client || {};
-        const existing = !!r.existing;
-
-        session.client_id = c.id || c.client_id || "";
-        session.phone9 = phoneTo9(c.telefone || c.phone || p9) || p9;
-
-        if (!session.client_id){
-          throw new Error("A API não devolveu id.");
-        }
-
-        // preencher UI (telefone mascarado)
-        nameEl.value = (c.nome || c.name || "").trim();
-        emailEl.value = (c.email || "").trim();
-        phoneEl.value = maskPhone9(session.phone9);
-
-        saveSession();
-
-        if (existing && nameEl.value){
-          loginStatus.textContent = "✅ Cliente reconhecido.";
-          hideOverlay();
-          unlockBookingUI();
-          await refreshAgenda();
-          return;
-        }
-
-        // novo (ou existe mas sem nome): pedir perfil
-        loginStatus.textContent = "Primeira vez — cria o teu perfil.";
-        createNameEl.value = nameEl.value || "";
-        createEmailEl.value = emailEl.value || "";
-        createArea.classList.remove("hide");
-
-      }catch(ex){
-        loginStatus.textContent = "Erro: " + ex.message;
-      }
-    }
-
-    async function createProfile(){
-      loginStatus.textContent = "A criar perfil…";
-
-      const nm = (createNameEl.value || "").trim();
-      const em = (createEmailEl.value || "").trim();
-
-      if (!nm){
-        loginStatus.textContent = "Escreve o teu nome.";
-        return;
-      }
-      if (!session.client_id || !session.phone9){
-        loginStatus.textContent = "Sessão inválida. Volta a entrar.";
-        return;
-      }
-
-      try{
-        await apiPost(API_BASE + "/client/upsert", {
-          id: session.client_id,
-          phone: session.phone9, // ✅ 9 dígitos
-          name: nm,
-          email: em
-        });
-
-        const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
-        const c = rr.client || {};
-
-        nameEl.value = (c.nome || c.name || nm).trim();
-        emailEl.value = (c.email || em).trim();
-
-        // UI mascarada
-        phoneEl.value = maskPhone9(session.phone9);
-
-        saveSession();
-
-        loginStatus.textContent = "✅ Perfil criado.";
-        hideOverlay();
-        unlockBookingUI();
-        await refreshAgenda();
-      }catch(ex){
-        loginStatus.textContent = "Erro: " + ex.message;
-      }
-    }
-
-    function logout(){
-      clearSession();
-      lockAll();
-      showOverlayLogin();
-    }
-
-    // ============ BOOKING ============
     document.getElementById('f').addEventListener('submit', async (e) => {
       e.preventDefault();
-      hideMsg(err); hideMsg(ok);
+      hide(err);
+      hide(ok);
       btn.disabled = true;
 
-      if (!session.client_id){
-        showMsg(err, "❌ Tens de entrar primeiro.");
-        btn.disabled = false;
-        return;
-      }
       if (!pickedTime){
-        showMsg(err, "❌ Escolhe um horário livre na agenda.");
+        show(err, "❌ Escolhe um horário livre na agenda.");
         btn.disabled = false;
         return;
       }
 
-      const payload = {
-        name: (nameEl.value || "").trim(),
-        phone: session.phone9,          // ✅ envia 9 dígitos (API normaliza)
-        email: (emailEl.value || "").trim(),
-        service: serviceEl.value,
-        barber: barberEl.value,
-        date: dateEl.value,
-        time: pickedTime.slice(0,5),
-        dur: FIXED_DUR,
-        notes: "",
-        client_id: session.client_id,
-        client: (nameEl.value || "").trim()
-      };
+      const fd = new FormData(e.target);
+      const payload = Object.fromEntries(fd.entries());
 
-      if (!payload.name || !payload.phone || !payload.date){
-        showMsg(err, "❌ Falta nome/telefone/data.");
-        btn.disabled = false;
-        return;
-      }
+      payload.time = pickedTime.slice(0,5);
+      payload.dur = FIXED_DUR;
+      payload.notes = "";
 
-      try{
+      try {
         const r = await fetch(API_BASE + "/book", {
           method: "POST",
           headers: {"Content-Type":"application/json"},
@@ -644,71 +490,37 @@
         const data = await r.json().catch(()=> ({}));
         if (!r.ok) throw new Error(data.error || ("Erro HTTP " + r.status));
 
-        showMsg(ok,
+        show(ok,
           "✅ Marcação confirmada!\n" +
           "ID: " + (data.id || "(sem id)") + "\n" +
-          "Cliente: " + payload.name + " (" + maskPhone9(session.phone9) + ")\n" +
           "Data: " + payload.date + "  Hora: " + payload.time + "\n" +
           "Barbeiro: " + payload.barber + "  Serviço: " + payload.service + "\n" +
           "Duração: 45 min"
         );
 
+        const keepName = payload.name;
+        const keepPhone = payload.phone;
+        const keepEmail = payload.email;
+
+        e.target.reset();
+        setTodayIfEmpty();
+        document.querySelector('input[name="name"]').value = keepName || "";
+        document.querySelector('input[name="phone"]').value = keepPhone || "";
+        document.querySelector('input[name="email"]').value = keepEmail || "";
+
         await refreshAgenda();
-      }catch(ex){
-        showMsg(err, "❌ Não foi possível marcar: " + ex.message);
-      }finally{
+
+      } catch (ex) {
+        show(err, "❌ Não foi possível marcar: " + ex.message);
+      } finally {
         btn.disabled = false;
       }
     });
 
-    // ============ EVENTS / BOOT ============
-    btnLogin.addEventListener("click", doLoginSimple);
-    btnCreate.addEventListener("click", createProfile);
-    btnLogout.addEventListener("click", logout);
-
-    // Enter no input do telefone
-    loginPhoneEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); doLoginSimple(); }
-    });
-
-    dateEl.addEventListener("change", refreshAgenda);
-    barberEl.addEventListener("change", refreshAgenda);
-
-    (async function boot(){
-      lockAll();
-
-      const s = loadSession();
-      if (s){
-        session.client_id = s.client_id || "";
-        session.phone9 = phoneTo9(s.phone9) || "";
-
-        try{
-          const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
-          const c = rr.client || {};
-
-          if (c && (c.nome || c.name)){
-            nameEl.value = (c.nome || c.name || "").trim();
-            emailEl.value = (c.email || "").trim();
-            phoneEl.value = maskPhone9(session.phone9);
-
-            hideOverlay();
-            unlockBookingUI();
-          } else {
-            logout();
-          }
-        }catch(_){
-          logout();
-        }
-      } else {
-        showOverlayLogin();
-      }
-
-      setTodayIfEmpty();
-      await refreshAgenda();
-    })();
+    setTodayIfEmpty();
+    refreshAgenda();
 
     setInterval(() => {
-      if (!overlay.classList.contains("hide")) return;
       if (dateEl.value === todayISO()){
         refreshAgenda();
       }
