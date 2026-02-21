@@ -6,210 +6,99 @@
   <title>Barbearia Neves — Marcação</title>
   <style>
     :root{
-      --bg:#0b0d10;
-      --card:#12161c;
-      --muted:#aeb6c2;
-      --text:#ffffff;
-      --line:#2a3240;
-      --input:#0f1319;
-      --accent:#ffffff;
-
-      --okbg:#0f2a16;
-      --okline:#2bd66a;
-      --errbg:#2a1010;
-      --errline:#ff5c5c;
-
-      --slotFree:#0f1319;
-      --slotFreeBorder:#2a3240;
-      --slotBusy:#241216;
-      --slotBusyBorder:#7a2a3a;
-      --slotPick:#1a2230;
-      --slotPickBorder:#5e7aa8;
+      --bg:#0b0d10; --card:#12161c; --muted:#aeb6c2; --text:#ffffff;
+      --line:#2a3240; --input:#0f1319; --accent:#ffffff;
+      --okbg:#0f2a16; --okline:#2bd66a; --errbg:#2a1010; --errline:#ff5c5c;
+      --slotFree:#0f1319; --slotFreeBorder:#2a3240;
+      --slotBusy:#241216; --slotBusyBorder:#7a2a3a;
+      --slotPick:#1a2230; --slotPickBorder:#5e7aa8;
     }
-
     *{box-sizing:border-box}
     body{
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      margin:0;
-      min-height:100vh;
-      background:var(--bg);
-      color:var(--text);
-      display:flex;
-      justify-content:center;
-      padding:22px;
+      margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+      display:flex; justify-content:center; padding:22px;
     }
-
     .wrap{width:100%; max-width:980px;}
     .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:18px;
+      background:var(--card); border:1px solid var(--line);
+      border-radius:16px; padding:18px;
       box-shadow:0 10px 30px rgba(0,0,0,.35);
     }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      margin-bottom:10px;
-    }
+    .brand{display:flex;align-items:center;gap:14px;margin-bottom:10px;}
     .brand img{
-      width:64px;height:64px;
-      object-fit:contain;
-      border-radius:12px;
-      background:#fff;
-      padding:8px;
+      width:64px;height:64px;object-fit:contain;border-radius:12px;
+      background:#fff;padding:8px;
     }
     h1{margin:0;font-size:34px}
     p{margin:6px 0 0;color:var(--muted)}
-
-    label{
-      display:block;margin-top:14px;
-      font-weight:650;color:var(--text);
-    }
-
+    label{display:block;margin-top:14px;font-weight:650;color:var(--text);}
     input,select,button{
-      width:100%;
-      padding:12px 12px;
-      margin-top:8px;
-      font-size:16px;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:var(--input);
-      color:var(--text);
-      outline:none;
+      width:100%; padding:12px; margin-top:8px; font-size:16px;
+      border-radius:12px; border:1px solid var(--line);
+      background:var(--input); color:var(--text); outline:none;
     }
     input::placeholder{color:#7f8aa0}
-    input:focus,select:focus{
-      border-color:#55637d;
-      box-shadow:0 0 0 3px rgba(85,99,125,.25);
-    }
-
-    .row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-      align-items:end;
-    }
-
+    input:focus,select:focus{border-color:#55637d;box-shadow:0 0 0 3px rgba(85,99,125,.25)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;}
     button{
-      cursor:pointer;
-      margin-top:16px;
-      background:var(--accent);
-      color:#000;
-      font-weight:750;
-      border:0;
-      transition:transform .06s ease;
+      cursor:pointer; margin-top:16px; background:var(--accent); color:#000;
+      font-weight:750; border:0; transition:transform .06s ease;
     }
     button:active{transform:translateY(1px)}
     button:disabled{opacity:.6; cursor:not-allowed}
-
     .ok,.err{
-      padding:12px 12px;
-      border-radius:12px;
-      margin:12px 0 0;
-      display:none;
-      white-space:pre-wrap;
+      padding:12px; border-radius:12px; margin:12px 0 0;
+      display:none; white-space:pre-wrap;
     }
     .ok{background:var(--okbg); border:1px solid var(--okline)}
     .err{background:var(--errbg); border:1px solid var(--errline)}
-
-    .grid2{
-      display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap:16px;
-      margin-top:14px;
-    }
-
-    .agenda{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#0e1218;
-    }
-    .agendaTop{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-bottom:10px;
-    }
+    .grid2{display:grid;grid-template-columns: 1.1fr .9fr;gap:16px;margin-top:14px;}
+    .agenda{border:1px solid var(--line);border-radius:14px;padding:12px;background:#0e1218;}
+    .agendaTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
     .small{color:var(--muted); font-size:13px}
-
     .slots{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
-      max-height:420px;
-      overflow:auto;
-      padding-right:6px;
+      display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;
+      max-height:420px; overflow:auto; padding-right:6px;
     }
     .slot{
-      border:1px solid var(--slotFreeBorder);
-      background:var(--slotFree);
-      border-radius:12px;
-      padding:10px;
-      cursor:pointer;
-      user-select:none;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
+      border:1px solid var(--slotFreeBorder); background:var(--slotFree);
+      border-radius:12px; padding:10px; cursor:pointer; user-select:none;
+      display:flex; flex-direction:column; gap:6px;
     }
     .slot .t{font-weight:800}
     .slot .d{font-size:12px;color:var(--muted)}
     .slot.busy{
-      background:var(--slotBusy);
-      border-color:var(--slotBusyBorder);
-      cursor:not-allowed;
-      opacity:.85;
+      background:var(--slotBusy); border-color:var(--slotBusyBorder);
+      cursor:not-allowed; opacity:.85;
     }
     .slot.pick{
-      background:var(--slotPick);
-      border-color:var(--slotPickBorder);
+      background:var(--slotPick); border-color:var(--slotPickBorder);
       box-shadow:0 0 0 3px rgba(94,122,168,.22);
     }
-
     .pill{
-      display:inline-block;
-      padding:4px 8px;
-      border:1px solid var(--line);
-      border-radius:999px;
-      font-size:12px;
-      color:var(--muted);
-      margin-top:8px;
-      line-height:1.35;
+      display:inline-block; padding:4px 8px; border:1px solid var(--line);
+      border-radius:999px; font-size:12px; color:var(--muted);
+      margin-top:8px; line-height:1.35;
     }
-
     .overlay{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.55);
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
       display:flex; align-items:center; justify-content:center;
-      padding:16px;
-      z-index:10;
+      padding:16px; z-index:10;
     }
     .box{
-      width:100%; max-width:460px;
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:16px;
+      width:100%; max-width:460px; background:var(--card);
+      border:1px solid var(--line); border-radius:18px; padding:16px;
     }
     .hide{display:none}
     .hint{color:var(--muted); font-size:13px; margin-top:8px}
     .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
-
     .sep{height:1px;background:var(--line);margin:14px 0}
     .tag{
-      display:inline-block;
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:4px 8px;
-      font-size:12px;
-      color:var(--muted);
-      margin-top:10px;
+      display:inline-block; border:1px solid var(--line);
+      border-radius:999px; padding:4px 8px; font-size:12px;
+      color:var(--muted); margin-top:10px;
     }
-
     @media (max-width: 900px){
       .grid2{grid-template-columns:1fr}
       .row{grid-template-columns:1fr}
@@ -266,8 +155,8 @@
               <div>
                 <label>Barbeiro</label>
                 <select name="barber" id="barber" required disabled>
-                  <option value="Pedro">Pedro Neves</option>
-                  <option value="Joao">João Leite</option>
+                  <option value="Pedro">Pedro</option>
+                  <option value="Joao">João</option>
                 </select>
               </div>
             </div>
@@ -332,7 +221,7 @@
         <div class="small">Falta só o teu nome (email opcional). Depois não volta a perguntar.</div>
 
         <label>Nome</label>
-        <input id="createName" placeholder="Ex: Enrique Santos">
+        <input id="createName" placeholder="Ex: Cliente">
 
         <label>Email (opcional)</label>
         <input id="createEmail" placeholder="email@exemplo.com" type="email">
@@ -347,7 +236,6 @@
   <script>
     const API_BASE = "https://barbearia-api-ki25.onrender.com";
 
-    // Slots / duração
     const STEP_MIN   = 45;
     const FIXED_DUR  = 45;
 
@@ -389,25 +277,16 @@
     let pickedTime = "";
     let session = {
       client_id: "",
-      phone_e164: "",     // interno
-      phone9: "",         // interno
-      challenge_id: "",
-      is_new: false
+      phone_e164: "",
+      phone9: ""
     };
 
     function showMsg(el, text) { el.textContent = text; el.style.display = 'block'; }
     function hideMsg(el) { el.style.display = 'none'; }
 
     function pad2(n){ return (n<10 ? "0":"") + n; }
-    function toMin(hhmm){
-      const [h,m] = hhmm.split(":").map(Number);
-      return h*60+m;
-    }
-    function toHHMM(min){
-      const h = Math.floor(min/60);
-      const m = min%60;
-      return pad2(h)+":"+pad2(m);
-    }
+    function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60+m; }
+    function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad2(h)+":"+pad2(m); }
     function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
 
     function todayISO(){
@@ -443,9 +322,11 @@
       }[c]));
     }
 
-    // =========================
-    // ✅ PHONE HELPERS (UI SEM NUMERO REAL)
-    // =========================
+    /* =========================
+       PHONE HELPERS
+       - UI nunca mostra telefone real (só 9xxxxxxx)
+       - session guarda phone9 + e164
+       ========================= */
     function phoneTo9(raw){
       const digits = (raw || "").replace(/\D/g,"");
       let d = digits;
@@ -462,7 +343,7 @@
     function maskPhone9(phone9){
       const p9 = phoneTo9(phone9);
       if (!p9) return "9xxxxxxx";
-      return p9[0] + "xxxxxxx"; // ex: 9xxxxxxx
+      return p9[0] + "xxxxxxx";
     }
 
     // ============ SESSION ============
@@ -482,7 +363,7 @@
     }
     function clearSession(){
       localStorage.removeItem("client_session");
-      session = {client_id:"", phone_e164:"", phone9:"", challenge_id:"", is_new:false};
+      session = {client_id:"", phone_e164:"", phone9:""};
     }
 
     // ============ UI LOCK/UNLOCK ============
@@ -505,8 +386,7 @@
       btn.disabled = false;
       btnLogout.disabled = false;
 
-      // ✅ não mostrar numero real
-      whoEl.textContent = "Cliente: " + (nameEl.value || "—") + " • " + maskPhone9(session.phone9 || phoneEl.value);
+      whoEl.textContent = "Cliente: " + (nameEl.value || "—") + " • " + maskPhone9(session.phone9);
       formHint.textContent = "Dados do cliente preenchidos automaticamente. (sem duplicados)";
     }
 
@@ -517,8 +397,6 @@
       loginStatus.textContent = "—";
       fakeSms.textContent = "";
       loginCodeEl.value = "";
-      session.challenge_id = "";
-      session.is_new = false;
     }
 
     function hideOverlay(){
@@ -581,16 +459,11 @@
 
           let busy = null;
           for (const b of booked){
-            if (overlaps(s,e,b.s,b.e)){
-              busy = b;
-              break;
-            }
+            if (overlaps(s,e,b.s,b.e)){ busy = b; break; }
           }
-
           slots.push({ time: toHHMM(t), busy });
         }
       }
-
       return slots;
     }
 
@@ -652,14 +525,17 @@
       }
     }
 
-    // ============ LOGIN FLOW ============
+    /* =========================
+       LOGIN (OTP) — corrigido
+       - bug: existing lido corretamente
+       - phone sempre PT 9 -> e164 para API
+       ========================= */
     async function startLogin(){
       loginStatus.textContent = "A enviar código…";
       fakeSms.textContent = "";
       codeArea.classList.add("hide");
       createArea.classList.add("hide");
 
-      // ✅ só 9 dígitos PT
       const p9 = phoneTo9(loginPhoneEl.value);
       if (!p9){
         loginStatus.textContent = "Escreve um número PT válido (9 dígitos).";
@@ -667,22 +543,30 @@
       }
 
       try{
-        // manda para API (compatível): E164
         const e164 = toE164From9(p9);
-
         const r = await apiPost(API_BASE + "/client/start_login", { phone: e164 });
 
         session.phone9 = p9;
         session.phone_e164 = e164;
-        session.challenge_id = r.challenge_id || "";
-        session.is_new = false;
 
+        // mostra área do código
         codeArea.classList.remove("hide");
         loginStatus.textContent = "Código enviado.";
         if (r.otp_debug) fakeSms.textContent = r.otp_debug;
+        // guardamos só depois de verificar (evita sessão meia-feita)
       }catch(ex){
         loginStatus.textContent = "Erro: " + ex.message;
       }
+    }
+
+    function readExistingFlag(r){
+      // ✅ a tua API usa "existing"
+      if (typeof r.existing === "boolean") return r.existing;
+      // compat com variantes
+      if (typeof r.exists === "boolean") return r.exists;
+      if (typeof r.found === "boolean") return r.found;
+      if (typeof r.created === "boolean") return !r.created;
+      return false;
     }
 
     async function verifyLogin(){
@@ -694,47 +578,38 @@
         loginStatus.textContent = "Escreve o código.";
         return;
       }
-      if (!session.challenge_id){
-        loginStatus.textContent = "Tens de pedir o código primeiro.";
-        return;
-      }
 
       try{
-        const r = await apiPost(API_BASE + "/client/verify_login", {
-          challenge_id: session.challenge_id,
-          code
-        });
-
-        const c = r.client || {};
-
-        // ✅ compatível com APIs antigas: existing / exists / found / created
-        const existing =
-          (typeof r.existing === "boolean") ? r.existing :
-          (typeof r.exists === "boolean") ? r.exists :
-          (typeof r.found === "boolean") ? r.found :
-          (typeof r.created === "boolean") ? !r.created :
-          false;
-
-        session.client_id = c.id || c.client_id || "";
-        const phoneFromApi = c.telefone || c.phone || session.phone_e164;
-
-        // guarda ambos
-        session.phone_e164 = (phoneFromApi && phoneFromApi.startsWith("+")) ? phoneFromApi : session.phone_e164;
-        session.phone9 = phoneTo9(phoneFromApi) || session.phone9;
-
-        if (!session.client_id){
-          throw new Error("Login OK mas API não devolveu client_id.");
+        // ⚠️ esta versão do index guarda o challenge só em memória
+        // se o user der refresh, tem de pedir o código de novo (ok)
+        const challenge_id = window.__challenge_id || "";
+        if(!challenge_id){
+          loginStatus.textContent = "Tens de pedir o código primeiro.";
+          return;
         }
 
-        // preencher UI (mas telefone mascarado)
+        const r = await apiPost(API_BASE + "/client/verify_login", { challenge_id, code });
+
+        const c = r.client || {};
+        const existing = readExistingFlag(r);
+
+        session.client_id = c.id || c.client_id || "";
+        // API devolve telefone como 9 dígitos em "telefone"
+        const p9 = phoneTo9(c.telefone || c.phone || session.phone9);
+        session.phone9 = p9 || session.phone9;
+        session.phone_e164 = toE164From9(session.phone9);
+
+        if (!session.client_id){
+          throw new Error("Login OK mas API não devolveu id.");
+        }
+
         nameEl.value = c.nome || c.name || "";
         emailEl.value = c.email || "";
         phoneEl.value = maskPhone9(session.phone9);
 
-        saveSession();
+        saveSession(); // ✅ agora é sessão válida
 
         if (existing && nameEl.value){
-          // ✅ cliente existe: não pede mais nada
           loginStatus.textContent = "✅ Cliente reconhecido.";
           hideOverlay();
           unlockBookingUI();
@@ -742,12 +617,48 @@
           return;
         }
 
-        // novo (sem nome): pedir só uma vez
         loginStatus.textContent = "Primeira vez — cria o teu perfil.";
         createNameEl.value = nameEl.value || "";
         createEmailEl.value = emailEl.value || "";
         createArea.classList.remove("hide");
 
+      }catch(ex){
+        loginStatus.textContent = "Erro: " + ex.message;
+      }
+    }
+
+    // guardar challenge_id num sitio simples (sem pôr no storage)
+    async function startLoginWrapped(){
+      await startLogin();
+      // startLogin chama /client/start_login mas não guardava challenge
+      // aqui buscamos do último response com um hook simples:
+    }
+
+    // substituir startLogin para guardar challenge
+    async function startLogin(){
+      loginStatus.textContent = "A enviar código…";
+      fakeSms.textContent = "";
+      codeArea.classList.add("hide");
+      createArea.classList.add("hide");
+
+      const p9 = phoneTo9(loginPhoneEl.value);
+      if (!p9){
+        loginStatus.textContent = "Escreve um número PT válido (9 dígitos).";
+        return;
+      }
+
+      try{
+        const e164 = toE164From9(p9);
+        const r = await apiPost(API_BASE + "/client/start_login", { phone: e164 });
+
+        session.phone9 = p9;
+        session.phone_e164 = e164;
+
+        window.__challenge_id = r.challenge_id || "";
+
+        codeArea.classList.remove("hide");
+        loginStatus.textContent = "Código enviado.";
+        if (r.otp_debug) fakeSms.textContent = r.otp_debug;
       }catch(ex){
         loginStatus.textContent = "Erro: " + ex.message;
       }
@@ -782,10 +693,8 @@
         nameEl.value = c.nome || c.name || nm;
         emailEl.value = c.email || em;
 
-        // atualizar phone9/e164 (mas UI mascarada)
-        const phoneFromApi = c.telefone || c.phone || session.phone_e164;
-        session.phone_e164 = (phoneFromApi && phoneFromApi.startsWith("+")) ? phoneFromApi : session.phone_e164;
-        session.phone9 = phoneTo9(phoneFromApi) || session.phone9;
+        session.phone9 = phoneTo9(c.telefone || session.phone9) || session.phone9;
+        session.phone_e164 = toE164From9(session.phone9);
 
         phoneEl.value = maskPhone9(session.phone9);
 
@@ -809,8 +718,7 @@
     // ============ BOOKING ============
     document.getElementById('f').addEventListener('submit', async (e) => {
       e.preventDefault();
-      hideMsg(err);
-      hideMsg(ok);
+      hideMsg(err); hideMsg(ok);
       btn.disabled = true;
 
       if (!session.client_id){
@@ -824,10 +732,9 @@
         return;
       }
 
-      // ✅ enviar para API o telefone real (E164), mas nunca mostrar no UI
       const payload = {
         name: (nameEl.value || "").trim(),
-        phone: session.phone_e164,
+        phone: session.phone_e164, // ✅ envia real para API, UI fica mascarada
         email: (emailEl.value || "").trim(),
         service: serviceEl.value,
         barber: barberEl.value,
@@ -883,27 +790,20 @@
     (async function boot(){
       lockAll();
 
-      // ✅ tenta sessão anterior
       const s = loadSession();
       if (s){
         session.client_id = s.client_id || "";
         session.phone_e164 = s.phone_e164 || "";
-        session.phone9 = s.phone9 || phoneTo9(s.phone_e164);
+        session.phone9 = s.phone9 || phoneTo9(session.phone_e164);
 
         try{
-          // confirma no servidor que existe mesmo
           const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
           const c = rr.client || {};
-
           if (c && (c.nome || c.name)){
             nameEl.value = c.nome || c.name || "";
             emailEl.value = c.email || "";
-
-            const phoneFromApi = c.telefone || c.phone || session.phone_e164;
-            session.phone_e164 = (phoneFromApi && phoneFromApi.startsWith("+")) ? phoneFromApi : session.phone_e164;
-            session.phone9 = phoneTo9(phoneFromApi) || session.phone9;
-
-            // UI mascarada
+            session.phone9 = phoneTo9(c.telefone || session.phone9) || session.phone9;
+            session.phone_e164 = toE164From9(session.phone9);
             phoneEl.value = maskPhone9(session.phone9);
 
             hideOverlay();
