@@ -92,7 +92,7 @@
       <label>Senha</label>
       <input type="password" id="token" placeholder="ex: barbeiro-2026">
       <div style="height:10px"></div>
-      <button id="loginBtn" onclick="doLogin()">Entrar</button>
+      <button onclick="doLogin()">Entrar</button>
       <div class="status" id="loginStatus">—</div>
     </div>
   </div>
@@ -105,21 +105,43 @@
 const API_BASE    = "https://barbearia-api-ki25.onrender.com";
 const STEP_MIN    = 45;
 
+// true -> mostra debug quando falta email/telefone
 const DEBUG_ON_MISSING = true;
+
+// fallback: se faltar telefone no booking, podes usar este para testar (muda depois)
 const TEST_PHONE_FALLBACK = "916634329";
 
 /* =========================
-   HORÁRIOS
+   HORÁRIOS (condizente com o cliente)
+   - 2ª-6ª: 10:00-12:30 e 14:00-20:00
+   - Sáb:  09:00-14:00
+   - Dom:  fechado
    ========================= */
 function getScheduleForDate(dateISO){
   const [y,m,d] = dateISO.split("-").map(Number);
   const dt = new Date(y, m-1, d);
   const dow = dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
 
-  if(dow === 0) return { closed:true, segments: [] };
-  if(dow === 6) return { closed:false, segments: [{ start:"09:00", end:"14:00" }] };
+  if(dow === 0){
+    return { closed:true, segments: [] };
+  }
 
-  return { closed:false, segments: [{ start:"10:00", end:"12:30" }, { start:"14:00", end:"20:00" }] };
+  if(dow === 6){
+    return {
+      closed:false,
+      segments: [
+        { start:"09:00", end:"14:00" }
+      ]
+    };
+  }
+
+  return {
+    closed:false,
+    segments: [
+      { start:"10:00", end:"12:30" },
+      { start:"14:00", end:"20:00" }
+    ]
+  };
 }
 
 /* ========================= */
@@ -127,7 +149,6 @@ const appEl = document.getElementById("app");
 const overlayEl = document.getElementById("loginOverlay");
 const tokenEl = document.getElementById("token");
 const loginStatusEl = document.getElementById("loginStatus");
-const loginBtnEl = document.getElementById("loginBtn");
 
 const barberEl = document.getElementById("barber");
 const dateEl = document.getElementById("date");
@@ -143,79 +164,34 @@ function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad2(h)+":"+p
 function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
 function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
 function escapeHtml(s){
-  return (s||"").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  return (s||"").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
 }
 
-/* =========================
-   fetch robusto (timeout + retries)
-   ========================= */
-function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
-
-async function fetchWithTimeout(url, opts = {}, timeoutMs = 12000){
-  const ctrl = new AbortController();
-  const id = setTimeout(() => ctrl.abort(), timeoutMs);
-  try{
-    const res = await fetch(url, {
-      ...opts,
-      mode: "cors",
-      signal: ctrl.signal
-    });
-    return res;
-  } finally {
-    clearTimeout(id);
-  }
+async function apiGet(url){
+  const res = await fetch(url, { headers: { "X-Admin-Token": token() }});
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+async function apiPost(url, body){
+  const res = await fetch(url, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "X-Admin-Token": token() },
+    body: JSON.stringify(body || {})
+  });
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
 }
 
-function friendlyFetchError(ex){
-  // "Failed to fetch" / TypeError normalmente = CORS, DNS, offline, bloqueio, mixed content, etc.
-  const msg = (ex && ex.message) ? ex.message : String(ex);
-  if(msg.includes("Failed to fetch")) {
-    return "Não foi possível ligar à API (offline/cold start/CORS). Tenta novamente em 5–10s.";
-  }
-  if(msg.includes("aborted") || msg.includes("AbortError")){
-    return "A API demorou demasiado a responder (timeout). Tenta novamente.";
-  }
-  return msg;
+function isBlock(x){
+  return (x.status === "Bloqueado") || (x.service === "INDISPONIVEL");
 }
-
-async function apiRequest(url, { method="GET", body=null } = {}){
-  const headers = { "X-Admin-Token": token() };
-  if(body) headers["Content-Type"] = "application/json";
-
-  // 3 tentativas: 0ms, 700ms, 1500ms (bom p/ Render acordar)
-  const backoff = [0, 700, 1500];
-  let lastErr = null;
-
-  for(let i=0;i<backoff.length;i++){
-    if(backoff[i]) await sleep(backoff[i]);
-    try{
-      const res = await fetchWithTimeout(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined
-      }, 12000);
-
-      // tenta ler json (mas sem rebentar em 204/HTML)
-      const text = await res.text();
-      let data = {};
-      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
-
-      if(!res.ok){
-        throw new Error(data.error || data.message || ("HTTP " + res.status));
-      }
-      return data;
-    }catch(ex){
-      lastErr = ex;
-      // se for erro “lógico” (HTTP), não vale a pena retry
-      if(ex && ex.message && ex.message.startsWith("HTTP ")) break;
-      // senão, tenta de novo (rede/cold start)
-    }
-  }
-  throw new Error(friendlyFetchError(lastErr));
+function isHiddenFromMap(x){
+  return (x.status === "Cancelado") || (x.status === "Desbloqueado");
 }
-
-async function apiGet(url){ return apiRequest(url, { method:"GET" }); }
-async function apiPost(url, body){ return apiRequest(url, { method:"POST", body }); }
 
 /* =========================
    LOGIN
@@ -223,16 +199,9 @@ async function apiPost(url, body){ return apiRequest(url, { method:"POST", body 
 async function doLogin(){
   const t = tokenEl.value.trim();
   if(!t){ loginStatusEl.textContent="Escreve a senha."; return; }
-
-  loginBtnEl.disabled = true;
-  loginStatusEl.textContent="A verificar…";
-
   localStorage.setItem("admin_token", t);
 
   try{
-    // warmup opcional (se tiveres /health no backend, melhor)
-    // await apiGet(API_BASE + "/health").catch(()=>{});
-
     await apiGet(new URL(API_BASE + "/admin/bookings").toString());
     loginStatusEl.textContent="✅ OK";
     overlayEl.classList.add("hide");
@@ -241,9 +210,7 @@ async function doLogin(){
     await reloadMap();
   }catch(ex){
     localStorage.removeItem("admin_token");
-    loginStatusEl.textContent = "❌ " + ex.message;
-  }finally{
-    loginBtnEl.disabled = false;
+    loginStatusEl.textContent="❌ Senha errada ou API offline.";
   }
 }
 
@@ -257,9 +224,6 @@ async function fetchAdminDay(date, barber){
   const data = await apiGet(url.toString());
   return (data.items || []);
 }
-
-function isBlock(x){ return (x.status === "Bloqueado") || (x.service === "INDISPONIVEL"); }
-function isHiddenFromMap(x){ return (x.status === "Cancelado") || (x.status === "Desbloqueado"); }
 
 function buildSlots(items, schedule){
   if(schedule?.closed) return [];
@@ -280,6 +244,7 @@ function buildSlots(items, schedule){
 
     for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
       const s=t, e=t+STEP_MIN;
+
       let hit = null;
       for(const b of booked){
         if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
@@ -287,6 +252,7 @@ function buildSlots(items, schedule){
       slots.push({ time: toHHMM(t), hit });
     }
   }
+
   return slots;
 }
 
@@ -404,7 +370,7 @@ async function unblock(id){
 }
 
 /* =========================
-   helpers
+   helpers: obter booking “bem”
    ========================= */
 async function getBookingSafe(id){
   let hit = currentItemsById.get(id) || null;
@@ -470,7 +436,7 @@ Barbearia`;
 }
 
 /* =========================
-   📱 SMS iPhone
+   📱 SMS no iPhone (Messages)
    ========================= */
 async function openSMS(id){
   const hit = await getBookingSafe(id);
