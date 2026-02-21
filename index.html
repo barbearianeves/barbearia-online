@@ -92,7 +92,6 @@
     }
     .hide{display:none}
     .hint{color:var(--muted); font-size:13px; margin-top:8px}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
     .sep{height:1px;background:var(--line);margin:14px 0}
     .tag{
       display:inline-block; border:1px solid var(--line);
@@ -190,31 +189,22 @@
     </div>
   </div>
 
-  <!-- LOGIN OVERLAY -->
+  <!-- LOGIN OVERLAY (SEM CÓDIGO) -->
   <div id="loginOverlay" class="overlay">
     <div class="box">
       <h2 style="margin:0 0 6px">Entrar</h2>
       <div class="small">
-        Usa o teu telemóvel. Se já existir, entra e preenche automático.
-        Se não existir, crias só uma vez.
+        Escreve só o teu telemóvel.<br>
+        Se já existir, entramos e preenche automático.<br>
+        Se não existir, crias o perfil uma vez.
       </div>
 
       <label>Telemóvel</label>
       <input id="loginPhone" placeholder="9xxxxxxx" inputmode="tel">
 
-      <button id="btnSendCode" style="margin-top:12px">Receber código</button>
+      <button id="btnLogin" style="margin-top:12px">Continuar</button>
 
-      <div id="codeArea" class="hide">
-        <label>Código (6 dígitos)</label>
-        <input id="loginCode" class="mono" placeholder="123456" inputmode="numeric">
-        <button id="btnVerify" style="margin-top:12px">Confirmar</button>
-
-        <div class="hint">
-          <b>Modo teste:</b> “SMS” aparece aqui: <span id="fakeSms" class="mono"></span>
-        </div>
-      </div>
-
-      <!-- CREATE PROFILE (só se for novo) -->
+      <!-- CREATE PROFILE (só se for novo ou sem nome) -->
       <div id="createArea" class="hide">
         <div class="sep"></div>
         <h3 style="margin:0 0 6px">Primeira vez aqui</h3>
@@ -261,12 +251,8 @@
     // login UI
     const overlay = document.getElementById('loginOverlay');
     const loginPhoneEl = document.getElementById('loginPhone');
-    const btnSendCode = document.getElementById('btnSendCode');
-    const codeArea = document.getElementById('codeArea');
-    const loginCodeEl = document.getElementById('loginCode');
-    const btnVerify = document.getElementById('btnVerify');
+    const btnLogin = document.getElementById('btnLogin');
     const loginStatus = document.getElementById('loginStatus');
-    const fakeSms = document.getElementById('fakeSms');
 
     // create UI
     const createArea = document.getElementById('createArea');
@@ -277,7 +263,6 @@
     let pickedTime = "";
     let session = {
       client_id: "",
-      phone_e164: "",
       phone9: ""
     };
 
@@ -297,36 +282,30 @@
       const d = new Date();
       return d.getHours()*60 + d.getMinutes();
     }
-
     function setTodayIfEmpty(){
       if (dateEl.value) return;
       dateEl.value = todayISO();
     }
-
     function getWeekday(dateISO){
       const [y,m,d] = dateISO.split("-").map(Number);
       const dt = new Date(y, m-1, d);
       return dt.getDay();
     }
-
     function getWorkSegments(dateISO){
       const wd = getWeekday(dateISO);
       if (wd === 0) return [];
       if (wd === 6) return [{ start: "09:00", end: "14:00" }];
       return [{ start: "10:00", end: "12:30" }, { start: "14:00", end: "20:00" }];
     }
-
     function escapeHtml(s){
       return (s||"").replace(/[&<>"']/g, c => ({
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
       }[c]));
     }
 
-    /* =========================
-       PHONE HELPERS
-       - UI nunca mostra telefone real (só 9xxxxxxx)
-       - session guarda phone9 + e164
-       ========================= */
+    // =========================
+    // PHONE HELPERS (UI nunca mostra número real)
+    // =========================
     function phoneTo9(raw){
       const digits = (raw || "").replace(/\D/g,"");
       let d = digits;
@@ -334,12 +313,6 @@
       if (d.length > 9) d = d.slice(-9);
       return d.length === 9 ? d : "";
     }
-
-    function toE164From9(phone9){
-      const p9 = phoneTo9(phone9);
-      return p9 ? ("+351" + p9) : "";
-    }
-
     function maskPhone9(phone9){
       const p9 = phoneTo9(phone9);
       if (!p9) return "9xxxxxxx";
@@ -350,20 +323,19 @@
     function saveSession(){
       localStorage.setItem("client_session", JSON.stringify({
         client_id: session.client_id,
-        phone_e164: session.phone_e164,
         phone9: session.phone9
       }));
     }
     function loadSession(){
       try{
         const s = JSON.parse(localStorage.getItem("client_session") || "{}");
-        if (s && s.client_id && (s.phone_e164 || s.phone9)) return s;
+        if (s && s.client_id && s.phone9) return s;
       }catch(_){}
       return null;
     }
     function clearSession(){
       localStorage.removeItem("client_session");
-      session = {client_id:"", phone_e164:"", phone9:""};
+      session = {client_id:"", phone9:""};
     }
 
     // ============ UI LOCK/UNLOCK ============
@@ -392,13 +364,12 @@
 
     function showOverlayLogin(){
       overlay.classList.remove("hide");
-      codeArea.classList.add("hide");
       createArea.classList.add("hide");
       loginStatus.textContent = "—";
-      fakeSms.textContent = "";
-      loginCodeEl.value = "";
+      loginPhoneEl.value = "";
+      createNameEl.value = "";
+      createEmailEl.value = "";
     }
-
     function hideOverlay(){
       overlay.classList.add("hide");
     }
@@ -525,15 +496,11 @@
       }
     }
 
-    /* =========================
-       LOGIN (OTP) — corrigido
-       - bug: existing lido corretamente
-       - phone sempre PT 9 -> e164 para API
-       ========================= */
-    async function startLogin(){
-      loginStatus.textContent = "A enviar código…";
-      fakeSms.textContent = "";
-      codeArea.classList.add("hide");
+    // =========================
+    // LOGIN SIMPLES (SEM OTP)
+    // =========================
+    async function doLoginSimple(){
+      loginStatus.textContent = "A verificar…";
       createArea.classList.add("hide");
 
       const p9 = phoneTo9(loginPhoneEl.value);
@@ -543,71 +510,25 @@
       }
 
       try{
-        const e164 = toE164From9(p9);
-        const r = await apiPost(API_BASE + "/client/start_login", { phone: e164 });
-
-        session.phone9 = p9;
-        session.phone_e164 = e164;
-
-        // mostra área do código
-        codeArea.classList.remove("hide");
-        loginStatus.textContent = "Código enviado.";
-        if (r.otp_debug) fakeSms.textContent = r.otp_debug;
-        // guardamos só depois de verificar (evita sessão meia-feita)
-      }catch(ex){
-        loginStatus.textContent = "Erro: " + ex.message;
-      }
-    }
-
-    function readExistingFlag(r){
-      // ✅ a tua API usa "existing"
-      if (typeof r.existing === "boolean") return r.existing;
-      // compat com variantes
-      if (typeof r.exists === "boolean") return r.exists;
-      if (typeof r.found === "boolean") return r.found;
-      if (typeof r.created === "boolean") return !r.created;
-      return false;
-    }
-
-    async function verifyLogin(){
-      loginStatus.textContent = "A validar…";
-      createArea.classList.add("hide");
-
-      const code = (loginCodeEl.value || "").trim();
-      if (code.length < 4){
-        loginStatus.textContent = "Escreve o código.";
-        return;
-      }
-
-      try{
-        // ⚠️ esta versão do index guarda o challenge só em memória
-        // se o user der refresh, tem de pedir o código de novo (ok)
-        const challenge_id = window.__challenge_id || "";
-        if(!challenge_id){
-          loginStatus.textContent = "Tens de pedir o código primeiro.";
-          return;
-        }
-
-        const r = await apiPost(API_BASE + "/client/verify_login", { challenge_id, code });
+        // ✅ chama a nova rota da API
+        const r = await apiPost(API_BASE + "/client/login", { phone: p9 });
 
         const c = r.client || {};
-        const existing = readExistingFlag(r);
+        const existing = !!r.existing;
 
         session.client_id = c.id || c.client_id || "";
-        // API devolve telefone como 9 dígitos em "telefone"
-        const p9 = phoneTo9(c.telefone || c.phone || session.phone9);
-        session.phone9 = p9 || session.phone9;
-        session.phone_e164 = toE164From9(session.phone9);
+        session.phone9 = phoneTo9(c.telefone || c.phone || p9) || p9;
 
         if (!session.client_id){
-          throw new Error("Login OK mas API não devolveu id.");
+          throw new Error("A API não devolveu id.");
         }
 
-        nameEl.value = c.nome || c.name || "";
-        emailEl.value = c.email || "";
+        // preencher UI (telefone mascarado)
+        nameEl.value = (c.nome || c.name || "").trim();
+        emailEl.value = (c.email || "").trim();
         phoneEl.value = maskPhone9(session.phone9);
 
-        saveSession(); // ✅ agora é sessão válida
+        saveSession();
 
         if (existing && nameEl.value){
           loginStatus.textContent = "✅ Cliente reconhecido.";
@@ -617,48 +538,12 @@
           return;
         }
 
+        // novo (ou existe mas sem nome): pedir perfil
         loginStatus.textContent = "Primeira vez — cria o teu perfil.";
         createNameEl.value = nameEl.value || "";
         createEmailEl.value = emailEl.value || "";
         createArea.classList.remove("hide");
 
-      }catch(ex){
-        loginStatus.textContent = "Erro: " + ex.message;
-      }
-    }
-
-    // guardar challenge_id num sitio simples (sem pôr no storage)
-    async function startLoginWrapped(){
-      await startLogin();
-      // startLogin chama /client/start_login mas não guardava challenge
-      // aqui buscamos do último response com um hook simples:
-    }
-
-    // substituir startLogin para guardar challenge
-    async function startLogin(){
-      loginStatus.textContent = "A enviar código…";
-      fakeSms.textContent = "";
-      codeArea.classList.add("hide");
-      createArea.classList.add("hide");
-
-      const p9 = phoneTo9(loginPhoneEl.value);
-      if (!p9){
-        loginStatus.textContent = "Escreve um número PT válido (9 dígitos).";
-        return;
-      }
-
-      try{
-        const e164 = toE164From9(p9);
-        const r = await apiPost(API_BASE + "/client/start_login", { phone: e164 });
-
-        session.phone9 = p9;
-        session.phone_e164 = e164;
-
-        window.__challenge_id = r.challenge_id || "";
-
-        codeArea.classList.remove("hide");
-        loginStatus.textContent = "Código enviado.";
-        if (r.otp_debug) fakeSms.textContent = r.otp_debug;
       }catch(ex){
         loginStatus.textContent = "Erro: " + ex.message;
       }
@@ -674,7 +559,7 @@
         loginStatus.textContent = "Escreve o teu nome.";
         return;
       }
-      if (!session.client_id || !session.phone_e164){
+      if (!session.client_id || !session.phone9){
         loginStatus.textContent = "Sessão inválida. Volta a entrar.";
         return;
       }
@@ -682,7 +567,7 @@
       try{
         await apiPost(API_BASE + "/client/upsert", {
           id: session.client_id,
-          phone: session.phone_e164,
+          phone: session.phone9, // ✅ 9 dígitos
           name: nm,
           email: em
         });
@@ -690,12 +575,10 @@
         const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
         const c = rr.client || {};
 
-        nameEl.value = c.nome || c.name || nm;
-        emailEl.value = c.email || em;
+        nameEl.value = (c.nome || c.name || nm).trim();
+        emailEl.value = (c.email || em).trim();
 
-        session.phone9 = phoneTo9(c.telefone || session.phone9) || session.phone9;
-        session.phone_e164 = toE164From9(session.phone9);
-
+        // UI mascarada
         phoneEl.value = maskPhone9(session.phone9);
 
         saveSession();
@@ -734,7 +617,7 @@
 
       const payload = {
         name: (nameEl.value || "").trim(),
-        phone: session.phone_e164, // ✅ envia real para API, UI fica mascarada
+        phone: session.phone9,          // ✅ envia 9 dígitos (API normaliza)
         email: (emailEl.value || "").trim(),
         service: serviceEl.value,
         barber: barberEl.value,
@@ -778,11 +661,15 @@
       }
     });
 
-    // ============ BOOT ============
-    btnSendCode.addEventListener("click", startLogin);
-    btnVerify.addEventListener("click", verifyLogin);
+    // ============ EVENTS / BOOT ============
+    btnLogin.addEventListener("click", doLoginSimple);
     btnCreate.addEventListener("click", createProfile);
     btnLogout.addEventListener("click", logout);
+
+    // Enter no input do telefone
+    loginPhoneEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); doLoginSimple(); }
+    });
 
     dateEl.addEventListener("change", refreshAgenda);
     barberEl.addEventListener("change", refreshAgenda);
@@ -793,17 +680,15 @@
       const s = loadSession();
       if (s){
         session.client_id = s.client_id || "";
-        session.phone_e164 = s.phone_e164 || "";
-        session.phone9 = s.phone9 || phoneTo9(session.phone_e164);
+        session.phone9 = phoneTo9(s.phone9) || "";
 
         try{
           const rr = await apiGet(API_BASE + "/client/" + encodeURIComponent(session.client_id));
           const c = rr.client || {};
+
           if (c && (c.nome || c.name)){
-            nameEl.value = c.nome || c.name || "";
-            emailEl.value = c.email || "";
-            session.phone9 = phoneTo9(c.telefone || session.phone9) || session.phone9;
-            session.phone_e164 = toE164From9(session.phone9);
+            nameEl.value = (c.nome || c.name || "").trim();
+            emailEl.value = (c.email || "").trim();
             phoneEl.value = maskPhone9(session.phone9);
 
             hideOverlay();
