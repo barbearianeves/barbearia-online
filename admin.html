@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="pt">
 <head>
@@ -24,7 +23,8 @@
   h1{font-size:20px;margin:6px 0}
   small{color:var(--muted)}
   label{display:block;margin:10px 0 6px;font-weight:850;color:#d9deea;font-size:13px}
-  input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0f1319;color:#fff;outline:none}
+  input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0f1319;color:#fff;outline:none}
+  textarea{min-height:84px;resize:vertical}
   button{width:100%;padding:12px;border-radius:12px;border:0;cursor:pointer;font-weight:950;background:var(--btn);color:var(--btnTxt)}
   button.danger{background:var(--danger);color:#000}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -59,31 +59,155 @@
     margin-top:8px; padding:10px; border:1px dashed var(--line);
     border-radius:12px; font-size:12px; color:var(--muted); white-space:pre-wrap;
   }
+
+  /* Tabs */
+  .tabs{display:flex;gap:10px;margin:12px 0}
+  .tabbtn{
+    width:auto; padding:10px 12px; border-radius:14px; border:1px solid var(--line);
+    background:#0f1319; color:#fff; font-weight:900; cursor:pointer;
+  }
+  .tabbtn.active{background:#fff;color:#000;border-color:#fff}
+
+  /* Clientes */
+  .clientGrid{display:grid;grid-template-columns:1fr 1.2fr;gap:12px}
+  @media(max-width:900px){ .clientGrid{grid-template-columns:1fr} }
+  .clientList{max-height:65vh; overflow:auto; border:1px solid var(--line); border-radius:14px; padding:8px; background:#0f1319}
+  .clientItem{padding:10px;border-radius:12px;border:1px solid var(--line);margin:8px 0;cursor:pointer}
+  .clientItem:hover{filter:brightness(1.1)}
+  .clientItem .nm{font-weight:950}
+  .clientItem .sm{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin-top:6px}
+  .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:700px){ .photos{grid-template-columns:1fr} }
+  .ph{border:1px solid var(--line);border-radius:14px;background:#0f1319;padding:10px}
+  .ph img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
+  .ph .t{font-weight:950;margin-bottom:8px}
+  .mini{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div id="app" class="hide">
-    <div class="card">
-      <h1>Mapa do Barbeiro</h1>
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label>Barbeiro</label>
-          <select id="barber">
-            <option value="Pedro">Pedro</option>
-            <option value="Joao">Joao</option>
-          </select>
+
+    <div class="tabs">
+      <button class="tabbtn active" id="tabMap" onclick="showTab('map')">🗓️ Mapa</button>
+      <button class="tabbtn" id="tabClients" onclick="showTab('clients')">👤 Clientes</button>
+    </div>
+
+    <!-- TAB: MAPA -->
+    <div id="viewMap">
+      <div class="card">
+        <h1>Mapa do Barbeiro</h1>
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Barbeiro</label>
+            <select id="barber">
+              <option value="Pedro">Pedro</option>
+              <option value="Joao">Joao</option>
+            </select>
+          </div>
+          <div>
+            <label>Data</label>
+            <input type="date" id="date">
+          </div>
         </div>
-        <div>
-          <label>Data</label>
-          <input type="date" id="date">
+
+        <div class="status" id="status">—</div>
+        <div class="slots" id="slots"></div>
+      </div>
+    </div>
+
+    <!-- TAB: CLIENTES -->
+    <div id="viewClients" class="hide">
+      <div class="card">
+        <h1>Clientes • Fotos</h1>
+        <small>Seleciona um cliente e adiciona fotos (Antes/Depois) diretamente do telemóvel.</small>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Pesquisar</label>
+            <input id="clientSearch" placeholder="nome, telefone, email, id..." />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button onclick="reloadClients()">🔄 Atualizar lista</button>
+          </div>
+        </div>
+
+        <div class="status" id="clientsStatus">—</div>
+
+        <div class="clientGrid" style="margin-top:12px">
+          <div class="clientList" id="clientList"></div>
+
+          <div>
+            <div class="card" style="margin:0;border-radius:16px">
+              <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+                <div>
+                  <div style="font-weight:950;font-size:16px" id="selName">Seleciona um cliente</div>
+                  <div class="mini" id="selMeta">—</div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button style="width:auto" onclick="newClient()">➕ Novo</button>
+                  <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px">
+                <div>
+                  <label>ID</label>
+                  <input id="c_id" placeholder="(auto)" />
+                </div>
+                <div>
+                  <label>Nome</label>
+                  <input id="c_name" placeholder="ex: Rui Silva" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label>Telefone</label>
+                  <input id="c_phone" placeholder="9xxxxxxxx" />
+                </div>
+                <div>
+                  <label>Email</label>
+                  <input id="c_email" placeholder="email@..." />
+                </div>
+              </div>
+
+              <label>Notas</label>
+              <textarea id="c_notes" placeholder="Notas do cliente..."></textarea>
+
+              <div class="photos" style="margin-top:12px">
+                <div class="ph">
+                  <div class="t">📷 Antes</div>
+                  <img id="imgBefore" src="" alt="Antes" style="display:none" />
+                  <div class="mini" id="beforeInfo">—</div>
+                  <div style="height:10px"></div>
+                  <input id="fileBefore" type="file" accept="image/*" capture="environment" />
+                  <div style="height:10px"></div>
+                  <button onclick="uploadPhoto('before')">⬆️ Enviar Antes</button>
+                </div>
+
+                <div class="ph">
+                  <div class="t">📷 Depois</div>
+                  <img id="imgAfter" src="" alt="Depois" style="display:none" />
+                  <div class="mini" id="afterInfo">—</div>
+                  <div style="height:10px"></div>
+                  <input id="fileAfter" type="file" accept="image/*" capture="environment" />
+                  <div style="height:10px"></div>
+                  <button onclick="uploadPhoto('after')">⬆️ Enviar Depois</button>
+                </div>
+              </div>
+
+              <div class="status" id="clientSaveStatus">—</div>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      <div class="status" id="status">—</div>
-      <div class="slots" id="slots"></div>
     </div>
+
   </div>
 
   <div id="loginOverlay" class="overlay">
@@ -113,27 +237,17 @@ const DEBUG_ON_MISSING = true;
 const TEST_PHONE_FALLBACK = "916634329";
 
 /* =========================
-   HORÁRIOS (condizente com o cliente)
-   - 2ª-6ª: 10:00-12:30 e 14:00-20:00
-   - Sáb:  09:00-14:00
-   - Dom:  fechado
+   HORÁRIOS
    ========================= */
 function getScheduleForDate(dateISO){
   const [y,m,d] = dateISO.split("-").map(Number);
   const dt = new Date(y, m-1, d);
   const dow = dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
 
-  if(dow === 0){
-    return { closed:true, segments: [] };
-  }
+  if(dow === 0) return { closed:true, segments: [] };
 
   if(dow === 6){
-    return {
-      closed:false,
-      segments: [
-        { start:"09:00", end:"14:00" }
-      ]
-    };
+    return { closed:false, segments: [{ start:"09:00", end:"14:00" }] };
   }
 
   return {
@@ -186,12 +300,45 @@ async function apiPost(url, body){
   if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
   return data;
 }
+async function apiPostForm(url, formData){
+  const res = await fetch(url, {
+    method:"POST",
+    headers:{ "X-Admin-Token": token() },
+    body: formData
+  });
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
 
 function isBlock(x){
   return (x.status === "Bloqueado") || (x.service === "INDISPONIVEL");
 }
 function isHiddenFromMap(x){
   return (x.status === "Cancelado") || (x.status === "Desbloqueado");
+}
+
+/* =========================
+   TABS
+   ========================= */
+function showTab(which){
+  const map = document.getElementById("viewMap");
+  const clients = document.getElementById("viewClients");
+  const b1 = document.getElementById("tabMap");
+  const b2 = document.getElementById("tabClients");
+
+  if(which === "clients"){
+    map.classList.add("hide");
+    clients.classList.remove("hide");
+    b1.classList.remove("active");
+    b2.classList.add("active");
+    reloadClients().catch(()=>{});
+  }else{
+    clients.classList.add("hide");
+    map.classList.remove("hide");
+    b2.classList.remove("active");
+    b1.classList.add("active");
+  }
 }
 
 /* =========================
@@ -282,6 +429,7 @@ function renderSlots(slots){
         <div class="actions">
           <button onclick="openOutlookEmail('${hit.id}')">📧 Outlook</button>
           <button onclick="openSMS('${hit.id}')">📱 SMS (iPhone)</button>
+          <button onclick="openPhotosForBooking('${hit.id}')">📸 Fotos</button>
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
         <div class="dbg hide" id="dbg_${hit.id}"></div>
@@ -465,6 +613,220 @@ Obrigado!`;
   const smsUrl = "sms:" + encodeURIComponent(phone) + "&body=" + encodeURIComponent(msg);
   window.location.href = smsUrl;
 }
+
+/* =========================
+   CLIENTES / FOTOS
+   ========================= */
+const clientSearchEl = document.getElementById("clientSearch");
+const clientsStatusEl = document.getElementById("clientsStatus");
+const clientListEl = document.getElementById("clientList");
+const clientSaveStatusEl = document.getElementById("clientSaveStatus");
+
+const selNameEl = document.getElementById("selName");
+const selMetaEl = document.getElementById("selMeta");
+
+const c_id = document.getElementById("c_id");
+const c_name = document.getElementById("c_name");
+const c_phone = document.getElementById("c_phone");
+const c_email = document.getElementById("c_email");
+const c_notes = document.getElementById("c_notes");
+
+const imgBefore = document.getElementById("imgBefore");
+const imgAfter  = document.getElementById("imgAfter");
+const beforeInfo = document.getElementById("beforeInfo");
+const afterInfo  = document.getElementById("afterInfo");
+const fileBefore = document.getElementById("fileBefore");
+const fileAfter  = document.getElementById("fileAfter");
+
+let clientsCache = [];
+let selectedClient = null;
+
+function absUrlMaybe(u){
+  if(!u) return "";
+  if(u.startsWith("http://") || u.startsWith("https://")) return u;
+  if(u.startsWith("/")) return API_BASE + u;
+  return API_BASE + "/" + u;
+}
+
+function renderClientList(items){
+  clientListEl.innerHTML = "";
+  if(!items.length){
+    clientListEl.innerHTML = `<div class="status">Sem clientes.</div>`;
+    return;
+  }
+  for(const c of items){
+    const div = document.createElement("div");
+    div.className = "clientItem";
+    const nm = escapeHtml(c.name || "(sem nome)");
+    const sm = escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "));
+    div.innerHTML = `
+      <div class="nm">${nm}</div>
+      <div class="sm">${sm}</div>
+      <div class="pill">Fotos: ${(c.photo_before_url?"Antes ":"") + (c.photo_after_url?"Depois":"") || "—"}</div>
+    `;
+    div.addEventListener("click", () => selectClient(c));
+    clientListEl.appendChild(div);
+  }
+}
+
+async function reloadClients(){
+  const q = (clientSearchEl.value || "").trim();
+  clientsStatusEl.textContent = "A carregar…";
+  try{
+    const url = new URL(API_BASE + "/admin/clients");
+    if(q) url.searchParams.set("q", q);
+    const data = await apiGet(url.toString());
+    clientsCache = data.items || [];
+    renderClientList(clientsCache);
+    clientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
+  }catch(ex){
+    clientsStatusEl.textContent = "Erro: " + ex.message;
+  }
+}
+
+function fillClientForm(c){
+  c_id.value = c?.id || "";
+  c_name.value = c?.name || "";
+  c_phone.value = c?.phone || "";
+  c_email.value = c?.email || "";
+  c_notes.value = c?.notes || "";
+}
+
+function renderClientPhotos(c){
+  const b = c?.photo_before_url || "";
+  const a = c?.photo_after_url || "";
+
+  if(b){
+    imgBefore.src = absUrlMaybe(b);
+    imgBefore.style.display = "block";
+    beforeInfo.textContent = b;
+  }else{
+    imgBefore.src = "";
+    imgBefore.style.display = "none";
+    beforeInfo.textContent = "—";
+  }
+
+  if(a){
+    imgAfter.src = absUrlMaybe(a);
+    imgAfter.style.display = "block";
+    afterInfo.textContent = a;
+  }else{
+    imgAfter.src = "";
+    imgAfter.style.display = "none";
+    afterInfo.textContent = "—";
+  }
+}
+
+function selectClient(c){
+  selectedClient = c;
+  selNameEl.textContent = c.name || "(sem nome)";
+  selMetaEl.textContent = [c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • ") || "—";
+  fillClientForm(c);
+  renderClientPhotos(c);
+  clientSaveStatusEl.textContent = "—";
+}
+
+function newClient(){
+  selectedClient = { id:"", name:"", phone:"", email:"", notes:"" };
+  selNameEl.textContent = "Novo cliente";
+  selMetaEl.textContent = "—";
+  fillClientForm(selectedClient);
+  renderClientPhotos({});
+  clientSaveStatusEl.textContent = "—";
+  showTab("clients");
+}
+
+async function saveClient(){
+  clientSaveStatusEl.textContent = "A guardar…";
+  try{
+    const payload = {
+      id: (c_id.value || "").trim(),
+      name: (c_name.value || "").trim(),
+      phone: (c_phone.value || "").trim(),
+      email: (c_email.value || "").trim(),
+      notes: (c_notes.value || "").trim()
+    };
+    const data = await apiPost(API_BASE + "/admin/clients", payload);
+    const item = data.item || null;
+    if(item){
+      selectClient(item);
+      await reloadClients();
+    }
+    clientSaveStatusEl.textContent = "✅ Guardado";
+  }catch(ex){
+    clientSaveStatusEl.textContent = "❌ Erro: " + ex.message;
+  }
+}
+
+async function uploadPhoto(kind){
+  const cid = (c_id.value || "").trim();
+  if(!cid){
+    alert("Primeiro guarda o cliente (precisa de ID).");
+    return;
+  }
+
+  const file = (kind === "before" ? fileBefore.files[0] : fileAfter.files[0]);
+  if(!file){
+    alert("Escolhe/tira uma foto primeiro.");
+    return;
+  }
+
+  clientSaveStatusEl.textContent = "A enviar foto…";
+  try{
+    const fd = new FormData();
+    fd.append("kind", kind);
+    fd.append("file", file);
+
+    const data = await apiPostForm(API_BASE + "/admin/client/" + encodeURIComponent(cid) + "/photo", fd);
+    const item = data.item || null;
+    if(item){
+      selectClient(item);
+      await reloadClients();
+    }
+    clientSaveStatusEl.textContent = "✅ Foto enviada";
+    // limpar input
+    if(kind === "before") fileBefore.value = "";
+    else fileAfter.value = "";
+  }catch(ex){
+    clientSaveStatusEl.textContent = "❌ Erro: " + ex.message;
+  }
+}
+
+/* abrir tab clientes já no cliente da marcação */
+async function openPhotosForBooking(bid){
+  const b = await getBookingSafe(bid);
+  if(!b){ alert("Não encontrei a marcação."); return; }
+
+  showTab("clients");
+
+  // 1) se tiver client_id, procura direto
+  const cid = (b.client_id || "").trim();
+  if(cid){
+    // tenta achar no cache; se não, recarrega e tenta outra vez
+    let c = (clientsCache || []).find(x => x.id === cid) || null;
+    if(!c){
+      await reloadClients();
+      c = (clientsCache || []).find(x => x.id === cid) || null;
+    }
+    if(c){ selectClient(c); return; }
+  }
+
+  // 2) fallback: preenche form para criar/guardar rápido
+  newClient();
+  c_name.value = (b.name || b.client || "").trim();
+  c_phone.value = (b.phone || "").trim();
+  c_email.value = (b.email || "").trim();
+
+  clientSaveStatusEl.textContent =
+    "Este booking não tem client_id. Carrega em 💾 Guardar para criar o cliente e depois envia as fotos.";
+}
+
+/* eventos */
+clientSearchEl.addEventListener("input", () => {
+  // debounce simples
+  clearTimeout(window.__cs_t);
+  window.__cs_t = setTimeout(() => reloadClients(), 250);
+});
 
 /* AUTO START */
 (function boot(){
