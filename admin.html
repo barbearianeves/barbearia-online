@@ -150,6 +150,7 @@
                 <div style="display:flex;gap:10px;flex-wrap:wrap">
                   <button style="width:auto" onclick="newClient()">➕ Novo</button>
                   <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
+                  <button style="width:auto" class="danger" onclick="deleteClientById((c_id.value||'').trim())">🗑️ Apagar</button>
                 </div>
               </div>
 
@@ -306,6 +307,12 @@ async function apiPostForm(url, formData){
     headers:{ "X-Admin-Token": token() },
     body: formData
   });
+  const data = await res.json().catch(()=> ({}));
+  if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+async function apiDelete(url){
+  const res = await fetch(url, { method:"DELETE", headers:{ "X-Admin-Token": token() }});
   const data = await res.json().catch(()=> ({}));
   if(!res.ok) throw new Error(data.error || ("HTTP " + res.status));
   return data;
@@ -641,6 +648,54 @@ const fileAfter  = document.getElementById("fileAfter");
 let clientsCache = [];
 let selectedClient = null;
 
+/* ====== DEDUPE HELPERS (NOVO) ====== */
+function normPhone(p){
+  return (p||"").replace(/\D+/g,"").replace(/^351/,"");
+}
+function normEmail(e){
+  return (e||"").trim().toLowerCase();
+}
+function findClientLocalByContact(name, phone, email){
+  const p = normPhone(phone);
+  const m = normEmail(email);
+  const n = (name||"").trim().toLowerCase();
+
+  if(m){
+    const hit = (clientsCache||[]).find(x => normEmail(x.email) === m);
+    if(hit) return hit;
+  }
+  if(p){
+    const hit = (clientsCache||[]).find(x => normPhone(x.phone) === p);
+    if(hit) return hit;
+  }
+  if(n){
+    const hits = (clientsCache||[]).filter(x => (x.name||"").trim().toLowerCase() === n);
+    if(hits.length === 1) return hits[0];
+  }
+  return null;
+}
+async function findClientRemote(name, phone, email){
+  const tries = [];
+  if(email) tries.push(email);
+  if(phone) tries.push(phone);
+  if(name)  tries.push(name);
+
+  for(const q of tries){
+    try{
+      const url = new URL(API_BASE + "/admin/clients");
+      url.searchParams.set("q", q);
+      const data = await apiGet(url.toString());
+      const items = data.items || [];
+      // atualiza cache com o resultado desta pesquisa
+      clientsCache = items;
+      const hit = findClientLocalByContact(name, phone, email);
+      if(hit) return hit;
+    }catch(e){}
+  }
+  return null;
+}
+/* ====== /DEDUPE HELPERS ====== */
+
 function absUrlMaybe(u){
   if(!u) return "";
   if(u.startsWith("http://") || u.startsWith("https://")) return u;
@@ -746,6 +801,21 @@ async function saveClient(){
       email: (c_email.value || "").trim(),
       notes: (c_notes.value || "").trim()
     };
+
+    // ✅ DEDUPE: se não há ID, tenta reutilizar cliente existente por email/telefone/nome
+    if(!payload.id){
+      if(!(clientsCache||[]).length){
+        await reloadClients().catch(()=>{});
+      }
+      let existing = findClientLocalByContact(payload.name, payload.phone, payload.email);
+      if(!existing){
+        existing = await findClientRemote(payload.name, payload.phone, payload.email);
+      }
+      if(existing && existing.id){
+        payload.id = existing.id; // em vez de criar novo, atualiza este
+      }
+    }
+
     const data = await apiPost(API_BASE + "/admin/clients", payload);
     const item = data.item || null;
     if(item){
@@ -792,17 +862,45 @@ async function uploadPhoto(kind){
   }
 }
 
-/* abrir tab clientes já no cliente da marcação */
+/* ✅ Apagar cliente (tenta alguns endpoints comuns; se a tua API tiver um endpoint certo, digo-te como deixar 100% fixo) */
+async function deleteClientById(cid){
+  const id = (cid || "").trim();
+  if(!id){ alert("Sem ID."); return; }
+  if(!confirm("Apagar este cliente? (vai remover fotos e dados do cliente)")) return;
+
+  const tries = [
+    () => apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(id)),
+    () => apiPost(API_BASE + "/admin/client/" + encodeURIComponent(id) + "/delete", {}),
+    () => apiPost(API_BASE + "/admin/clients/delete", { id }),
+  ];
+
+  for(const t of tries){
+    try{
+      await t();
+      await reloadClients();
+      newClient();
+      clientSaveStatusEl.textContent = "✅ Cliente apagado.";
+      return;
+    }catch(e){}
+  }
+
+  alert("Não consegui apagar. A API provavelmente não tem endpoint de delete de clientes.");
+}
+
+/* abrir tab clientes já no cliente da marcação (DEDUPED) */
 async function openPhotosForBooking(bid){
   const b = await getBookingSafe(bid);
   if(!b){ alert("Não encontrei a marcação."); return; }
 
   showTab("clients");
 
+  const bookingName  = (b.name || b.client || "").trim();
+  const bookingPhone = (b.phone || "").trim();
+  const bookingEmail = (b.email || "").trim();
+
   // 1) se tiver client_id, procura direto
   const cid = (b.client_id || "").trim();
   if(cid){
-    // tenta achar no cache; se não, recarrega e tenta outra vez
     let c = (clientsCache || []).find(x => x.id === cid) || null;
     if(!c){
       await reloadClients();
@@ -811,14 +909,31 @@ async function openPhotosForBooking(bid){
     if(c){ selectClient(c); return; }
   }
 
-  // 2) fallback: preenche form para criar/guardar rápido
+  // 2) se NÃO tiver client_id: tenta encontrar cliente existente pelo contacto
+  if(!(clientsCache||[]).length){
+    await reloadClients().catch(()=>{});
+  }
+
+  let existing = findClientLocalByContact(bookingName, bookingPhone, bookingEmail);
+  if(!existing){
+    existing = await findClientRemote(bookingName, bookingPhone, bookingEmail);
+  }
+
+  if(existing){
+    selectClient(existing);
+    clientSaveStatusEl.textContent =
+      "✅ Cliente já existia — selecionado automaticamente. Agora podes enviar as fotos.";
+    return;
+  }
+
+  // 3) só se não existir mesmo: preparar novo
   newClient();
-  c_name.value = (b.name || b.client || "").trim();
-  c_phone.value = (b.phone || "").trim();
-  c_email.value = (b.email || "").trim();
+  c_name.value = bookingName;
+  c_phone.value = bookingPhone;
+  c_email.value = bookingEmail;
 
   clientSaveStatusEl.textContent =
-    "Este booking não tem client_id. Carrega em 💾 Guardar para criar o cliente e depois envia as fotos.";
+    "⚠️ Este booking não tem client_id e não encontrei cliente igual. Carrega 💾 Guardar para criar o cliente e depois envia as fotos.";
 }
 
 /* eventos */
