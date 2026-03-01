@@ -648,7 +648,7 @@ const fileAfter  = document.getElementById("fileAfter");
 let clientsCache = [];
 let selectedClient = null;
 
-/* ====== DEDUPE HELPERS (NOVO) ====== */
+/* ====== DEDUPE HELPERS ====== */
 function normPhone(p){
   return (p||"").replace(/\D+/g,"").replace(/^351/,"");
 }
@@ -686,7 +686,6 @@ async function findClientRemote(name, phone, email){
       url.searchParams.set("q", q);
       const data = await apiGet(url.toString());
       const items = data.items || [];
-      // atualiza cache com o resultado desta pesquisa
       clientsCache = items;
       const hit = findClientLocalByContact(name, phone, email);
       if(hit) return hit;
@@ -714,10 +713,12 @@ function renderClientList(items){
     div.className = "clientItem";
     const nm = escapeHtml(c.name || "(sem nome)");
     const sm = escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "));
+    const photosTxt =
+      ((c.photo_before_url ? "Antes " : "") + (c.photo_after_url ? "Depois" : "")).trim() || "—";
     div.innerHTML = `
       <div class="nm">${nm}</div>
       <div class="sm">${sm}</div>
-      <div class="pill">Fotos: ${(c.photo_before_url?"Antes ":"") + (c.photo_after_url?"Depois":"") || "—"}</div>
+      <div class="pill">Fotos: ${photosTxt}</div>
     `;
     div.addEventListener("click", () => selectClient(c));
     clientListEl.appendChild(div);
@@ -854,7 +855,6 @@ async function uploadPhoto(kind){
       await reloadClients();
     }
     clientSaveStatusEl.textContent = "✅ Foto enviada";
-    // limpar input
     if(kind === "before") fileBefore.value = "";
     else fileAfter.value = "";
   }catch(ex){
@@ -862,29 +862,28 @@ async function uploadPhoto(kind){
   }
 }
 
-/* ✅ Apagar cliente (tenta alguns endpoints comuns; se a tua API tiver um endpoint certo, digo-te como deixar 100% fixo) */
+/* ✅ Apagar cliente (AGORA 100% alinhado com a API nova: DELETE /admin/client/<id>) */
 async function deleteClientById(cid){
   const id = (cid || "").trim();
   if(!id){ alert("Sem ID."); return; }
   if(!confirm("Apagar este cliente? (vai remover fotos e dados do cliente)")) return;
 
-  const tries = [
-    () => apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(id)),
-    () => apiPost(API_BASE + "/admin/client/" + encodeURIComponent(id) + "/delete", {}),
-    () => apiPost(API_BASE + "/admin/clients/delete", { id }),
-  ];
-
-  for(const t of tries){
+  try{
+    await apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(id));
+    await reloadClients();
+    newClient();
+    clientSaveStatusEl.textContent = "✅ Cliente apagado.";
+  }catch(e1){
+    // fallback para browsers/hosts que bloqueiam DELETE em certos cenários
     try{
-      await t();
+      await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(id) + "/delete", {});
       await reloadClients();
       newClient();
       clientSaveStatusEl.textContent = "✅ Cliente apagado.";
-      return;
-    }catch(e){}
+    }catch(e2){
+      alert("Não consegui apagar: " + (e2?.message || e1?.message || "erro"));
+    }
   }
-
-  alert("Não consegui apagar. A API provavelmente não tem endpoint de delete de clientes.");
 }
 
 /* abrir tab clientes já no cliente da marcação (DEDUPED) */
@@ -933,12 +932,11 @@ async function openPhotosForBooking(bid){
   c_email.value = bookingEmail;
 
   clientSaveStatusEl.textContent =
-    "⚠️ Este booking não tem client_id e não encontrei cliente igual. Carrega 💾 Guardar para criar o cliente e depois envia as fotos.";
+    "⚠️ Não encontrei cliente igual. Carrega 💾 Guardar para criar o cliente e depois envia as fotos.";
 }
 
 /* eventos */
 clientSearchEl.addEventListener("input", () => {
-  // debounce simples
   clearTimeout(window.__cs_t);
   window.__cs_t = setTimeout(() => reloadClients(), 250);
 });
