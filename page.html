@@ -45,10 +45,28 @@ header{
   backdrop-filter:blur(10px);
 }
 
+.brand-wrap{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-width:0;
+}
+
+.logo{
+  width:56px;
+  height:56px;
+  object-fit:cover;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:#fff;
+  flex-shrink:0;
+}
+
 .brand{
   display:flex;
   flex-direction:column;
   gap:4px;
+  min-width:0;
 }
 
 .brand h1{
@@ -100,10 +118,23 @@ nav button.active{
   font-weight:700;
   text-decoration:none;
   transition:0.2s ease;
+  border:none;
 }
 
 .btn:hover{
   transform:translateY(-1px);
+}
+
+.btn.secondary{
+  background:transparent;
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.18);
+}
+
+.btn.insta{
+  background:#1b2028;
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.1);
 }
 
 .main{
@@ -173,12 +204,6 @@ nav button.active{
   display:flex;
   gap:14px;
   flex-wrap:wrap;
-}
-
-.btn.secondary{
-  background:transparent;
-  color:#fff;
-  border:1px solid rgba(255,255,255,0.18);
 }
 
 .hero-card{
@@ -334,6 +359,9 @@ nav button.active{
 
 .contact-cta{
   margin-top:20px;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
 }
 
 footer{
@@ -395,15 +423,27 @@ footer{
   .hero-actions{
     flex-direction:column;
   }
+
+  .brand h1{
+    font-size:22px;
+  }
+
+  .logo{
+    width:48px;
+    height:48px;
+  }
 }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand">
-    <h1>Barbearia Neves</h1>
-    <small>Estilo, detalhe e presença</small>
+  <div class="brand-wrap">
+    <img src="logo.jpg" alt="Logo Barbearia Neves" class="logo">
+    <div class="brand">
+      <h1>Barbearia Neves</h1>
+      <small>Estilo, detalhe e presença</small>
+    </div>
   </div>
 
   <nav>
@@ -436,6 +476,9 @@ footer{
             <button class="btn secondary" type="button" onclick="showTab('trabalhos')">
               Ver trabalhos
             </button>
+            <a class="btn insta" href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
+              Instagram
+            </a>
           </div>
         </div>
 
@@ -478,7 +521,7 @@ footer{
           <p>Corte limpo, moderno e ajustado ao teu estilo.</p>
           <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">Marcar</a>
         </div>
-        
+
         <div class="card">
           <h3>Corte + Barba</h3>
           <div class="price">15€</div>
@@ -529,27 +572,31 @@ footer{
     <div class="section">
       <h2>Contactos</h2>
       <div class="section-intro">
-        Aqui metes os teus contactos reais, localização, horário e redes sociais.
+        Aqui tens os teus contactos, localização, horário e ligação direta para o Instagram e para as marcações.
       </div>
 
       <div class="contact-wrap">
         <div class="contact-card">
           <h3>Informação</h3>
-          <div class="contact-item">📍 Pinheiro da Bemposta Oliveira de Azemeis</div>
+          <div class="contact-item">📍 Pinheiro da Bemposta, Oliveira de Azeméis</div>
           <div class="contact-item">📞 915469875</div>
           <div class="contact-item">📧 contacto@barbearianeves.pt</div>
+          <div class="contact-item">📸 Instagram: @barbearia_neves241</div>
           <div class="contact-item">🕒 2ª–6ª: 10:00–12:30 / 14:00–20:00</div>
           <div class="contact-item">🕒 Sábado: 09:00–14:00</div>
         </div>
 
         <div class="contact-card">
-          <h3>Marca já</h3>
+          <h3>Links rápidos</h3>
           <div class="contact-item">
-            Se quiseres marcar agora, entra diretamente na página de marcações online.
+            Entra diretamente na página de marcações ou visita o Instagram da barbearia.
           </div>
           <div class="contact-cta">
             <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">
               Ir para marcações
+            </a>
+            <a class="btn insta" href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
+              Abrir Instagram
             </a>
           </div>
         </div>
