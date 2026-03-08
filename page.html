@@ -110,7 +110,10 @@ nav button.active{
 }
 
 .btn{
-  display:inline-block;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
   background:var(--accent);
   color:var(--accentText);
   padding:13px 24px;
@@ -135,6 +138,17 @@ nav button.active{
   background:#1b2028;
   color:#fff;
   border:1px solid rgba(255,255,255,0.1);
+}
+
+.btn.map{
+  background:#182028;
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+.icon{
+  font-size:16px;
+  line-height:1;
 }
 
 .main{
@@ -351,10 +365,19 @@ nav button.active{
   font-size:24px;
 }
 
-.contact-item{
+.contact-item,
+.contact-item a{
   color:var(--muted);
-  margin:10px 0;
-  line-height:1.6;
+  line-height:1.7;
+  text-decoration:none;
+}
+
+.contact-item{
+  margin:12px 0;
+}
+
+.contact-item a:hover{
+  color:#fff;
 }
 
 .contact-cta{
@@ -477,7 +500,8 @@ footer{
               Ver trabalhos
             </button>
             <a class="btn insta" href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
-              Instagram
+              <span class="icon">📸</span>
+              <span>Instagram</span>
             </a>
           </div>
         </div>
@@ -578,10 +602,18 @@ footer{
       <div class="contact-wrap">
         <div class="contact-card">
           <h3>Informação</h3>
-          <div class="contact-item">📍 Pinheiro da Bemposta, Oliveira de Azeméis</div>
+          <div class="contact-item">
+            <a href="https://www.google.com/maps/search/?api=1&query=Pinheiro%20da%20Bemposta%2C%20Oliveira%20de%20Azem%C3%A9is" target="_blank" rel="noopener">
+              📍 Pinheiro da Bemposta, Oliveira de Azeméis
+            </a>
+          </div>
           <div class="contact-item">📞 915469875</div>
           <div class="contact-item">📧 contacto@barbearianeves.pt</div>
-          <div class="contact-item">📸 Instagram: @barbearia_neves241</div>
+          <div class="contact-item">
+            <a href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
+              📸 @barbearia_neves241
+            </a>
+          </div>
           <div class="contact-item">🕒 2ª–6ª: 10:00–12:30 / 14:00–20:00</div>
           <div class="contact-item">🕒 Sábado: 09:00–14:00</div>
         </div>
@@ -589,14 +621,19 @@ footer{
         <div class="contact-card">
           <h3>Links rápidos</h3>
           <div class="contact-item">
-            Entra diretamente na página de marcações ou visita o Instagram da barbearia.
+            Entra diretamente na página de marcações, abre o Instagram ou vê a localização no Google Maps.
           </div>
           <div class="contact-cta">
             <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">
               Ir para marcações
             </a>
             <a class="btn insta" href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
-              Abrir Instagram
+              <span class="icon">📸</span>
+              <span>Instagram</span>
+            </a>
+            <a class="btn map" href="https://www.google.com/maps/search/?api=1&query=Pinheiro%20da%20Bemposta%2C%20Oliveira%20de%20Azem%C3%A9is" target="_blank" rel="noopener">
+              <span class="icon">📍</span>
+              <span>Google Maps</span>
             </a>
           </div>
         </div>
