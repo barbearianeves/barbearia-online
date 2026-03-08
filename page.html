@@ -4,179 +4,597 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Barbearia Neves</title>
-
 <style>
+:root{
+  --bg:#0b0d10;
+  --panel:#111418;
+  --panel2:#171b21;
+  --line:#2a3240;
+  --text:#ffffff;
+  --muted:#b2bccb;
+  --accent:#ffffff;
+  --accentText:#000000;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html{
+  scroll-behavior:smooth;
+}
 
 body{
-margin:0;
-font-family:Arial, sans-serif;
-background:#0b0d10;
-color:white;
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
 }
 
 header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:20px 40px;
-background:#111;
+  position:sticky;
+  top:0;
+  z-index:20;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  padding:18px 28px;
+  background:rgba(10,12,15,0.95);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);
 }
 
-header h1{
-margin:0;
+.brand{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
 }
 
-nav a{
-color:white;
-margin-left:20px;
-text-decoration:none;
+.brand h1{
+  margin:0;
+  font-size:26px;
+  line-height:1;
 }
 
-.hero{
-padding:120px 40px;
-background:url("https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1600&q=80") center/cover;
+.brand small{
+  color:var(--muted);
+  font-size:13px;
 }
 
-.hero h2{
-font-size:60px;
-margin-bottom:20px;
+nav{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+nav button{
+  background:transparent;
+  color:var(--text);
+  border:1px solid transparent;
+  padding:10px 14px;
+  border-radius:10px;
+  font-size:15px;
+  cursor:pointer;
+  transition:0.2s ease;
+}
+
+nav button:hover{
+  background:rgba(255,255,255,0.06);
+  border-color:rgba(255,255,255,0.08);
+}
+
+nav button.active{
+  background:#fff;
+  color:#000;
+  font-weight:700;
 }
 
 .btn{
-display:inline-block;
-background:white;
-color:black;
-padding:15px 30px;
-border-radius:8px;
-font-weight:bold;
-text-decoration:none;
+  display:inline-block;
+  background:var(--accent);
+  color:var(--accentText);
+  padding:13px 24px;
+  border-radius:12px;
+  font-weight:700;
+  text-decoration:none;
+  transition:0.2s ease;
+}
+
+.btn:hover{
+  transform:translateY(-1px);
+}
+
+.main{
+  min-height:calc(100vh - 90px);
+}
+
+.tab{
+  display:none;
+}
+
+.tab.active{
+  display:block;
+}
+
+.hero{
+  position:relative;
+  min-height:calc(100vh - 90px);
+  display:flex;
+  align-items:center;
+  padding:60px 28px;
+  background:
+    linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.65)),
+    url("https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1600&q=80") center/cover no-repeat;
+}
+
+.hero-inner{
+  max-width:1100px;
+  margin:0 auto;
+  width:100%;
+  display:grid;
+  grid-template-columns:1.1fr 0.9fr;
+  gap:30px;
+  align-items:center;
+}
+
+.hero-copy{
+  max-width:620px;
+}
+
+.badge{
+  display:inline-block;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.16);
+  background:rgba(255,255,255,0.06);
+  color:#e7edf7;
+  font-size:12px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+
+.hero h2{
+  font-size:64px;
+  line-height:1.02;
+  margin:0 0 18px;
+}
+
+.hero p{
+  font-size:19px;
+  line-height:1.7;
+  color:#e1e7ef;
+  margin:0 0 28px;
+}
+
+.hero-actions{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+}
+
+.btn.secondary{
+  background:transparent;
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.18);
+}
+
+.hero-card{
+  background:rgba(17,20,24,0.88);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;
+  padding:24px;
+  box-shadow:0 20px 50px rgba(0,0,0,0.25);
+}
+
+.hero-card h3{
+  margin:0 0 14px;
+  font-size:24px;
+}
+
+.hero-card p{
+  margin:0 0 10px;
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.6;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-top:18px;
+}
+
+.stat{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;
+  padding:14px;
+}
+
+.stat strong{
+  display:block;
+  font-size:24px;
+  margin-bottom:4px;
 }
 
 .section{
-padding:60px 40px;
-max-width:1100px;
-margin:auto;
+  max-width:1100px;
+  margin:0 auto;
+  padding:54px 28px 70px;
+}
+
+.section h2{
+  margin:0 0 12px;
+  font-size:38px;
+}
+
+.section-intro{
+  color:var(--muted);
+  max-width:760px;
+  line-height:1.7;
+  margin-bottom:26px;
 }
 
 .cards{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-gap:20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:18px;
 }
 
 .card{
-background:#111;
-padding:25px;
-border-radius:10px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:22px;
+}
+
+.card h3{
+  margin:0 0 10px;
+  font-size:23px;
+}
+
+.price{
+  font-size:28px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+
+.meta{
+  color:var(--muted);
+  margin-bottom:18px;
+}
+
+.card p{
+  color:var(--muted);
+  line-height:1.7;
 }
 
 .gallery{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:18px;
 }
 
-.gallery img{
-width:100%;
-border-radius:10px;
+.work{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  overflow:hidden;
+}
+
+.work img{
+  width:100%;
+  height:300px;
+  object-fit:cover;
+  display:block;
+}
+
+.work-text{
+  padding:18px;
+}
+
+.work-text h3{
+  margin:0 0 8px;
+  font-size:22px;
+}
+
+.work-text p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.7;
+}
+
+.contact-wrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
+
+.contact-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:24px;
+}
+
+.contact-card h3{
+  margin:0 0 14px;
+  font-size:24px;
+}
+
+.contact-item{
+  color:var(--muted);
+  margin:10px 0;
+  line-height:1.6;
+}
+
+.contact-cta{
+  margin-top:20px;
 }
 
 footer{
-background:#111;
-padding:40px;
-text-align:center;
-color:#aaa;
+  border-top:1px solid rgba(255,255,255,0.08);
+  background:#0d1014;
+  padding:28px;
+  text-align:center;
+  color:#98a4b6;
 }
 
+@media (max-width:900px){
+  .hero-inner,
+  .contact-wrap{
+    grid-template-columns:1fr;
+  }
+
+  .hero{
+    min-height:auto;
+    padding:40px 20px 60px;
+  }
+
+  .hero h2{
+    font-size:42px;
+  }
+
+  .section{
+    padding:42px 20px 56px;
+  }
+
+  header{
+    padding:16px 18px;
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  nav{
+    width:100%;
+  }
+
+  .stats{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:600px){
+  .hero h2{
+    font-size:34px;
+  }
+
+  .section h2{
+    font-size:30px;
+  }
+
+  .btn{
+    width:100%;
+    text-align:center;
+  }
+
+  .hero-actions{
+    flex-direction:column;
+  }
+}
 </style>
 </head>
-
 <body>
 
 <header>
-<h1>Barbearia Neves</h1>
+  <div class="brand">
+    <h1>Barbearia Neves</h1>
+    <small>Estilo, detalhe e presença</small>
+  </div>
 
-<nav>
-<a href="#servicos">Serviços</a>
-<a href="#trabalhos">Trabalhos</a>
-<a href="#contacto">Contacto</a>
-</nav>
+  <nav>
+    <button class="tablink active" data-tab="home">Home</button>
+    <button class="tablink" data-tab="servicos">Serviços</button>
+    <button class="tablink" data-tab="trabalhos">Trabalhos</button>
+    <button class="tablink" data-tab="contactos">Contactos</button>
+  </nav>
 
-<a class="btn" href="marcacoes.html">Marcar</a>
+  <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">
+    Marcar agora
+  </a>
 </header>
 
-<section class="hero">
+<main class="main">
 
-<h2>O teu visual começa aqui</h2>
+  <section id="home" class="tab active">
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="badge">Barbearia moderna</div>
+          <h2>O teu visual começa aqui.</h2>
+          <p>
+            Cortes modernos, barba com detalhe e uma experiência pensada para quem gosta de sair da cadeira com presença.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">
+              Fazer marcação
+            </a>
+            <button class="btn secondary" type="button" onclick="showTab('trabalhos')">
+              Ver trabalhos
+            </button>
+          </div>
+        </div>
 
-<p>Barbearia moderna com cortes de qualidade e marcação online.</p>
+        <div class="hero-card">
+          <h3>Marca online sem complicações</h3>
+          <p>Escolhe o barbeiro, o dia e o horário em poucos segundos.</p>
+          <p>Simples no telemóvel, rápido e direto.</p>
 
-<br>
+          <div class="stats">
+            <div class="stat">
+              <strong>45m</strong>
+              <span>Marcações rápidas</span>
+            </div>
+            <div class="stat">
+              <strong>Top</strong>
+              <span>Cortes modernos</span>
+            </div>
+            <div class="stat">
+              <strong>+Estilo</strong>
+              <span>Acabamento premium</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<a class="btn" href="marcacoes.html">Fazer marcação</a>
+  <section id="servicos" class="tab">
+    <div class="section">
+      <h2>Serviços</h2>
+      <div class="section-intro">
+        Escolhe o serviço que queres. Podes depois finalizar a tua marcação diretamente no link de reservas.
+      </div>
 
-</section>
+      <div class="cards">
+        <div class="card">
+          <h3>Corte</h3>
+          <div class="price">15€</div>
+          <div class="meta">45 minutos</div>
+          <p>Corte limpo, moderno e ajustado ao teu estilo.</p>
+          <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">Marcar</a>
+        </div>
 
-<section class="section" id="servicos">
+        <div class="card">
+          <h3>Barba</h3>
+          <div class="price">10€</div>
+          <div class="meta">30 minutos</div>
+          <p>Desenho, alinhamento e acabamento com detalhe.</p>
+          <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">Marcar</a>
+        </div>
 
-<h2>Serviços</h2>
+        <div class="card">
+          <h3>Corte + Barba</h3>
+          <div class="price">22€</div>
+          <div class="meta">60 minutos</div>
+          <p>Serviço completo para sair com imagem forte e cuidada.</p>
+          <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">Marcar</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<div class="cards">
+  <section id="trabalhos" class="tab">
+    <div class="section">
+      <h2>Trabalhos</h2>
+      <div class="section-intro">
+        Espaço para mostrares os teus melhores cortes, fades, barbas e antes/depois. Depois podes trocar estas fotos pelas tuas reais.
+      </div>
 
-<div class="card">
-<h3>Corte</h3>
-<p>15€</p>
-<p>45 minutos</p>
-</div>
+      <div class="gallery">
+        <div class="work">
+          <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1200&q=80" alt="Fade clássico">
+          <div class="work-text">
+            <h3>Fade clássico</h3>
+            <p>Corte limpo com acabamento natural e detalhe de barba.</p>
+          </div>
+        </div>
 
-<div class="card">
-<h3>Barba</h3>
-<p>10€</p>
-<p>30 minutos</p>
-</div>
+        <div class="work">
+          <img src="https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&fit=crop&w=1200&q=80" alt="Crop moderno">
+          <div class="work-text">
+            <h3>Crop moderno</h3>
+            <p>Estilo atual, textura no topo e laterais bem definidas.</p>
+          </div>
+        </div>
 
-<div class="card">
-<h3>Corte + Barba</h3>
-<p>22€</p>
-<p>60 minutos</p>
-</div>
+        <div class="work">
+          <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80" alt="Barba com contorno">
+          <div class="work-text">
+            <h3>Barba + contorno</h3>
+            <p>Desenho de barba com linhas precisas e acabamento premium.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-</div>
+  <section id="contactos" class="tab">
+    <div class="section">
+      <h2>Contactos</h2>
+      <div class="section-intro">
+        Aqui metes os teus contactos reais, localização, horário e redes sociais.
+      </div>
 
-</section>
+      <div class="contact-wrap">
+        <div class="contact-card">
+          <h3>Informação</h3>
+          <div class="contact-item">📍 Rua da Barbearia, Lisboa</div>
+          <div class="contact-item">📞 9xx xxx xxx</div>
+          <div class="contact-item">📧 contacto@barbearianeves.pt</div>
+          <div class="contact-item">🕒 2ª–6ª: 10:00–12:30 / 14:00–20:00</div>
+          <div class="contact-item">🕒 Sábado: 09:00–14:00</div>
+        </div>
 
-<section class="section" id="trabalhos">
+        <div class="contact-card">
+          <h3>Marca já</h3>
+          <div class="contact-item">
+            Se quiseres marcar agora, entra diretamente na página de marcações online.
+          </div>
+          <div class="contact-cta">
+            <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">
+              Ir para marcações
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<h2>Trabalhos</h2>
-
-<div class="gallery">
-
-<img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033">
-<img src="https://images.unsplash.com/photo-1517832606299-7ae9b720a186">
-<img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1">
-
-</div>
-
-</section>
-
-<section class="section" id="contacto">
-
-<h2>Contacto</h2>
-
-<p>📍 Rua da Barbearia</p>
-<p>📞 9xx xxx xxx</p>
-
-<br>
-
-<a class="btn" href="marcacoes.html">Marcar agora</a>
-
-</section>
+</main>
 
 <footer>
-
-Barbearia Neves © 2026
-
+  Barbearia Neves © 2026
 </footer>
+
+<script>
+const buttons = document.querySelectorAll(".tablink");
+const tabs = document.querySelectorAll(".tab");
+
+function showTab(tabId){
+  tabs.forEach(tab => tab.classList.remove("active"));
+  buttons.forEach(btn => btn.classList.remove("active"));
+
+  document.getElementById(tabId).classList.add("active");
+
+  const activeButton = document.querySelector('.tablink[data-tab="' + tabId + '"]');
+  if(activeButton){
+    activeButton.classList.add("active");
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+buttons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    showTab(btn.dataset.tab);
+  });
+});
+</script>
 
 </body>
 </html>
