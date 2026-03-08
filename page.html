@@ -1,255 +1,182 @@
-export default function BarbeariaNevesHomepage() {
-  const trabalhos = [
-    {
-      titulo: "Fade clássico",
-      descricao: "Corte limpo com acabamento natural e detalhe de barba.",
-      imagem:
-        "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1200&q=80",
-    },
-    {
-      titulo: "Crop moderno",
-      descricao: "Estilo atual, textura no topo e laterais bem definidas.",
-      imagem:
-        "https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&fit=crop&w=1200&q=80",
-    },
-    {
-      titulo: "Barba + contorno",
-      descricao: "Desenho de barba com linhas precisas e acabamento premium.",
-      imagem:
-        "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80",
-    },
-  ];
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barbearia Neves</title>
 
-  const servicos = [
-    { nome: "Corte", preco: "15€", tempo: "45 min" },
-    { nome: "Barba", preco: "10€", tempo: "30 min" },
-    { nome: "Corte + Barba", preco: "22€", tempo: "60 min" },
-  ];
+<style>
 
-  return (
-    <div className="min-h-screen bg-neutral-950 text-white">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div>
-            <div className="text-xl font-black tracking-wide">Barbearia Neves</div>
-            <div className="text-xs text-neutral-400">Estilo, detalhe e presença</div>
-          </div>
-          <nav className="hidden gap-6 text-sm text-neutral-300 md:flex">
-            <a href="#servicos" className="hover:text-white">Serviços</a>
-            <a href="#trabalhos" className="hover:text-white">Trabalhos</a>
-            <a href="#sobre" className="hover:text-white">Sobre</a>
-            <a href="#contactos" className="hover:text-white">Contactos</a>
-          </nav>
-          <a
-            href="/marcacoes"
-            className="rounded-2xl bg-white px-4 py-2 text-sm font-bold text-black shadow-lg shadow-white/10 transition hover:-translate-y-0.5"
-          >
-            Marcar agora
-          </a>
-        </div>
-      </header>
-
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_25%)]" />
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-20 md:grid-cols-2 md:py-28">
-          <div className="relative z-10 flex flex-col justify-center">
-            <span className="mb-4 inline-flex w-fit rounded-full border border-white/15 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300">
-              Barbearia moderna
-            </span>
-            <h1 className="max-w-xl text-5xl font-black leading-tight md:text-7xl">
-              O teu visual começa aqui.
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-neutral-300">
-              Uma página elegante para mostrar o estilo da barbearia, destacar os teus melhores trabalhos e levar o cliente diretamente para a marcação online.
-            </p>
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <a
-                href="/marcacoes"
-                className="rounded-2xl bg-white px-6 py-4 text-center font-bold text-black transition hover:-translate-y-0.5"
-              >
-                Fazer marcação
-              </a>
-              <a
-                href="#trabalhos"
-                className="rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-center font-bold text-white transition hover:bg-white/10"
-              >
-                Ver trabalhos
-              </a>
-            </div>
-            <div className="mt-10 grid max-w-md grid-cols-3 gap-4 text-sm">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-2xl font-black">+300</div>
-                <div className="mt-1 text-neutral-400">Clientes satisfeitos</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-2xl font-black">4.9★</div>
-                <div className="mt-1 text-neutral-400">Avaliação média</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-2xl font-black">45m</div>
-                <div className="mt-1 text-neutral-400">Marcações rápidas</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative z-10">
-            <div className="grid gap-4 md:grid-cols-2">
-              <img
-                src="https://images.unsplash.com/photo-1622287162716-f311baa1a2b8?auto=format&fit=crop&w=1200&q=80"
-                alt="Interior da barbearia"
-                className="h-80 w-full rounded-[2rem] object-cover shadow-2xl"
-              />
-              <div className="grid gap-4">
-                <img
-                  src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1200&q=80"
-                  alt="Corte masculino"
-                  className="h-38 w-full rounded-[2rem] object-cover shadow-xl"
-                />
-                <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-xl">
-                  <div className="text-sm uppercase tracking-[0.2em] text-neutral-400">Destaque</div>
-                  <div className="mt-3 text-2xl font-black">Marcações online</div>
-                  <p className="mt-3 text-neutral-300">
-                    Botão direto para a tua página de marcações, simples e rápido no telemóvel.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="servicos" className="mx-auto max-w-7xl px-6 py-20">
-        <div className="mb-10 flex items-end justify-between gap-6">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-neutral-400">Serviços</p>
-            <h2 className="mt-2 text-3xl font-black md:text-4xl">O essencial, bem apresentado</h2>
-          </div>
-          <a href="/marcacoes" className="hidden rounded-2xl border border-white/15 px-5 py-3 font-semibold md:block">
-            Reservar horário
-          </a>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {servicos.map((s) => (
-            <div key={s.nome} className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-lg">
-              <div className="text-2xl font-black">{s.nome}</div>
-              <div className="mt-4 flex items-center justify-between text-neutral-300">
-                <span>Preço</span>
-                <span className="font-bold text-white">{s.preco}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-neutral-300">
-                <span>Duração</span>
-                <span className="font-bold text-white">{s.tempo}</span>
-              </div>
-              <a
-                href="/marcacoes"
-                className="mt-6 block rounded-2xl bg-white px-4 py-3 text-center font-bold text-black"
-              >
-                Marcar
-              </a>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="trabalhos" className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-10">
-          <p className="text-sm uppercase tracking-[0.2em] text-neutral-400">Galeria</p>
-          <h2 className="mt-2 text-3xl font-black md:text-4xl">Fotos de trabalhos que vendem por ti</h2>
-          <p className="mt-4 max-w-2xl text-neutral-300">
-            Uma zona dedicada aos teus melhores cortes e barbas. Aqui o cliente percebe logo a qualidade e ganha confiança para marcar.
-          </p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {trabalhos.map((trabalho) => (
-            <div key={trabalho.titulo} className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 shadow-lg">
-              <img src={trabalho.imagem} alt={trabalho.titulo} className="h-80 w-full object-cover" />
-              <div className="p-6">
-                <div className="text-xl font-black">{trabalho.titulo}</div>
-                <p className="mt-3 leading-7 text-neutral-300">{trabalho.descricao}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="sobre" className="mx-auto grid max-w-7xl gap-10 px-6 py-20 md:grid-cols-2">
-        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-neutral-400">Sobre nós</p>
-          <h2 className="mt-2 text-3xl font-black">Imagem forte, confiança forte</h2>
-          <p className="mt-6 leading-8 text-neutral-300">
-            A página ideal para a Barbearia Neves mistura visual premium com funcionalidade: mostra o espaço, os trabalhos, os serviços e leva o cliente para a marcação sem distrações.
-          </p>
-          <p className="mt-4 leading-8 text-neutral-300">
-            O objetivo é simples: parecer profissional, moderno e fazer com que qualquer pessoa que entre no site pense logo “quero marcar aqui”.
-          </p>
-        </div>
-        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
-          <p className="text-sm uppercase tracking-[0.2em] text-neutral-400">Porque funciona</p>
-          <div className="mt-6 space-y-5 text-neutral-300">
-            <div>
-              <div className="font-bold text-white">1. Botão de marcação em destaque</div>
-              <div className="mt-1">Sempre visível para transformar visitas em clientes.</div>
-            </div>
-            <div>
-              <div className="font-bold text-white">2. Trabalhos em grande</div>
-              <div className="mt-1">Fotos limpas, grandes e com ar premium.</div>
-            </div>
-            <div>
-              <div className="font-bold text-white">3. Design moderno</div>
-              <div className="mt-1">Visual escuro, elegante e masculino, muito forte para barbearia.</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-6 pb-20">
-        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 md:p-12">
-          <div className="grid gap-8 md:grid-cols-[1.3fr_0.7fr] md:items-center">
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-neutral-400">Call to action</p>
-              <h2 className="mt-2 text-3xl font-black md:text-4xl">Pronto para encher a agenda?</h2>
-              <p className="mt-4 max-w-2xl text-lg leading-8 text-neutral-300">
-                Esta homepage pode ficar ligada à tua página de marcações atual e a uma galeria com fotos reais dos teus cortes.
-              </p>
-            </div>
-            <div className="flex flex-col gap-4">
-              <a href="/marcacoes" className="rounded-2xl bg-white px-6 py-4 text-center font-bold text-black">
-                Ir para marcações
-              </a>
-              <a href="#trabalhos" className="rounded-2xl border border-white/15 px-6 py-4 text-center font-bold text-white">
-                Ver galeria
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer id="contactos" className="border-t border-white/10 bg-black/30">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-3">
-          <div>
-            <div className="text-lg font-black">Barbearia Neves</div>
-            <p className="mt-3 text-sm leading-7 text-neutral-400">
-              Estilo, detalhe e atendimento com personalidade.
-            </p>
-          </div>
-          <div>
-            <div className="font-bold">Contactos</div>
-            <div className="mt-3 space-y-2 text-sm text-neutral-400">
-              <div>📍 Rua da Barbearia, Lisboa</div>
-              <div>📞 9xx xxx xxx</div>
-              <div>✉️ contacto@barbearianeves.pt</div>
-            </div>
-          </div>
-          <div>
-            <div className="font-bold">Links rápidos</div>
-            <div className="mt-3 flex flex-col gap-2 text-sm text-neutral-400">
-              <a href="/marcacoes" className="hover:text-white">Marcar online</a>
-              <a href="#trabalhos" className="hover:text-white">Ver trabalhos</a>
-              <a href="#servicos" className="hover:text-white">Serviços</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:#0b0d10;
+color:white;
 }
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px 40px;
+background:#111;
+}
+
+header h1{
+margin:0;
+}
+
+nav a{
+color:white;
+margin-left:20px;
+text-decoration:none;
+}
+
+.hero{
+padding:120px 40px;
+background:url("https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1600&q=80") center/cover;
+}
+
+.hero h2{
+font-size:60px;
+margin-bottom:20px;
+}
+
+.btn{
+display:inline-block;
+background:white;
+color:black;
+padding:15px 30px;
+border-radius:8px;
+font-weight:bold;
+text-decoration:none;
+}
+
+.section{
+padding:60px 40px;
+max-width:1100px;
+margin:auto;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+}
+
+.card{
+background:#111;
+padding:25px;
+border-radius:10px;
+}
+
+.gallery{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+gap:20px;
+}
+
+.gallery img{
+width:100%;
+border-radius:10px;
+}
+
+footer{
+background:#111;
+padding:40px;
+text-align:center;
+color:#aaa;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Barbearia Neves</h1>
+
+<nav>
+<a href="#servicos">Serviços</a>
+<a href="#trabalhos">Trabalhos</a>
+<a href="#contacto">Contacto</a>
+</nav>
+
+<a class="btn" href="marcacoes.html">Marcar</a>
+</header>
+
+<section class="hero">
+
+<h2>O teu visual começa aqui</h2>
+
+<p>Barbearia moderna com cortes de qualidade e marcação online.</p>
+
+<br>
+
+<a class="btn" href="marcacoes.html">Fazer marcação</a>
+
+</section>
+
+<section class="section" id="servicos">
+
+<h2>Serviços</h2>
+
+<div class="cards">
+
+<div class="card">
+<h3>Corte</h3>
+<p>15€</p>
+<p>45 minutos</p>
+</div>
+
+<div class="card">
+<h3>Barba</h3>
+<p>10€</p>
+<p>30 minutos</p>
+</div>
+
+<div class="card">
+<h3>Corte + Barba</h3>
+<p>22€</p>
+<p>60 minutos</p>
+</div>
+
+</div>
+
+</section>
+
+<section class="section" id="trabalhos">
+
+<h2>Trabalhos</h2>
+
+<div class="gallery">
+
+<img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033">
+<img src="https://images.unsplash.com/photo-1517832606299-7ae9b720a186">
+<img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1">
+
+</div>
+
+</section>
+
+<section class="section" id="contacto">
+
+<h2>Contacto</h2>
+
+<p>📍 Rua da Barbearia</p>
+<p>📞 9xx xxx xxx</p>
+
+<br>
+
+<a class="btn" href="marcacoes.html">Marcar agora</a>
+
+</section>
+
+<footer>
+
+Barbearia Neves © 2026
+
+</footer>
+
+</body>
+</html>
