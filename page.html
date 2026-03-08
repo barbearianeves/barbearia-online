@@ -147,8 +147,16 @@ nav button.active{
 }
 
 .icon{
-  font-size:16px;
-  line-height:1;
+  width:18px;
+  height:18px;
+  flex-shrink:0;
+  display:inline-block;
+}
+
+.icon svg{
+  width:100%;
+  height:100%;
+  display:block;
 }
 
 .main{
@@ -380,6 +388,12 @@ nav button.active{
   color:#fff;
 }
 
+.contact-inline{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+}
+
 .contact-cta{
   margin-top:20px;
   display:flex;
@@ -500,7 +514,13 @@ footer{
               Ver trabalhos
             </button>
             <a class="btn insta" href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
-              <span class="icon">📸</span>
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="5" ry="5"></rect>
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <circle cx="17.5" cy="6.5" r="1"></circle>
+                </svg>
+              </span>
               <span>Instagram</span>
             </a>
           </div>
@@ -560,9 +580,7 @@ footer{
   <section id="trabalhos" class="tab">
     <div class="section">
       <h2>Trabalhos</h2>
-      <div class="section-intro">
-        
-      </div>
+      <div class="section-intro"></div>
 
       <div class="gallery">
         <div class="work">
@@ -602,18 +620,34 @@ footer{
       <div class="contact-wrap">
         <div class="contact-card">
           <h3>Informação</h3>
+
           <div class="contact-item">
-            <a href="https://www.google.com/maps/search/?api=1&query=Pinheiro%20da%20Bemposta%2C%20Oliveira%20de%20Azem%C3%A9is" target="_blank" rel="noopener">
-              📍 R. Padre Bernardo Xavier Coutinho, 3720-469 Pinheiro da Bemposta
+            <a class="contact-inline" href="https://www.google.com/maps/search/?api=1&query=R.%20Padre%20Bernardo%20Xavier%20Coutinho%2C%203720-469%20Pinheiro%20da%20Bemposta" target="_blank" rel="noopener">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
+                </svg>
+              </span>
+              <span>R. Padre Bernardo Xavier Coutinho, 3720-469 Pinheiro da Bemposta</span>
             </a>
           </div>
+
           <div class="contact-item">📞 915469875</div>
           <div class="contact-item">📧 contacto@barbearianeves.pt</div>
+
           <div class="contact-item">
-            <a href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
-              📸 @barbearia_neves241
+            <a class="contact-inline" href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="5" ry="5"></rect>
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <circle cx="17.5" cy="6.5" r="1"></circle>
+                </svg>
+              </span>
+              <span>@barbearia_neves241</span>
             </a>
           </div>
+
           <div class="contact-item">🕒 3ª–6ª: 10:00–12:30 / 14:00–20:00</div>
           <div class="contact-item">🕒 Sábado: 09:00–14:00</div>
         </div>
@@ -627,12 +661,24 @@ footer{
             <a class="btn" href="https://barbearianeves.github.io/barbearia-online/" target="_blank" rel="noopener">
               Ir para marcações
             </a>
+
             <a class="btn insta" href="https://www.instagram.com/barbearia_neves241/" target="_blank" rel="noopener">
-              <span class="icon">📸</span>
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="5" ry="5"></rect>
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <circle cx="17.5" cy="6.5" r="1"></circle>
+                </svg>
+              </span>
               <span>Instagram</span>
             </a>
-            <a class="btn map" href="https://www.google.com/maps/search/?api=1&query=Pinheiro%20da%20Bemposta%2C%20Oliveira%20de%20Azem%C3%A9is" target="_blank" rel="noopener">
-              <span class="icon">📍</span>
+
+            <a class="btn map" href="https://www.google.com/maps/search/?api=1&query=R.%20Padre%20Bernardo%20Xavier%20Coutinho%2C%203720-469%20Pinheiro%20da%20Bemposta" target="_blank" rel="noopener">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
+                </svg>
+              </span>
               <span>Google Maps</span>
             </a>
           </div>
