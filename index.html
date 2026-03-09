@@ -301,8 +301,8 @@
           <h1>Barbearia Neves</h1>
           <p>Escolhe um horário livre e confirma. A marcação entra automaticamente na agenda.</p>
           <div class="pill">
-            2ª–6ª: 10:00–12:30 • 14:00–20:00<br>
-            Sábado: 09:00–14:00 • Domingo: Fechado<br>
+            3ª–6ª: 10:00–12:30 • 14:00–20:00<br>
+            Sábado: 09:00–14:00 • Domingo e 2ª: Fechado<br>
             Intervalos: 45 min
           </div>
         </div>
@@ -333,7 +333,6 @@
                 <label>Serviço</label>
                 <select name="service" id="service" required>
                   <option value="Corte">Corte</option>
-                  <option value="Barba">Barba</option>
                   <option value="Corte+Barba">Corte+Barba</option>
                 </select>
               </div>
@@ -478,7 +477,7 @@
     function getWorkSegments(dateISO){
       const wd = getWeekday(dateISO);
 
-      if (wd === 0) return [];
+      if (wd === 0 || wd === 1) return [];
 
       if (wd === 6) {
         return [
@@ -583,7 +582,7 @@
       const picked = pickedTime;
 
       if (!slots.length){
-        slotsEl.innerHTML = `<div class="small">Sem horários disponíveis (domingo fechado ou a data já passou).</div>`;
+        slotsEl.innerHTML = `<div class="small">Sem horários disponíveis (domingo, segunda fechado ou a data já passou).</div>`;
         return;
       }
 
