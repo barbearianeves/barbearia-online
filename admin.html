@@ -245,7 +245,7 @@ function getScheduleForDate(dateISO){
   const dt = new Date(y, m-1, d);
   const dow = dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
 
-  if(dow === 0) return { closed:true, segments: [] };
+  if(dow === 0 || dow === 1) return { closed:true, segments: [] };
 
   if(dow === 6){
     return { closed:false, segments: [{ start:"09:00", end:"14:00" }] };
