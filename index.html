@@ -371,7 +371,7 @@
         <div class="mineTop">
           <div>
             <h2>As minhas marcações</h2>
-            <div class="small">Introduz o teu telefone para veres e desmarcares as tuas marcações.</div>
+            <div class="small">Introduz o teu telefone para veres as tuas marcações.</div>
           </div>
         </div>
 
@@ -521,21 +521,6 @@
       return data.items || [];
     }
 
-    async function cancelBooking(id, phone){
-      const r = await fetch(API_BASE + "/cancel-booking", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          id,
-          phone: normalizePhone(phone)
-        })
-      });
-
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.error || ("Erro HTTP " + r.status));
-      return data;
-    }
-
     function buildSlots(bookedItems, dur, dateSelected){
       if (dateSelected < todayISO()) return [];
 
@@ -640,7 +625,7 @@
       }
     }
 
-    function renderMyBookings(items, phone){
+    function renderMyBookings(items){
       myListEl.innerHTML = "";
 
       if (!items.length){
@@ -653,7 +638,6 @@
         box.className = "bookingCard";
 
         const status = item.status || "Marcado";
-        const canCancel = status !== "Cancelado";
 
         box.innerHTML = `
           <div class="bookingHead">
@@ -666,48 +650,7 @@
               </div>
             </div>
           </div>
-          <div class="bookingActions"></div>
         `;
-
-        const actions = box.querySelector(".bookingActions");
-
-        if (canCancel){
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "btnDanger";
-          b.textContent = "Desmarcar marcação";
-
-          b.addEventListener("click", async () => {
-            hide(err);
-            hide(ok);
-
-            const yes = window.confirm(
-              `Tens a certeza que queres desmarcar a marcação de ${item.date} às ${item.time}?`
-            );
-            if (!yes) return;
-
-            b.disabled = true;
-            b.textContent = "A desmarcar...";
-
-            try{
-              await cancelBooking(item.id, phone);
-              show(ok, `✅ Marcação desmarcada com sucesso.\nData: ${item.date}  Hora: ${item.time}`);
-              await loadMyBookings();
-              await refreshAgenda();
-            }catch(ex){
-              show(err, "❌ Não foi possível desmarcar: " + ex.message);
-              b.disabled = false;
-              b.textContent = "Desmarcar marcação";
-            }
-          });
-
-          actions.appendChild(b);
-        } else {
-          const s = document.createElement("div");
-          s.className = "small";
-          s.textContent = "Esta marcação já está cancelada.";
-          actions.appendChild(s);
-        }
 
         myListEl.appendChild(box);
       }
@@ -726,7 +669,7 @@
         btnLoadMine.disabled = true;
         btnLoadMine.textContent = "A carregar...";
         const items = await fetchMyBookings(phone);
-        renderMyBookings(items, phone);
+        renderMyBookings(items);
       }catch(ex){
         myListEl.innerHTML = `<div class="mutedBox">Erro ao carregar marcações.</div>`;
         show(err, "❌ Erro ao carregar as tuas marcações: " + ex.message);
