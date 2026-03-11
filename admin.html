@@ -69,20 +69,14 @@
   .tabbtn.active{background:#fff;color:#000;border-color:#fff}
 
   /* Clientes */
-  .clientGrid{display:grid;grid-template-columns:1fr 1.2fr;gap:12px}
-  @media(max-width:900px){ .clientGrid{grid-template-columns:1fr} }
-  .clientList{max-height:65vh; overflow:auto; border:1px solid var(--line); border-radius:14px; padding:8px; background:#0f1319}
-  .clientItem{padding:10px;border-radius:12px;border:1px solid var(--line);margin:8px 0;cursor:pointer}
-  .clientItem:hover{filter:brightness(1.1)}
-  .clientItem .nm{font-weight:950}
-  .clientItem .sm{font-size:12px;color:var(--muted)}
-  .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin-top:6px}
+  .clientGrid{display:grid;grid-template-columns:1fr;gap:12px}
   .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:700px){ .photos{grid-template-columns:1fr} }
   .ph{border:1px solid var(--line);border-radius:14px;background:#0f1319;padding:10px}
   .ph img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
   .ph .t{font-weight:950;margin-bottom:8px}
   .mini{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin-top:6px}
 </style>
 </head>
 <body>
@@ -122,24 +116,11 @@
     <div id="viewClients" class="hide">
       <div class="card">
         <h1>Clientes • Fotos</h1>
-        <small>Seleciona um cliente e adiciona fotos (Antes/Depois) do telemóvel ou do PC.</small>
-
-        <div class="row" style="margin-top:10px">
-          <div>
-            <label>Pesquisar</label>
-            <input id="clientSearch" placeholder="nome, telefone, email, id..." />
-          </div>
-          <div>
-            <label>&nbsp;</label>
-            <button onclick="reloadClients()">🔄 Atualizar lista</button>
-          </div>
-        </div>
+        <small>Ao clicar em 📸 Fotos numa marcação, o cliente abre logo aqui. A lista de clientes foi removida.</small>
 
         <div class="status" id="clientsStatus">—</div>
 
         <div class="clientGrid" style="margin-top:12px">
-          <div class="clientList" id="clientList"></div>
-
           <div>
             <div class="card" style="margin:0;border-radius:16px">
               <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
@@ -339,7 +320,6 @@ function showTab(which){
     clients.classList.remove("hide");
     b1.classList.remove("active");
     b2.classList.add("active");
-    reloadClients().catch(()=>{});
   }else{
     clients.classList.add("hide");
     map.classList.remove("hide");
@@ -624,9 +604,7 @@ Obrigado!`;
 /* =========================
    CLIENTES / FOTOS
    ========================= */
-const clientSearchEl = document.getElementById("clientSearch");
 const clientsStatusEl = document.getElementById("clientsStatus");
-const clientListEl = document.getElementById("clientList");
 const clientSaveStatusEl = document.getElementById("clientSaveStatus");
 
 const selNameEl = document.getElementById("selName");
@@ -702,39 +680,12 @@ function absUrlMaybe(u){
   return API_BASE + "/" + u;
 }
 
-function renderClientList(items){
-  clientListEl.innerHTML = "";
-  if(!items.length){
-    clientListEl.innerHTML = `<div class="status">Sem clientes.</div>`;
-    return;
-  }
-  for(const c of items){
-    const div = document.createElement("div");
-    div.className = "clientItem";
-    const nm = escapeHtml(c.name || "(sem nome)");
-    const sm = escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "));
-    const photosTxt =
-      ((c.photo_before_url ? "Antes " : "") + (c.photo_after_url ? "Depois" : "")).trim() || "—";
-    div.innerHTML = `
-      <div class="nm">${nm}</div>
-      <div class="sm">${sm}</div>
-      <div class="pill">Fotos: ${photosTxt}</div>
-    `;
-    div.addEventListener("click", () => selectClient(c));
-    clientListEl.appendChild(div);
-  }
-}
-
 async function reloadClients(){
-  const q = (clientSearchEl.value || "").trim();
-  clientsStatusEl.textContent = "A carregar…";
+  clientsStatusEl.textContent = "Clientes carregados por ligação direta da marcação.";
   try{
     const url = new URL(API_BASE + "/admin/clients");
-    if(q) url.searchParams.set("q", q);
     const data = await apiGet(url.toString());
     clientsCache = data.items || [];
-    renderClientList(clientsCache);
-    clientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
   }catch(ex){
     clientsStatusEl.textContent = "Erro: " + ex.message;
   }
@@ -780,6 +731,7 @@ function selectClient(c){
   fillClientForm(c);
   renderClientPhotos(c);
   clientSaveStatusEl.textContent = "—";
+  clientsStatusEl.textContent = "Cliente ligado com sucesso.";
 }
 
 function newClient(){
@@ -789,6 +741,7 @@ function newClient(){
   fillClientForm(selectedClient);
   renderClientPhotos({});
   clientSaveStatusEl.textContent = "—";
+  clientsStatusEl.textContent = "Novo cliente.";
   showTab("clients");
 }
 
@@ -803,7 +756,6 @@ async function saveClient(){
       notes: (c_notes.value || "").trim()
     };
 
-    // ✅ DEDUPE: se não há ID, tenta reutilizar cliente existente por email/telefone/nome
     if(!payload.id){
       if(!(clientsCache||[]).length){
         await reloadClients().catch(()=>{});
@@ -813,7 +765,7 @@ async function saveClient(){
         existing = await findClientRemote(payload.name, payload.phone, payload.email);
       }
       if(existing && existing.id){
-        payload.id = existing.id; // em vez de criar novo, atualiza este
+        payload.id = existing.id;
       }
     }
 
@@ -862,7 +814,6 @@ async function uploadPhoto(kind){
   }
 }
 
-/* ✅ Apagar cliente (AGORA 100% alinhado com a API nova: DELETE /admin/client/<id>) */
 async function deleteClientById(cid){
   const id = (cid || "").trim();
   if(!id){ alert("Sem ID."); return; }
@@ -870,14 +821,14 @@ async function deleteClientById(cid){
 
   try{
     await apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(id));
-    await reloadClients();
     newClient();
+    await reloadClients();
     clientSaveStatusEl.textContent = "✅ Cliente apagado.";
   }catch(e1){
     try{
       await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(id) + "/delete", {});
-      await reloadClients();
       newClient();
+      await reloadClients();
       clientSaveStatusEl.textContent = "✅ Cliente apagado.";
     }catch(e2){
       alert("Não consegui apagar: " + (e2?.message || e1?.message || "erro"));
@@ -885,29 +836,35 @@ async function deleteClientById(cid){
   }
 }
 
-/* abrir tab clientes já no cliente da marcação (DEDUPED) */
+/* abrir tab clientes já no cliente da marcação */
 async function openPhotosForBooking(bid){
   const b = await getBookingSafe(bid);
   if(!b){ alert("Não encontrei a marcação."); return; }
 
   showTab("clients");
+  clientsStatusEl.textContent = "A ligar cliente da marcação…";
 
   const bookingName  = (b.name || b.client || "").trim();
   const bookingPhone = (b.phone || "").trim();
   const bookingEmail = (b.email || "").trim();
 
-  const cid = (b.client_id || "").trim();
-  if(cid){
-    let c = (clientsCache || []).find(x => x.id === cid) || null;
-    if(!c){
-      await reloadClients();
-      c = (clientsCache || []).find(x => x.id === cid) || null;
-    }
-    if(c){ selectClient(c); return; }
-  }
-
   if(!(clientsCache||[]).length){
     await reloadClients().catch(()=>{});
+  }
+
+  const cid = (b.client_id || "").trim();
+  if(cid){
+    let c = (clientsCache || []).find(x => String(x.id) === String(cid)) || null;
+    if(!c){
+      try{
+        const data = await apiGet(API_BASE + "/admin/client/" + encodeURIComponent(cid));
+        c = data.item || null;
+      }catch(e){}
+    }
+    if(c){
+      selectClient(c);
+      return;
+    }
   }
 
   let existing = findClientLocalByContact(bookingName, bookingPhone, bookingEmail);
@@ -918,24 +875,39 @@ async function openPhotosForBooking(bid){
   if(existing){
     selectClient(existing);
     clientSaveStatusEl.textContent =
-      "✅ Cliente já existia — selecionado automaticamente. Agora podes enviar as fotos.";
+      "✅ Cliente ligado automaticamente. Agora podes enviar as fotos.";
     return;
   }
+
+  try{
+    const payload = {
+      id: "",
+      name: bookingName,
+      phone: bookingPhone,
+      email: bookingEmail,
+      notes: ""
+    };
+
+    const data = await apiPost(API_BASE + "/admin/clients", payload);
+    const item = data.item || null;
+    if(item){
+      await reloadClients().catch(()=>{});
+      selectClient(item);
+      clientSaveStatusEl.textContent =
+        "✅ Cliente criado e ligado automaticamente. Agora podes enviar as fotos.";
+      return;
+    }
+  }catch(e){}
 
   newClient();
   c_name.value = bookingName;
   c_phone.value = bookingPhone;
   c_email.value = bookingEmail;
 
+  clientsStatusEl.textContent = "Cliente não encontrado.";
   clientSaveStatusEl.textContent =
-    "⚠️ Não encontrei cliente igual. Carrega 💾 Guardar para criar o cliente e depois envia as fotos.";
+    "⚠️ Não encontrei nem consegui criar automaticamente. Carrega 💾 Guardar e depois envia as fotos.";
 }
-
-/* eventos */
-clientSearchEl.addEventListener("input", () => {
-  clearTimeout(window.__cs_t);
-  window.__cs_t = setTimeout(() => reloadClients(), 250);
-});
 
 /* AUTO START */
 (function boot(){
@@ -945,6 +917,7 @@ clientSearchEl.addEventListener("input", () => {
     appEl.classList.remove("hide");
     if(!dateEl.value) dateEl.value = todayISO();
     reloadMap().catch(()=>{});
+    reloadClients().catch(()=>{});
   }
 })();
 
