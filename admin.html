@@ -122,7 +122,7 @@
     <div id="viewClients" class="hide">
       <div class="card">
         <h1>Clientes • Fotos</h1>
-        <small>Seleciona um cliente e adiciona fotos (Antes/Depois) diretamente do telemóvel.</small>
+        <small>Seleciona um cliente e adiciona fotos (Antes/Depois) do telemóvel ou do PC.</small>
 
         <div class="row" style="margin-top:10px">
           <div>
@@ -185,7 +185,7 @@
                   <img id="imgBefore" src="" alt="Antes" style="display:none" />
                   <div class="mini" id="beforeInfo">—</div>
                   <div style="height:10px"></div>
-                  <input id="fileBefore" type="file" accept="image/*" capture="environment" />
+                  <input id="fileBefore" type="file" accept="image/*" />
                   <div style="height:10px"></div>
                   <button onclick="uploadPhoto('before')">⬆️ Enviar Antes</button>
                 </div>
@@ -195,7 +195,7 @@
                   <img id="imgAfter" src="" alt="Depois" style="display:none" />
                   <div class="mini" id="afterInfo">—</div>
                   <div style="height:10px"></div>
-                  <input id="fileAfter" type="file" accept="image/*" capture="environment" />
+                  <input id="fileAfter" type="file" accept="image/*" />
                   <div style="height:10px"></div>
                   <button onclick="uploadPhoto('after')">⬆️ Enviar Depois</button>
                 </div>
@@ -838,7 +838,7 @@ async function uploadPhoto(kind){
 
   const file = (kind === "before" ? fileBefore.files[0] : fileAfter.files[0]);
   if(!file){
-    alert("Escolhe/tira uma foto primeiro.");
+    alert("Escolhe uma foto do telemóvel ou do PC primeiro.");
     return;
   }
 
@@ -874,7 +874,6 @@ async function deleteClientById(cid){
     newClient();
     clientSaveStatusEl.textContent = "✅ Cliente apagado.";
   }catch(e1){
-    // fallback para browsers/hosts que bloqueiam DELETE em certos cenários
     try{
       await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(id) + "/delete", {});
       await reloadClients();
@@ -897,7 +896,6 @@ async function openPhotosForBooking(bid){
   const bookingPhone = (b.phone || "").trim();
   const bookingEmail = (b.email || "").trim();
 
-  // 1) se tiver client_id, procura direto
   const cid = (b.client_id || "").trim();
   if(cid){
     let c = (clientsCache || []).find(x => x.id === cid) || null;
@@ -908,7 +906,6 @@ async function openPhotosForBooking(bid){
     if(c){ selectClient(c); return; }
   }
 
-  // 2) se NÃO tiver client_id: tenta encontrar cliente existente pelo contacto
   if(!(clientsCache||[]).length){
     await reloadClients().catch(()=>{});
   }
@@ -925,7 +922,6 @@ async function openPhotosForBooking(bid){
     return;
   }
 
-  // 3) só se não existir mesmo: preparar novo
   newClient();
   c_name.value = bookingName;
   c_phone.value = bookingPhone;
