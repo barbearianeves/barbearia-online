@@ -60,7 +60,6 @@
     border-radius:12px; font-size:12px; color:var(--muted); white-space:pre-wrap;
   }
 
-  /* Tabs */
   .tabs{display:flex;gap:10px;margin:12px 0}
   .tabbtn{
     width:auto; padding:10px 12px; border-radius:14px; border:1px solid var(--line);
@@ -68,7 +67,6 @@
   }
   .tabbtn.active{background:#fff;color:#000;border-color:#fff}
 
-  /* Clientes */
   .clientGrid{display:grid;grid-template-columns:1fr;gap:12px}
   .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:700px){ .photos{grid-template-columns:1fr} }
@@ -89,7 +87,6 @@
       <button class="tabbtn" id="tabClients" onclick="showTab('clients')">👤 Clientes</button>
     </div>
 
-    <!-- TAB: MAPA -->
     <div id="viewMap">
       <div class="card">
         <h1>Mapa do Barbeiro</h1>
@@ -112,11 +109,10 @@
       </div>
     </div>
 
-    <!-- TAB: CLIENTES -->
     <div id="viewClients" class="hide">
       <div class="card">
         <h1>Clientes • Fotos</h1>
-        <small>Ao clicar em 📸 Fotos numa marcação, o cliente abre logo aqui. A lista de clientes foi removida.</small>
+        <small>Ao clicar em 📸 Fotos numa marcação, o cliente abre logo aqui e a marcação fica ligada ao cliente certo.</small>
 
         <div class="status" id="clientsStatus">—</div>
 
@@ -206,25 +202,15 @@
 </div>
 
 <script>
-/* =========================
-   CONFIG
-   ========================= */
-const API_BASE    = "https://barbearia-api-ki25.onrender.com";
-const STEP_MIN    = 45;
-
-// true -> mostra debug quando falta email/telefone
+const API_BASE = "https://barbearia-api-ki25.onrender.com";
+const STEP_MIN = 45;
 const DEBUG_ON_MISSING = true;
-
-// fallback: se faltar telefone no booking, podes usar este para testar (muda depois)
 const TEST_PHONE_FALLBACK = "916634329";
 
-/* =========================
-   HORÁRIOS
-   ========================= */
 function getScheduleForDate(dateISO){
   const [y,m,d] = dateISO.split("-").map(Number);
   const dt = new Date(y, m-1, d);
-  const dow = dt.getDay(); // 0=Dom,1=Seg,...6=Sáb
+  const dow = dt.getDay();
 
   if(dow === 0 || dow === 1) return { closed:true, segments: [] };
 
@@ -241,7 +227,6 @@ function getScheduleForDate(dateISO){
   };
 }
 
-/* ========================= */
 const appEl = document.getElementById("app");
 const overlayEl = document.getElementById("loginOverlay");
 const tokenEl = document.getElementById("token");
@@ -264,6 +249,16 @@ function escapeHtml(s){
   return (s||"").replace(/[&<>"']/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
+}
+
+function normPhone(p){
+  return (p||"").replace(/\D+/g,"").replace(/^351/,"");
+}
+function normEmail(e){
+  return (e||"").trim().toLowerCase();
+}
+function normName(n){
+  return (n||"").trim().toLowerCase().replace(/\s+/g," ");
 }
 
 async function apiGet(url){
@@ -306,9 +301,6 @@ function isHiddenFromMap(x){
   return (x.status === "Cancelado") || (x.status === "Desbloqueado");
 }
 
-/* =========================
-   TABS
-   ========================= */
 function showTab(which){
   const map = document.getElementById("viewMap");
   const clients = document.getElementById("viewClients");
@@ -328,9 +320,6 @@ function showTab(which){
   }
 }
 
-/* =========================
-   LOGIN
-   ========================= */
 async function doLogin(){
   const t = tokenEl.value.trim();
   if(!t){ loginStatusEl.textContent="Escreve a senha."; return; }
@@ -343,15 +332,13 @@ async function doLogin(){
     appEl.classList.remove("hide");
     if(!dateEl.value) dateEl.value = todayISO();
     await reloadMap();
+    await reloadClients();
   }catch(ex){
     localStorage.removeItem("admin_token");
     loginStatusEl.textContent="❌ Senha errada ou API offline.";
   }
 }
 
-/* =========================
-   MAPA
-   ========================= */
 async function fetchAdminDay(date, barber){
   const url = new URL(API_BASE + "/admin/bookings");
   url.searchParams.set("date", date);
@@ -505,9 +492,6 @@ async function unblock(id){
   }
 }
 
-/* =========================
-   helpers: obter booking “bem”
-   ========================= */
 async function getBookingSafe(id){
   let hit = currentItemsById.get(id) || null;
   if(hit) return hit;
@@ -529,9 +513,6 @@ function showDebug(id, obj){
   el.textContent = "DEBUG booking:\n" + JSON.stringify(obj, null, 2);
 }
 
-/* =========================
-   📧 Outlook / mailto
-   ========================= */
 async function openOutlookEmail(id){
   const hit = await getBookingSafe(id);
   if(!hit){ alert("Não encontrei a marcação."); return; }
@@ -571,9 +552,6 @@ Barbearia`;
   setTimeout(() => { window.location.href = mailtoUrl; }, 600);
 }
 
-/* =========================
-   📱 SMS no iPhone (Messages)
-   ========================= */
 async function openSMS(id){
   const hit = await getBookingSafe(id);
   if(!hit){ alert("Não encontrei a marcação."); return; }
@@ -601,9 +579,6 @@ Obrigado!`;
   window.location.href = smsUrl;
 }
 
-/* =========================
-   CLIENTES / FOTOS
-   ========================= */
 const clientsStatusEl = document.getElementById("clientsStatus");
 const clientSaveStatusEl = document.getElementById("clientSaveStatus");
 
@@ -626,37 +601,47 @@ const fileAfter  = document.getElementById("fileAfter");
 let clientsCache = [];
 let selectedClient = null;
 
-/* ====== DEDUPE HELPERS ====== */
-function normPhone(p){
-  return (p||"").replace(/\D+/g,"").replace(/^351/,"");
-}
-function normEmail(e){
-  return (e||"").trim().toLowerCase();
-}
-function findClientLocalByContact(name, phone, email){
-  const p = normPhone(phone);
-  const m = normEmail(email);
-  const n = (name||"").trim().toLowerCase();
+function clientMatchesExactly(client, name, phone, email){
+  const cp = normPhone(client?.phone || "");
+  const ce = normEmail(client?.email || "");
+  const cn = normName(client?.name || "");
 
-  if(m){
-    const hit = (clientsCache||[]).find(x => normEmail(x.email) === m);
+  const p = normPhone(phone || "");
+  const e = normEmail(email || "");
+  const n = normName(name || "");
+
+  if(e && ce && e === ce) return true;
+  if(p && cp && p === cp) return true;
+  if(n && cn && n === cn) return true;
+  return false;
+}
+
+function findClientLocalExact(name, phone, email){
+  const list = clientsCache || [];
+
+  if(email){
+    const hit = list.find(x => normEmail(x.email) === normEmail(email));
     if(hit) return hit;
   }
-  if(p){
-    const hit = (clientsCache||[]).find(x => normPhone(x.phone) === p);
+
+  if(phone){
+    const hit = list.find(x => normPhone(x.phone) === normPhone(phone));
     if(hit) return hit;
   }
-  if(n){
-    const hits = (clientsCache||[]).filter(x => (x.name||"").trim().toLowerCase() === n);
+
+  if(name){
+    const hits = list.filter(x => normName(x.name) === normName(name));
     if(hits.length === 1) return hits[0];
   }
+
   return null;
 }
-async function findClientRemote(name, phone, email){
+
+async function searchClientsRemote(name, phone, email){
   const tries = [];
   if(email) tries.push(email);
   if(phone) tries.push(phone);
-  if(name)  tries.push(name);
+  if(name) tries.push(name);
 
   for(const q of tries){
     try{
@@ -664,14 +649,28 @@ async function findClientRemote(name, phone, email){
       url.searchParams.set("q", q);
       const data = await apiGet(url.toString());
       const items = data.items || [];
-      clientsCache = items;
-      const hit = findClientLocalByContact(name, phone, email);
-      if(hit) return hit;
+
+      const exact = items.find(x => clientMatchesExactly(x, name, phone, email));
+      if(exact) return exact;
     }catch(e){}
   }
+
   return null;
 }
-/* ====== /DEDUPE HELPERS ====== */
+
+async function linkBookingToClient(bookingId, clientId){
+  if(!bookingId || !clientId) return null;
+  try{
+    const data = await apiPost(
+      API_BASE + "/admin/booking/" + encodeURIComponent(bookingId) + "/link-client",
+      { client_id: String(clientId) }
+    );
+    return data?.item || null;
+  }catch(e){
+    console.warn("Falhou link booking->client", e);
+    return null;
+  }
+}
 
 function absUrlMaybe(u){
   if(!u) return "";
@@ -725,13 +724,13 @@ function renderClientPhotos(c){
 }
 
 function selectClient(c){
-  selectedClient = c;
-  selNameEl.textContent = c.name || "(sem nome)";
-  selMetaEl.textContent = [c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • ") || "—";
-  fillClientForm(c);
-  renderClientPhotos(c);
+  selectedClient = c || null;
+  selNameEl.textContent = c?.name || "Seleciona um cliente";
+  selMetaEl.textContent = [c?.phone||"", c?.email||"", c?.id||""].filter(Boolean).join(" • ") || "—";
+  fillClientForm(c || {});
+  renderClientPhotos(c || {});
   clientSaveStatusEl.textContent = "—";
-  clientsStatusEl.textContent = "Cliente ligado com sucesso.";
+  if(c) clientsStatusEl.textContent = "Cliente ligado com sucesso.";
 }
 
 function newClient(){
@@ -760,9 +759,10 @@ async function saveClient(){
       if(!(clientsCache||[]).length){
         await reloadClients().catch(()=>{});
       }
-      let existing = findClientLocalByContact(payload.name, payload.phone, payload.email);
+
+      let existing = findClientLocalExact(payload.name, payload.phone, payload.email);
       if(!existing){
-        existing = await findClientRemote(payload.name, payload.phone, payload.email);
+        existing = await searchClientsRemote(payload.name, payload.phone, payload.email);
       }
       if(existing && existing.id){
         payload.id = existing.id;
@@ -772,8 +772,8 @@ async function saveClient(){
     const data = await apiPost(API_BASE + "/admin/clients", payload);
     const item = data.item || null;
     if(item){
+      await reloadClients().catch(()=>{});
       selectClient(item);
-      await reloadClients();
     }
     clientSaveStatusEl.textContent = "✅ Guardado";
   }catch(ex){
@@ -803,8 +803,8 @@ async function uploadPhoto(kind){
     const data = await apiPostForm(API_BASE + "/admin/client/" + encodeURIComponent(cid) + "/photo", fd);
     const item = data.item || null;
     if(item){
+      await reloadClients().catch(()=>{});
       selectClient(item);
-      await reloadClients();
     }
     clientSaveStatusEl.textContent = "✅ Foto enviada";
     if(kind === "before") fileBefore.value = "";
@@ -836,46 +836,51 @@ async function deleteClientById(cid){
   }
 }
 
-/* abrir tab clientes já no cliente da marcação */
 async function openPhotosForBooking(bid){
   const b = await getBookingSafe(bid);
   if(!b){ alert("Não encontrei a marcação."); return; }
 
   showTab("clients");
   clientsStatusEl.textContent = "A ligar cliente da marcação…";
+  clientSaveStatusEl.textContent = "—";
 
   const bookingName  = (b.name || b.client || "").trim();
   const bookingPhone = (b.phone || "").trim();
   const bookingEmail = (b.email || "").trim();
+  const bookingClientId = (b.client_id || "").trim();
 
   if(!(clientsCache||[]).length){
     await reloadClients().catch(()=>{});
   }
 
-  const cid = (b.client_id || "").trim();
-  if(cid){
-    let c = (clientsCache || []).find(x => String(x.id) === String(cid)) || null;
+  if(bookingClientId){
+    let c = (clientsCache || []).find(x => String(x.id) === String(bookingClientId)) || null;
     if(!c){
       try{
-        const data = await apiGet(API_BASE + "/admin/client/" + encodeURIComponent(cid));
+        const data = await apiGet(API_BASE + "/admin/client/" + encodeURIComponent(bookingClientId));
         c = data.item || null;
       }catch(e){}
     }
+
     if(c){
       selectClient(c);
+      clientsStatusEl.textContent = "Cliente da marcação aberto com sucesso.";
       return;
     }
   }
 
-  let existing = findClientLocalByContact(bookingName, bookingPhone, bookingEmail);
+  let existing = findClientLocalExact(bookingName, bookingPhone, bookingEmail);
   if(!existing){
-    existing = await findClientRemote(bookingName, bookingPhone, bookingEmail);
+    existing = await searchClientsRemote(bookingName, bookingPhone, bookingEmail);
   }
 
-  if(existing){
+  if(existing && existing.id){
+    await linkBookingToClient(bid, existing.id);
+    await reloadMap().catch(()=>{});
+    await reloadClients().catch(()=>{});
     selectClient(existing);
-    clientSaveStatusEl.textContent =
-      "✅ Cliente ligado automaticamente. Agora podes enviar as fotos.";
+    clientSaveStatusEl.textContent = "✅ Cliente encontrado e ligado à marcação.";
+    clientsStatusEl.textContent = "Cliente da marcação aberto com sucesso.";
     return;
   }
 
@@ -890,26 +895,31 @@ async function openPhotosForBooking(bid){
 
     const data = await apiPost(API_BASE + "/admin/clients", payload);
     const item = data.item || null;
-    if(item){
+
+    if(item && item.id){
+      await linkBookingToClient(bid, item.id);
+      await reloadMap().catch(()=>{});
       await reloadClients().catch(()=>{});
       selectClient(item);
-      clientSaveStatusEl.textContent =
-        "✅ Cliente criado e ligado automaticamente. Agora podes enviar as fotos.";
+      clientSaveStatusEl.textContent = "✅ Cliente criado e ligado automaticamente à marcação.";
+      clientsStatusEl.textContent = "Cliente da marcação aberto com sucesso.";
       return;
     }
-  }catch(e){}
+  }catch(e){
+    console.warn("Falhou criação automática do cliente", e);
+  }
 
   newClient();
   c_name.value = bookingName;
   c_phone.value = bookingPhone;
   c_email.value = bookingEmail;
+  c_id.value = "";
 
   clientsStatusEl.textContent = "Cliente não encontrado.";
   clientSaveStatusEl.textContent =
     "⚠️ Não encontrei nem consegui criar automaticamente. Carrega 💾 Guardar e depois envia as fotos.";
 }
 
-/* AUTO START */
 (function boot(){
   const t = token();
   if(t){
