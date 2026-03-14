@@ -158,12 +158,12 @@
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Pesquisa simples por nome ou telefone. Ao clicar num cliente, as fotos aparecem à direita.</small>
+        <small>Pesquisa dinâmica por nome ou telefone. Ao escrever, os nomes compatíveis aparecem logo.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
             <label>Pesquisar cliente</label>
-            <input id="photoSearch" placeholder="Nome ou telefone" oninput="filterPhotoClients()" />
+            <input id="photoSearch" placeholder="Nome ou telefone" oninput="filterPhotoClients()" autocomplete="off" />
             <div class="status" id="clientsStatus">—</div>
             <div id="photoResults" class="searchList"></div>
           </div>
@@ -237,12 +237,12 @@
     <div id="viewBooking" class="hide">
       <div class="card">
         <h1>Nova Marcação</h1>
-        <small>Podes marcar manualmente a partir daqui. Esta marcação pode cair em cima de horários já ocupados.</small>
+        <small>Podes marcar manualmente a partir daqui. A pesquisa do cliente também é dinâmica.</small>
 
         <div class="bookBox" style="margin-top:12px">
           <div class="card" style="margin:0">
             <label>Pesquisar cliente existente</label>
-            <input id="bookSearch" placeholder="Nome ou telefone" oninput="filterBookingClients()" />
+            <input id="bookSearch" placeholder="Nome ou telefone" oninput="filterBookingClients()" autocomplete="off" />
             <div class="status" id="bookSearchStatus">—</div>
             <div id="bookResults" class="searchList" style="max-height:220px"></div>
           </div>
@@ -398,6 +398,73 @@ function escapeHtml(s){
 function normPhone(p){ return (p||"").replace(/\D+/g,"").replace(/^351/,""); }
 function normEmail(e){ return (e||"").trim().toLowerCase(); }
 function normName(n){ return (n||"").trim().toLowerCase().replace(/\s+/g," "); }
+
+function splitWords(s){
+  return normName(s).split(" ").filter(Boolean);
+}
+
+function clientScoreForQuery(client, query){
+  const qRaw = (query || "").trim();
+  if(!qRaw) return 1;
+
+  const qName = normName(qRaw);
+  const qWords = splitWords(qRaw);
+  const qPhone = normPhone(qRaw);
+
+  const name = normName(client?.name || "");
+  const nameWords = splitWords(client?.name || "");
+  const phone = normPhone(client?.phone || "");
+  const email = normEmail(client?.email || "");
+
+  if(qPhone){
+    if(phone.startsWith(qPhone)) return 1000;
+    if(phone.includes(qPhone)) return 900;
+  }
+
+  if(qName){
+    if(name === qName) return 1200;
+    if(name.startsWith(qName)) return 1100;
+    if(email.startsWith(qName)) return 800;
+  }
+
+  if(qWords.length){
+    const allWordPrefixes = qWords.every(qw =>
+      nameWords.some(nw => nw.startsWith(qw))
+    );
+    if(allWordPrefixes) return 1000 - qWords.length;
+  }
+
+  if(qWords.length){
+    const allContained = qWords.every(qw => name.includes(qw));
+    if(allContained) return 700 - qWords.length;
+  }
+
+  return 0;
+}
+
+function dynamicFilterClients(list, query){
+  const q = (query || "").trim();
+  const items = (list || [])
+    .map(c => ({ c, score: clientScoreForQuery(c, q) }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => {
+      if(b.score !== a.score) return b.score - a.score;
+      const an = normName(a.c?.name || "");
+      const bn = normName(b.c?.name || "");
+      if(an < bn) return -1;
+      if(an > bn) return 1;
+      return String(a.c?.id || "").localeCompare(String(b.c?.id || ""));
+    })
+    .map(x => x.c);
+
+  return q ? items : [...list].sort((a,b) => {
+    const an = normName(a?.name || "");
+    const bn = normName(b?.name || "");
+    if(an < bn) return -1;
+    if(an > bn) return 1;
+    return String(a?.id || "").localeCompare(String(b?.id || ""));
+  });
+}
 
 function isBarberMadeBooking(x){
   const createdBy = String(x?.created_by || "").trim().toLowerCase();
@@ -916,17 +983,8 @@ function renderPhotoResults(items){
 }
 
 function filterPhotoClients(){
-  const q = (document.getElementById("photoSearch").value || "").trim().toLowerCase();
-  let items = [...clientsCache];
-
-  if(q){
-    items = items.filter(c => {
-      const name = (c.name || "").toLowerCase();
-      const phone = normPhone(c.phone || "");
-      return name.includes(q) || phone.includes(normPhone(q));
-    });
-  }
-
+  const q = document.getElementById("photoSearch").value || "";
+  const items = dynamicFilterClients(clientsCache, q);
   renderPhotoResults(items.slice(0, 100));
 }
 
@@ -1157,17 +1215,8 @@ function renderBookingResults(items){
 }
 
 function filterBookingClients(){
-  const q = (document.getElementById("bookSearch").value || "").trim().toLowerCase();
-  let items = [...clientsCache];
-
-  if(q){
-    items = items.filter(c => {
-      const name = (c.name || "").toLowerCase();
-      const phone = normPhone(c.phone || "");
-      return name.includes(q) || phone.includes(normPhone(q));
-    });
-  }
-
+  const q = document.getElementById("bookSearch").value || "";
+  const items = dynamicFilterClients(clientsCache, q);
   renderBookingResults(items.slice(0, 100));
   bookSearchStatus.textContent = `${items.length} resultado(s)`;
 }
@@ -1294,4 +1343,4 @@ setInterval(() => {
 }, 60000);
 </script>
 </body>
-</html>
+</html> manda completo corrigido ns pesquisa para filtrar dinamicamente os nomes compativeis com o que vou escrevendo both tab photos and booking
