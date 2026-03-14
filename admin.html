@@ -307,7 +307,7 @@
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Mostra clientes sem duplicados.</small>
+        <small>IDs são internos e não aparecem no ecrã.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
@@ -328,30 +328,27 @@
                 <button style="width:auto" onclick="newClient()">➕ Novo</button>
                 <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
                 <button style="width:auto" onclick="resetClientsFromApi()">♻️ Reset API</button>
-                <button style="width:auto" class="danger" onclick="deleteClientById((c_id.value||'').trim())">🗑️ Apagar</button>
+                <button style="width:auto" class="danger" onclick="deleteCurrentClient()">🗑️ Apagar</button>
               </div>
             </div>
 
             <div class="row" style="margin-top:10px">
               <div>
-                <label>ID</label>
-                <input id="c_id" placeholder="(auto)" />
-              </div>
-              <div>
                 <label>Nome</label>
                 <input id="c_name" placeholder="ex: Rui Silva" />
+              </div>
+              <div>
+                <label>Telefone</label>
+                <input id="c_phone" placeholder="9xxxxxxxx" />
               </div>
             </div>
 
             <div class="row">
               <div>
-                <label>Telefone</label>
-                <input id="c_phone" placeholder="9xxxxxxxx" />
-              </div>
-              <div>
                 <label>Email</label>
                 <input id="c_email" placeholder="email@..." />
               </div>
+              <div></div>
             </div>
 
             <label>Notas</label>
@@ -401,28 +398,25 @@
 
           <div class="card" style="margin:0">
             <div style="font-weight:950;font-size:16px" id="bookSelTitle">Dados da marcação</div>
-            <div class="mini" id="bookSelMeta">Só podes marcar clientes já existentes. Se não existir, cria primeiro na aba Fotos.</div>
+            <div class="mini" id="bookSelMeta">Só podes marcar clientes já existentes. IDs são internos.</div>
 
             <div class="row" style="margin-top:10px">
               <div>
-                <label>Client ID</label>
-                <input id="b_client_id" placeholder="(obrigatório: cliente existente)" />
-              </div>
-              <div>
                 <label>Nome</label>
                 <input id="b_name" placeholder="Nome do cliente" />
+              </div>
+              <div>
+                <label>Telefone</label>
+                <input id="b_phone" placeholder="9xxxxxxxx" />
               </div>
             </div>
 
             <div class="row">
               <div>
-                <label>Telefone</label>
-                <input id="b_phone" placeholder="9xxxxxxxx" />
-              </div>
-              <div>
                 <label>Email</label>
                 <input id="b_email" placeholder="email@..." />
               </div>
+              <div></div>
             </div>
 
             <div class="row3">
@@ -1147,7 +1141,6 @@ const clientSaveStatusEl = document.getElementById("clientSaveStatus");
 const selNameEl = document.getElementById("selName");
 const selMetaEl = document.getElementById("selMeta");
 
-const c_id = document.getElementById("c_id");
 const c_name = document.getElementById("c_name");
 const c_phone = document.getElementById("c_phone");
 const c_email = document.getElementById("c_email");
@@ -1159,6 +1152,10 @@ const beforeInfo = document.getElementById("beforeInfo");
 const afterInfo  = document.getElementById("afterInfo");
 const fileBefore = document.getElementById("fileBefore");
 const fileAfter  = document.getElementById("fileAfter");
+
+function currentSelectedClientId(){
+  return String(selectedClient?.id || "").trim();
+}
 
 function clientMatchesExactly(client, name, phone, email){
   const cp = normPhone(client?.phone || "");
@@ -1229,16 +1226,13 @@ async function getClientById(clientId){
 }
 
 async function resolveExistingClientForBookingDraft(){
-  let cid = String(b_client_id.value || "").trim();
   const name = (b_name.value || "").trim();
   const phone = (b_phone.value || "").trim();
   const email = (b_email.value || "").trim();
 
-  if(cid){
-    const byId = await getClientById(cid);
-    if(byId && String(byId.id || "").trim()){
-      return byId;
-    }
+  if(bookingSelectedClient && String(bookingSelectedClient.id || "").trim()){
+    const full = await getClientById(bookingSelectedClient.id);
+    if(full && String(full.id || "").trim()) return full;
   }
 
   let existing = findClientLocalExact(name, phone, email);
@@ -1256,12 +1250,12 @@ async function resolveExistingClientForBookingDraft(){
 
 function applyClientToBookingForm(c){
   if(!c) return;
-  b_client_id.value = c?.id || "";
+  bookingSelectedClient = c;
   b_name.value = c?.name || "";
   b_phone.value = c?.phone || "";
   b_email.value = c?.email || "";
   bookSelTitle.textContent = c?.name || "Dados da marcação";
-  bookSelMeta.textContent = [c?.phone||"", c?.email||"", c?.id||""].filter(Boolean).join(" • ") || "—";
+  bookSelMeta.textContent = [c?.phone||"", c?.email||""].filter(Boolean).join(" • ") || "—";
 }
 
 async function linkBookingToClient(bookingId, clientId){
@@ -1354,7 +1348,6 @@ async function reloadClients(){
 }
 
 function fillClientForm(c){
-  c_id.value = c?.id || "";
   c_name.value = c?.name || "";
   c_phone.value = c?.phone || "";
   c_email.value = c?.email || "";
@@ -1389,7 +1382,7 @@ function renderClientPhotos(c){
 function selectClient(c){
   selectedClient = c || null;
   selNameEl.textContent = c?.name || "Seleciona um cliente";
-  selMetaEl.textContent = [c?.phone||"", c?.email||"", c?.id||""].filter(Boolean).join(" • ") || "—";
+  selMetaEl.textContent = [c?.phone||"", c?.email||""].filter(Boolean).join(" • ") || "—";
   fillClientForm(c || {});
   renderClientPhotos(c || {});
   clientSaveStatusEl.textContent = "—";
@@ -1410,7 +1403,7 @@ function renderPhotoResults(items){
     div.className = "searchItem";
     div.innerHTML = `
       <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
-      <div class="m">${escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "))}</div>
+      <div class="m">${escapeHtml([c.phone||"", c.email||""].filter(Boolean).join(" • "))}</div>
       <div class="m">${escapeHtml(
         [
           c.photo_before_url ? "foto antes" : "",
@@ -1445,14 +1438,16 @@ async function saveClient(){
   clientSaveStatusEl.textContent = "A guardar…";
   try{
     const payload = {
-      id: (c_id.value || "").trim(),
       name: (c_name.value || "").trim(),
       phone: (c_phone.value || "").trim(),
       email: (c_email.value || "").trim(),
       notes: (c_notes.value || "").trim()
     };
 
-    if(!payload.id){
+    const existingInternalId = currentSelectedClientId();
+    if(existingInternalId){
+      payload.id = existingInternalId;
+    } else {
       if(!(clientsCache||[]).length){
         await reloadClients().catch(()=>{});
       }
@@ -1479,9 +1474,9 @@ async function saveClient(){
 }
 
 async function uploadPhoto(kind){
-  const cid = (c_id.value || "").trim();
+  const cid = currentSelectedClientId();
   if(!cid){
-    alert("Primeiro guarda o cliente (precisa de ID).");
+    alert("Primeiro guarda o cliente.");
     return;
   }
 
@@ -1511,19 +1506,23 @@ async function uploadPhoto(kind){
   }
 }
 
-async function deleteClientById(cid){
-  const id = (cid || "").trim();
-  if(!id){ alert("Sem ID."); return; }
+async function deleteCurrentClient(){
+  const cid = currentSelectedClientId();
+  if(!cid){
+    alert("Seleciona primeiro um cliente já guardado.");
+    return;
+  }
+
   if(!confirm("Apagar este cliente?")) return;
 
   try{
-    await apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(id));
+    await apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(cid));
     newClient();
     await reloadClients();
     clientSaveStatusEl.textContent = "✅ Cliente apagado.";
   }catch(e1){
     try{
-      await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(id) + "/delete", {});
+      await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(cid) + "/delete", {});
       newClient();
       await reloadClients();
       clientSaveStatusEl.textContent = "✅ Cliente apagado.";
@@ -1609,7 +1608,6 @@ async function openPhotosForBooking(bid){
   c_name.value = bookingName;
   c_phone.value = bookingPhone;
   c_email.value = bookingEmail;
-  c_id.value = "";
 
   clientsStatusEl.textContent = "Cliente não encontrado.";
   clientSaveStatusEl.textContent =
@@ -1619,7 +1617,6 @@ async function openPhotosForBooking(bid){
 /* -------------------------
    TAB MARCAÇÕES
 ------------------------- */
-const b_client_id = document.getElementById("b_client_id");
 const b_name = document.getElementById("b_name");
 const b_phone = document.getElementById("b_phone");
 const b_email = document.getElementById("b_email");
@@ -1649,7 +1646,7 @@ function renderBookingResults(items){
     div.className = "searchItem";
     div.innerHTML = `
       <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
-      <div class="m">${escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "))}</div>
+      <div class="m">${escapeHtml([c.phone||"", c.email||""].filter(Boolean).join(" • "))}</div>
       <div class="m">${escapeHtml(
         [
           c.photo_before_url ? "foto antes" : "",
@@ -1677,7 +1674,6 @@ function selectBookingClient(c){
 
 function clearBookingForm(){
   bookingSelectedClient = null;
-  b_client_id.value = "";
   b_name.value = "";
   b_phone.value = "";
   b_email.value = "";
@@ -1687,13 +1683,13 @@ function clearBookingForm(){
   b_dur.value = "45";
   if(!b_date.value) b_date.value = todayISO();
   bookSelTitle.textContent = "Dados da marcação";
-  bookSelMeta.textContent = "Só podes marcar clientes já existentes. Se não existir, cria primeiro na aba Fotos.";
+  bookSelMeta.textContent = "Só podes marcar clientes já existentes. IDs são internos.";
   bookCreateStatus.textContent = "—";
 }
 
 async function createBookingFromAdmin(){
   const payload = {
-    client_id: (b_client_id.value || "").trim(),
+    client_id: "",
     name: (b_name.value || "").trim(),
     phone: (b_phone.value || "").trim(),
     email: (b_email.value || "").trim(),
@@ -1709,10 +1705,6 @@ async function createBookingFromAdmin(){
 
   if(!payload.name){
     alert("Escolhe um cliente existente ou escreve o nome para procurar.");
-    return;
-  }
-  if(!payload.phone && !payload.email && !payload.client_id){
-    alert("Na página do barbeiro só podes marcar para clientes já existentes.");
     return;
   }
   if(!payload.barber || !payload.date || !payload.time || !payload.service || !payload.dur){
@@ -1741,20 +1733,9 @@ async function createBookingFromAdmin(){
     payload.phone = (existingClient.phone || "").trim();
     payload.email = (existingClient.email || "").trim();
 
-    if(!payload.client_id){
-      bookCreateStatus.textContent = "❌ Cliente inválido.";
-      alert("Cliente inválido.");
-      return;
-    }
-
     bookCreateStatus.textContent = "A criar marcação…";
 
     const data = await apiPost(API_BASE + "/book", payload);
-
-    const newClientId = data?.client_id || "";
-    if(newClientId){
-      b_client_id.value = newClientId;
-    }
 
     await reloadClients().catch(()=>{});
     await reloadMap().catch(()=>{});
@@ -1772,7 +1753,7 @@ async function prefillBookingFromSlot(bid){
 
   showTab("booking");
 
-  b_client_id.value = b.client_id || "";
+  bookingSelectedClient = b.client_id ? { id: b.client_id } : null;
   b_name.value = b.name || b.client || "";
   b_phone.value = b.phone || "";
   b_email.value = b.email || "";
@@ -1790,6 +1771,7 @@ async function prefillBookingFromSlot(bid){
 
 function prefillBookingByTime(hhmm){
   showTab("booking");
+  bookingSelectedClient = null;
   b_barber.value = barberEl.value || "Pedro";
   b_date.value = dateEl.value || todayISO();
   b_time.value = hhmm || "";
