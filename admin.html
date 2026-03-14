@@ -13,12 +13,14 @@
     --busyBg:#241216; --busyLine:#7a2a3a;
     --blockBg:#142017; --blockLine:#2bd66a;
 
+    --barberBg:#111c2d; --barberLine:#4ea1ff;
+
     --btn:#ffffff; --btnTxt:#000;
     --danger:#ff5c5c;
   }
   *{box-sizing:border-box}
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--txt);padding:16px}
-  .wrap{max-width:980px;margin:0 auto}
+  .wrap{max-width:1100px;margin:0 auto}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
   h1{font-size:20px;margin:6px 0}
   small{color:var(--muted)}
@@ -28,6 +30,8 @@
   button{width:100%;padding:12px;border-radius:12px;border:0;cursor:pointer;font-weight:950;background:var(--btn);color:var(--btnTxt)}
   button.danger{background:var(--danger);color:#000}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  @media(max-width:900px){ .row3{grid-template-columns:1fr} }
   @media(max-width:700px){ .row{grid-template-columns:1fr} }
 
   .status{margin-top:10px;color:var(--muted);font-size:13px}
@@ -48,6 +52,7 @@
   .slot .d{font-size:12px;color:var(--muted)}
   .slot.busy{background:var(--busyBg);border-color:var(--busyLine)}
   .slot.block{background:var(--blockBg);border-color:var(--blockLine)}
+  .slot.barber-made{background:var(--barberBg);border-color:var(--barberLine)}
   .actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
   .actions button{width:auto;padding:10px;border-radius:12px;font-size:12px}
 
@@ -60,21 +65,61 @@
     border-radius:12px; font-size:12px; color:var(--muted); white-space:pre-wrap;
   }
 
-  .tabs{display:flex;gap:10px;margin:12px 0}
+  .tabs{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
   .tabbtn{
     width:auto; padding:10px 12px; border-radius:14px; border:1px solid var(--line);
     background:#0f1319; color:#fff; font-weight:900; cursor:pointer;
   }
   .tabbtn.active{background:#fff;color:#000;border-color:#fff}
 
-  .clientGrid{display:grid;grid-template-columns:1fr;gap:12px}
+  .clientGrid{display:grid;grid-template-columns:340px 1fr;gap:12px}
+  @media(max-width:900px){ .clientGrid{grid-template-columns:1fr} }
+
   .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:700px){ .photos{grid-template-columns:1fr} }
   .ph{border:1px solid var(--line);border-radius:14px;background:#0f1319;padding:10px}
   .ph img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
   .ph .t{font-weight:950;margin-bottom:8px}
   .mini{font-size:12px;color:var(--muted)}
-  .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin-top:6px}
+
+  .searchList{
+    display:grid;
+    gap:8px;
+    max-height:65vh;
+    overflow:auto;
+    margin-top:10px;
+  }
+  .searchItem{
+    border:1px solid var(--line);
+    background:#0f1319;
+    border-radius:12px;
+    padding:10px;
+    cursor:pointer;
+  }
+  .searchItem:hover{border-color:#fff}
+  .searchItem .n{font-weight:900}
+  .searchItem .m{font-size:12px;color:var(--muted);margin-top:4px}
+
+  .bookBox{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
+  .pill{
+    display:inline-block;
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    color:#fff;
+    background:#0f1319;
+  }
+  .pill.barber{
+    border-color:var(--barberLine);
+    color:#d7ebff;
+    background:#102238;
+  }
 </style>
 </head>
 <body>
@@ -84,7 +129,8 @@
 
     <div class="tabs">
       <button class="tabbtn active" id="tabMap" onclick="showTab('map')">🗓️ Mapa</button>
-      <button class="tabbtn" id="tabClients" onclick="showTab('clients')">👤 Clientes</button>
+      <button class="tabbtn" id="tabPhotos" onclick="showTab('photos')">📸 Fotos</button>
+      <button class="tabbtn" id="tabBooking" onclick="showTab('booking')">➕ Marcar</button>
     </div>
 
     <div id="viewMap">
@@ -109,79 +155,175 @@
       </div>
     </div>
 
-    <div id="viewClients" class="hide">
+    <div id="viewPhotos" class="hide">
       <div class="card">
-        <h1>Clientes • Fotos</h1>
-        <small>Ao clicar em 📸 Fotos numa marcação, o cliente abre logo aqui e a marcação fica ligada ao cliente certo.</small>
-
-        <div class="status" id="clientsStatus">—</div>
+        <h1>Fotos dos Clientes</h1>
+        <small>Pesquisa simples por nome ou telefone. Ao clicar num cliente, as fotos aparecem à direita.</small>
 
         <div class="clientGrid" style="margin-top:12px">
-          <div>
-            <div class="card" style="margin:0;border-radius:16px">
-              <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
-                <div>
-                  <div style="font-weight:950;font-size:16px" id="selName">Seleciona um cliente</div>
-                  <div class="mini" id="selMeta">—</div>
-                </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
-                  <button style="width:auto" onclick="newClient()">➕ Novo</button>
-                  <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
-                  <button style="width:auto" class="danger" onclick="deleteClientById((c_id.value||'').trim())">🗑️ Apagar</button>
-                </div>
-              </div>
-
-              <div class="row" style="margin-top:10px">
-                <div>
-                  <label>ID</label>
-                  <input id="c_id" placeholder="(auto)" />
-                </div>
-                <div>
-                  <label>Nome</label>
-                  <input id="c_name" placeholder="ex: Rui Silva" />
-                </div>
-              </div>
-
-              <div class="row">
-                <div>
-                  <label>Telefone</label>
-                  <input id="c_phone" placeholder="9xxxxxxxx" />
-                </div>
-                <div>
-                  <label>Email</label>
-                  <input id="c_email" placeholder="email@..." />
-                </div>
-              </div>
-
-              <label>Notas</label>
-              <textarea id="c_notes" placeholder="Notas do cliente..."></textarea>
-
-              <div class="photos" style="margin-top:12px">
-                <div class="ph">
-                  <div class="t">📷 Antes</div>
-                  <img id="imgBefore" src="" alt="Antes" style="display:none" />
-                  <div class="mini" id="beforeInfo">—</div>
-                  <div style="height:10px"></div>
-                  <input id="fileBefore" type="file" accept="image/*" />
-                  <div style="height:10px"></div>
-                  <button onclick="uploadPhoto('before')">⬆️ Enviar Antes</button>
-                </div>
-
-                <div class="ph">
-                  <div class="t">📷 Depois</div>
-                  <img id="imgAfter" src="" alt="Depois" style="display:none" />
-                  <div class="mini" id="afterInfo">—</div>
-                  <div style="height:10px"></div>
-                  <input id="fileAfter" type="file" accept="image/*" />
-                  <div style="height:10px"></div>
-                  <button onclick="uploadPhoto('after')">⬆️ Enviar Depois</button>
-                </div>
-              </div>
-
-              <div class="status" id="clientSaveStatus">—</div>
-            </div>
+          <div class="card" style="margin:0">
+            <label>Pesquisar cliente</label>
+            <input id="photoSearch" placeholder="Nome ou telefone" oninput="filterPhotoClients()" />
+            <div class="status" id="clientsStatus">—</div>
+            <div id="photoResults" class="searchList"></div>
           </div>
 
+          <div class="card" style="margin:0">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+              <div>
+                <div style="font-weight:950;font-size:16px" id="selName">Seleciona um cliente</div>
+                <div class="mini" id="selMeta">—</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button style="width:auto" onclick="newClient()">➕ Novo</button>
+                <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
+                <button style="width:auto" class="danger" onclick="deleteClientById((c_id.value||'').trim())">🗑️ Apagar</button>
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <div>
+                <label>ID</label>
+                <input id="c_id" placeholder="(auto)" />
+              </div>
+              <div>
+                <label>Nome</label>
+                <input id="c_name" placeholder="ex: Rui Silva" />
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Telefone</label>
+                <input id="c_phone" placeholder="9xxxxxxxx" />
+              </div>
+              <div>
+                <label>Email</label>
+                <input id="c_email" placeholder="email@..." />
+              </div>
+            </div>
+
+            <label>Notas</label>
+            <textarea id="c_notes" placeholder="Notas do cliente..."></textarea>
+
+            <div class="photos" style="margin-top:12px">
+              <div class="ph">
+                <div class="t">📷 Antes</div>
+                <img id="imgBefore" src="" alt="Antes" style="display:none" />
+                <div class="mini" id="beforeInfo">—</div>
+                <div style="height:10px"></div>
+                <input id="fileBefore" type="file" accept="image/*" />
+                <div style="height:10px"></div>
+                <button onclick="uploadPhoto('before')">⬆️ Enviar Antes</button>
+              </div>
+
+              <div class="ph">
+                <div class="t">📷 Depois</div>
+                <img id="imgAfter" src="" alt="Depois" style="display:none" />
+                <div class="mini" id="afterInfo">—</div>
+                <div style="height:10px"></div>
+                <input id="fileAfter" type="file" accept="image/*" />
+                <div style="height:10px"></div>
+                <button onclick="uploadPhoto('after')">⬆️ Enviar Depois</button>
+              </div>
+            </div>
+
+            <div class="status" id="clientSaveStatus">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewBooking" class="hide">
+      <div class="card">
+        <h1>Nova Marcação</h1>
+        <small>Podes marcar manualmente a partir daqui. Esta marcação pode cair em cima de horários já ocupados.</small>
+
+        <div class="bookBox" style="margin-top:12px">
+          <div class="card" style="margin:0">
+            <label>Pesquisar cliente existente</label>
+            <input id="bookSearch" placeholder="Nome ou telefone" oninput="filterBookingClients()" />
+            <div class="status" id="bookSearchStatus">—</div>
+            <div id="bookResults" class="searchList" style="max-height:220px"></div>
+          </div>
+
+          <div class="card" style="margin:0">
+            <div style="font-weight:950;font-size:16px" id="bookSelTitle">Dados da marcação</div>
+            <div class="mini" id="bookSelMeta">Podes escolher cliente existente ou preencher manualmente.</div>
+
+            <div class="row" style="margin-top:10px">
+              <div>
+                <label>Client ID</label>
+                <input id="b_client_id" placeholder="(auto se escolheres cliente)" />
+              </div>
+              <div>
+                <label>Nome</label>
+                <input id="b_name" placeholder="Nome do cliente" />
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Telefone</label>
+                <input id="b_phone" placeholder="9xxxxxxxx" />
+              </div>
+              <div>
+                <label>Email</label>
+                <input id="b_email" placeholder="email@..." />
+              </div>
+            </div>
+
+            <div class="row3">
+              <div>
+                <label>Barbeiro</label>
+                <select id="b_barber">
+                  <option value="Pedro">Pedro</option>
+                  <option value="Joao">Joao</option>
+                </select>
+              </div>
+              <div>
+                <label>Data</label>
+                <input type="date" id="b_date" />
+              </div>
+              <div>
+                <label>Hora</label>
+                <input type="time" id="b_time" />
+              </div>
+            </div>
+
+            <div class="row3">
+              <div>
+                <label>Serviço</label>
+                <input id="b_service" placeholder="Ex: Corte" />
+              </div>
+              <div>
+                <label>Duração (min)</label>
+                <select id="b_dur">
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                  <option value="45" selected>45</option>
+                  <option value="60">60</option>
+                  <option value="75">75</option>
+                  <option value="90">90</option>
+                  <option value="120">120</option>
+                </select>
+              </div>
+              <div>
+                <label>Origem</label>
+                <input id="b_status_preview" value="Marcação do barbeiro" disabled />
+              </div>
+            </div>
+
+            <label>Notas</label>
+            <textarea id="b_notes" placeholder="Notas da marcação..."></textarea>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+              <button style="width:auto" onclick="clearBookingForm()">Limpar</button>
+              <button style="width:auto" onclick="createBookingFromAdmin()">✅ Criar Marcação</button>
+            </div>
+
+            <div class="status" id="bookCreateStatus">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -238,6 +380,9 @@ const statusEl = document.getElementById("status");
 const slotsEl = document.getElementById("slots");
 
 let currentItemsById = new Map();
+let clientsCache = [];
+let selectedClient = null;
+let bookingSelectedClient = null;
 
 function token(){ return (localStorage.getItem("admin_token") || "").trim(); }
 function pad2(n){ return (n<10?"0":"")+n; }
@@ -250,15 +395,14 @@ function escapeHtml(s){
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
 }
+function normPhone(p){ return (p||"").replace(/\D+/g,"").replace(/^351/,""); }
+function normEmail(e){ return (e||"").trim().toLowerCase(); }
+function normName(n){ return (n||"").trim().toLowerCase().replace(/\s+/g," "); }
 
-function normPhone(p){
-  return (p||"").replace(/\D+/g,"").replace(/^351/,"");
-}
-function normEmail(e){
-  return (e||"").trim().toLowerCase();
-}
-function normName(n){
-  return (n||"").trim().toLowerCase().replace(/\s+/g," ");
+function isBarberMadeBooking(x){
+  const createdBy = String(x?.created_by || "").trim().toLowerCase();
+  const createdVia = String(x?.created_via || "").trim().toLowerCase();
+  return createdBy === "barber_admin" || createdVia === "barber_page";
 }
 
 async function apiGet(url){
@@ -303,19 +447,29 @@ function isHiddenFromMap(x){
 
 function showTab(which){
   const map = document.getElementById("viewMap");
-  const clients = document.getElementById("viewClients");
-  const b1 = document.getElementById("tabMap");
-  const b2 = document.getElementById("tabClients");
+  const photos = document.getElementById("viewPhotos");
+  const booking = document.getElementById("viewBooking");
 
-  if(which === "clients"){
-    map.classList.add("hide");
-    clients.classList.remove("hide");
-    b1.classList.remove("active");
+  const b1 = document.getElementById("tabMap");
+  const b2 = document.getElementById("tabPhotos");
+  const b3 = document.getElementById("tabBooking");
+
+  map.classList.add("hide");
+  photos.classList.add("hide");
+  booking.classList.add("hide");
+
+  b1.classList.remove("active");
+  b2.classList.remove("active");
+  b3.classList.remove("active");
+
+  if(which === "photos"){
+    photos.classList.remove("hide");
     b2.classList.add("active");
+  }else if(which === "booking"){
+    booking.classList.remove("hide");
+    b3.classList.add("active");
   }else{
-    clients.classList.add("hide");
     map.classList.remove("hide");
-    b2.classList.remove("active");
     b1.classList.add("active");
   }
 }
@@ -331,8 +485,11 @@ async function doLogin(){
     overlayEl.classList.add("hide");
     appEl.classList.remove("hide");
     if(!dateEl.value) dateEl.value = todayISO();
+    if(!document.getElementById("b_date").value) document.getElementById("b_date").value = todayISO();
     await reloadMap();
     await reloadClients();
+    filterPhotoClients();
+    filterBookingClients();
   }catch(ex){
     localStorage.removeItem("admin_token");
     loginStatusEl.textContent="❌ Senha errada ou API offline.";
@@ -388,22 +545,24 @@ function renderSlots(slots){
 
   for(const s of slots){
     const div = document.createElement("div");
-
     const hit = s.hit;
     const busy = !!hit && !isBlock(hit);
     const block = !!hit && isBlock(hit);
+    const barberMade = !!hit && isBarberMadeBooking(hit);
 
-    div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "");
+    div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "") + (barberMade ? " barber-made" : "");
 
     if(busy){
       div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — Ocupado</div>
+        <div class="t">${escapeHtml(s.time)} — ${barberMade ? "Marcação do Barbeiro" : "Ocupado"}</div>
         <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
         <div class="d">${escapeHtml(hit.service || "")}</div>
+        ${barberMade ? `<div><span class="pill barber">feito pelo barbeiro</span></div>` : ``}
         <div class="actions">
           <button onclick="openOutlookEmail('${hit.id}')">📧 Outlook</button>
           <button onclick="openSMS('${hit.id}')">📱 SMS (iPhone)</button>
           <button onclick="openPhotosForBooking('${hit.id}')">📸 Fotos</button>
+          <button onclick="prefillBookingFromSlot('${hit.id}')">➕ Marcar por cima</button>
           <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
         </div>
         <div class="dbg hide" id="dbg_${hit.id}"></div>
@@ -414,12 +573,16 @@ function renderSlots(slots){
         <div class="d">Bloqueado</div>
         <div class="actions">
           <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
+          <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
         </div>
       `;
     } else {
       div.innerHTML = `
         <div class="t">${escapeHtml(s.time)} — Livre</div>
         <div class="d">Toque para bloquear</div>
+        <div class="actions">
+          <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
+        </div>
       `;
       div.addEventListener("click", () => blockAt(s.time));
     }
@@ -581,7 +744,6 @@ Obrigado!`;
 
 const clientsStatusEl = document.getElementById("clientsStatus");
 const clientSaveStatusEl = document.getElementById("clientSaveStatus");
-
 const selNameEl = document.getElementById("selName");
 const selMetaEl = document.getElementById("selMeta");
 
@@ -597,9 +759,6 @@ const beforeInfo = document.getElementById("beforeInfo");
 const afterInfo  = document.getElementById("afterInfo");
 const fileBefore = document.getElementById("fileBefore");
 const fileAfter  = document.getElementById("fileAfter");
-
-let clientsCache = [];
-let selectedClient = null;
 
 function clientMatchesExactly(client, name, phone, email){
   const cp = normPhone(client?.phone || "");
@@ -649,7 +808,6 @@ async function searchClientsRemote(name, phone, email){
       url.searchParams.set("q", q);
       const data = await apiGet(url.toString());
       const items = data.items || [];
-
       const exact = items.find(x => clientMatchesExactly(x, name, phone, email));
       if(exact) return exact;
     }catch(e){}
@@ -680,11 +838,14 @@ function absUrlMaybe(u){
 }
 
 async function reloadClients(){
-  clientsStatusEl.textContent = "Clientes carregados por ligação direta da marcação.";
+  clientsStatusEl.textContent = "A carregar clientes…";
   try{
     const url = new URL(API_BASE + "/admin/clients");
     const data = await apiGet(url.toString());
     clientsCache = data.items || [];
+    clientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
+    filterPhotoClients();
+    filterBookingClients();
   }catch(ex){
     clientsStatusEl.textContent = "Erro: " + ex.message;
   }
@@ -730,7 +891,43 @@ function selectClient(c){
   fillClientForm(c || {});
   renderClientPhotos(c || {});
   clientSaveStatusEl.textContent = "—";
-  if(c) clientsStatusEl.textContent = "Cliente ligado com sucesso.";
+  if(c) clientsStatusEl.textContent = "Cliente selecionado.";
+}
+
+function renderPhotoResults(items){
+  const box = document.getElementById("photoResults");
+  box.innerHTML = "";
+
+  if(!items.length){
+    box.innerHTML = `<div class="mini">Sem resultados.</div>`;
+    return;
+  }
+
+  for(const c of items){
+    const div = document.createElement("div");
+    div.className = "searchItem";
+    div.innerHTML = `
+      <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
+      <div class="m">${escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "))}</div>
+    `;
+    div.onclick = () => selectClient(c);
+    box.appendChild(div);
+  }
+}
+
+function filterPhotoClients(){
+  const q = (document.getElementById("photoSearch").value || "").trim().toLowerCase();
+  let items = [...clientsCache];
+
+  if(q){
+    items = items.filter(c => {
+      const name = (c.name || "").toLowerCase();
+      const phone = normPhone(c.phone || "");
+      return name.includes(q) || phone.includes(normPhone(q));
+    });
+  }
+
+  renderPhotoResults(items.slice(0, 100));
 }
 
 function newClient(){
@@ -741,7 +938,7 @@ function newClient(){
   renderClientPhotos({});
   clientSaveStatusEl.textContent = "—";
   clientsStatusEl.textContent = "Novo cliente.";
-  showTab("clients");
+  showTab("photos");
 }
 
 async function saveClient(){
@@ -790,7 +987,7 @@ async function uploadPhoto(kind){
 
   const file = (kind === "before" ? fileBefore.files[0] : fileAfter.files[0]);
   if(!file){
-    alert("Escolhe uma foto do telemóvel ou do PC primeiro.");
+    alert("Escolhe uma foto primeiro.");
     return;
   }
 
@@ -817,7 +1014,7 @@ async function uploadPhoto(kind){
 async function deleteClientById(cid){
   const id = (cid || "").trim();
   if(!id){ alert("Sem ID."); return; }
-  if(!confirm("Apagar este cliente? (vai remover fotos e dados do cliente)")) return;
+  if(!confirm("Apagar este cliente?")) return;
 
   try{
     await apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(id));
@@ -840,7 +1037,7 @@ async function openPhotosForBooking(bid){
   const b = await getBookingSafe(bid);
   if(!b){ alert("Não encontrei a marcação."); return; }
 
-  showTab("clients");
+  showTab("photos");
   clientsStatusEl.textContent = "A ligar cliente da marcação…";
   clientSaveStatusEl.textContent = "—";
 
@@ -920,12 +1117,170 @@ async function openPhotosForBooking(bid){
     "⚠️ Não encontrei nem consegui criar automaticamente. Carrega 💾 Guardar e depois envia as fotos.";
 }
 
+/* -------------------------
+   TAB MARCAÇÕES
+------------------------- */
+const b_client_id = document.getElementById("b_client_id");
+const b_name = document.getElementById("b_name");
+const b_phone = document.getElementById("b_phone");
+const b_email = document.getElementById("b_email");
+const b_barber = document.getElementById("b_barber");
+const b_date = document.getElementById("b_date");
+const b_time = document.getElementById("b_time");
+const b_service = document.getElementById("b_service");
+const b_dur = document.getElementById("b_dur");
+const b_notes = document.getElementById("b_notes");
+const bookCreateStatus = document.getElementById("bookCreateStatus");
+const bookSearchStatus = document.getElementById("bookSearchStatus");
+const bookSelTitle = document.getElementById("bookSelTitle");
+const bookSelMeta = document.getElementById("bookSelMeta");
+
+function renderBookingResults(items){
+  const box = document.getElementById("bookResults");
+  box.innerHTML = "";
+
+  if(!items.length){
+    box.innerHTML = `<div class="mini">Sem resultados.</div>`;
+    return;
+  }
+
+  for(const c of items){
+    const div = document.createElement("div");
+    div.className = "searchItem";
+    div.innerHTML = `
+      <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
+      <div class="m">${escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "))}</div>
+    `;
+    div.onclick = () => selectBookingClient(c);
+    box.appendChild(div);
+  }
+}
+
+function filterBookingClients(){
+  const q = (document.getElementById("bookSearch").value || "").trim().toLowerCase();
+  let items = [...clientsCache];
+
+  if(q){
+    items = items.filter(c => {
+      const name = (c.name || "").toLowerCase();
+      const phone = normPhone(c.phone || "");
+      return name.includes(q) || phone.includes(normPhone(q));
+    });
+  }
+
+  renderBookingResults(items.slice(0, 100));
+  bookSearchStatus.textContent = `${items.length} resultado(s)`;
+}
+
+function selectBookingClient(c){
+  bookingSelectedClient = c || null;
+  b_client_id.value = c?.id || "";
+  b_name.value = c?.name || "";
+  b_phone.value = c?.phone || "";
+  b_email.value = c?.email || "";
+  bookSelTitle.textContent = c?.name || "Dados da marcação";
+  bookSelMeta.textContent = [c?.phone||"", c?.email||"", c?.id||""].filter(Boolean).join(" • ") || "—";
+}
+
+function clearBookingForm(){
+  bookingSelectedClient = null;
+  b_client_id.value = "";
+  b_name.value = "";
+  b_phone.value = "";
+  b_email.value = "";
+  b_service.value = "";
+  b_notes.value = "";
+  b_dur.value = "45";
+  if(!b_date.value) b_date.value = todayISO();
+  bookSelTitle.textContent = "Dados da marcação";
+  bookSelMeta.textContent = "Podes escolher cliente existente ou preencher manualmente.";
+  bookCreateStatus.textContent = "—";
+}
+
+async function createBookingFromAdmin(){
+  const payload = {
+    client_id: (b_client_id.value || "").trim(),
+    name: (b_name.value || "").trim(),
+    phone: (b_phone.value || "").trim(),
+    email: (b_email.value || "").trim(),
+    barber: (b_barber.value || "").trim(),
+    date: (b_date.value || "").trim(),
+    time: (b_time.value || "").trim(),
+    service: (b_service.value || "").trim(),
+    dur: parseInt(b_dur.value || "45", 10),
+    notes: (b_notes.value || "").trim(),
+    created_by: "barber_admin",
+    created_via: "barber_page"
+  };
+
+  if(!payload.name){
+    alert("Escreve o nome do cliente.");
+    return;
+  }
+  if(!payload.phone){
+    alert("Escreve o telefone do cliente.");
+    return;
+  }
+  if(!payload.barber || !payload.date || !payload.time || !payload.service || !payload.dur){
+    alert("Preenche barbeiro, data, hora, serviço e duração.");
+    return;
+  }
+
+  bookCreateStatus.textContent = "A criar marcação…";
+  try{
+    const data = await apiPost(API_BASE + "/book", payload);
+    const newClientId = data?.client_id || "";
+    if(newClientId && !payload.client_id){
+      b_client_id.value = newClientId;
+    }
+
+    await reloadClients().catch(()=>{});
+    await reloadMap().catch(()=>{});
+
+    bookCreateStatus.textContent = `✅ Marcação criada com sucesso${data?.id ? " • ID " + data.id : ""}`;
+    showTab("map");
+  }catch(ex){
+    bookCreateStatus.textContent = "❌ Erro: " + ex.message;
+  }
+}
+
+async function prefillBookingFromSlot(bid){
+  const b = await getBookingSafe(bid);
+  if(!b) return;
+
+  showTab("booking");
+
+  b_client_id.value = b.client_id || "";
+  b_name.value = b.name || b.client || "";
+  b_phone.value = b.phone || "";
+  b_email.value = b.email || "";
+  b_barber.value = b.barber || "Pedro";
+  b_date.value = b.date || todayISO();
+  b_time.value = b.time || "";
+  b_service.value = b.service || "";
+  b_dur.value = String(b.dur || 45);
+  b_notes.value = "";
+  bookSelTitle.textContent = "Nova marcação por cima de um slot existente";
+  bookSelMeta.textContent = "Podes alterar a hora, serviço e duração antes de gravar.";
+  bookCreateStatus.textContent = "—";
+}
+
+function prefillBookingByTime(hhmm){
+  showTab("booking");
+  b_barber.value = barberEl.value || "Pedro";
+  b_date.value = dateEl.value || todayISO();
+  b_time.value = hhmm || "";
+  if(!b_dur.value) b_dur.value = "45";
+  bookCreateStatus.textContent = "—";
+}
+
 (function boot(){
   const t = token();
   if(t){
     overlayEl.classList.add("hide");
     appEl.classList.remove("hide");
     if(!dateEl.value) dateEl.value = todayISO();
+    if(!b_date.value) b_date.value = todayISO();
     reloadMap().catch(()=>{});
     reloadClients().catch(()=>{});
   }
