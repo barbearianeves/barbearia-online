@@ -1216,6 +1216,41 @@ async function searchClientsRemote(name, phone, email){
   return null;
 }
 
+async function ensureClientIdForBookingDraft(payload){
+  const existingId = String(payload?.client_id || "").trim();
+  if(existingId) return existingId;
+
+  const name = (payload?.name || "").trim();
+  const phone = (payload?.phone || "").trim();
+  const email = (payload?.email || "").trim();
+
+  let existing = findClientLocalExact(name, phone, email);
+  if(!existing){
+    existing = await searchClientsRemote(name, phone, email);
+  }
+  if(existing && existing.id){
+    return String(existing.id);
+  }
+
+  const data = await apiPost(API_BASE + "/admin/clients", {
+    id: "",
+    name,
+    phone,
+    email,
+    notes: ""
+  });
+
+  const item = data?.item || null;
+  if(item && item.id){
+    return String(item.id);
+  }
+  if(data && data.id){
+    return String(data.id);
+  }
+
+  return "";
+}
+
 async function linkBookingToClient(bookingId, clientId){
   if(!bookingId || !clientId) return null;
   try{
@@ -1702,11 +1737,19 @@ async function createBookingFromAdmin(){
     return;
   }
 
-  bookCreateStatus.textContent = "A criar marcação…";
+  bookCreateStatus.textContent = "A preparar cliente…";
   try{
+    const forcedClientId = await ensureClientIdForBookingDraft(payload);
+    if(forcedClientId){
+      payload.client_id = forcedClientId;
+      b_client_id.value = forcedClientId;
+    }
+
+    bookCreateStatus.textContent = "A criar marcação…";
     const data = await apiPost(API_BASE + "/book", payload);
+
     const newClientId = data?.client_id || "";
-    if(newClientId && !payload.client_id){
+    if(newClientId){
       b_client_id.value = newClientId;
     }
 
