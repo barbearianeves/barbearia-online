@@ -307,7 +307,7 @@
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Mostra só 2 clientes, sem duplicados e apenas com foto.</small>
+        <small>Mostra só 2 clientes, sem duplicados.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
@@ -652,43 +652,69 @@ function getBookingOriginLabel(x){
 }
 
 function hasAnyPhoto(client){
-  return !!((client?.photo_before_url || "").trim() || (client?.photo_after_url || "").trim());
+  return !!(
+    String(client?.photo_before_url || "").trim() ||
+    String(client?.photo_after_url || "").trim()
+  );
+}
+
+function clientLogicalKey(c){
+  const id = String(c?.id || "").trim();
+  const email = normEmail(c?.email || "");
+  const phone = normPhone(c?.phone || "");
+  const name = normName(c?.name || "");
+
+  if(id) return "id:" + id;
+  if(email) return "e:" + email;
+  if(phone) return "p:" + phone;
+  if(name) return "n:" + name;
+  return "fallback:" + Math.random();
+}
+
+function chooseBetterClient(a, b){
+  if(!a) return b;
+  if(!b) return a;
+
+  const aPhoto = hasAnyPhoto(a) ? 1 : 0;
+  const bPhoto = hasAnyPhoto(b) ? 1 : 0;
+  if(aPhoto !== bPhoto) return bPhoto > aPhoto ? b : a;
+
+  const aUpd = Number(a?.updated_at || 0);
+  const bUpd = Number(b?.updated_at || 0);
+  if(aUpd !== bUpd) return bUpd > aUpd ? b : a;
+
+  const aCreated = Number(a?.created_at || 0);
+  const bCreated = Number(b?.created_at || 0);
+  if(aCreated !== bCreated) return bCreated > aCreated ? b : a;
+
+  const aId = String(a?.id || "");
+  const bId = String(b?.id || "");
+  if(aId && bId){
+    const na = Number(aId);
+    const nb = Number(bId);
+    if(Number.isFinite(na) && Number.isFinite(nb)) return na < nb ? a : b;
+  }
+
+  return a;
 }
 
 function dedupeClients(list){
-  const out = [];
-  const seen = new Set();
+  const map = new Map();
 
   for(const c of (list || [])){
-    const phone = normPhone(c?.phone || "");
-    const email = normEmail(c?.email || "");
-    const name  = normName(c?.name || "");
-
-    let key = "";
-    if(email) key = "e:" + email;
-    else if(phone) key = "p:" + phone;
-    else if(name) key = "n:" + name;
-    else key = "id:" + String(c?.id || "");
-
-    if(seen.has(key)) continue;
-    seen.add(key);
-    out.push(c);
+    const key = clientLogicalKey(c);
+    const prev = map.get(key) || null;
+    map.set(key, chooseBetterClient(prev, c));
   }
 
-  return out;
+  return Array.from(map.values());
 }
 
 function getCleanClients(opts = {}){
-  const requirePhoto = !!opts.requirePhoto;
   const limit = Number.isFinite(opts.limit) ? opts.limit : null;
   const query = opts.query || "";
 
   let list = [...(clientsCache || [])];
-
-  if(requirePhoto){
-    list = list.filter(hasAnyPhoto);
-  }
-
   list = dedupeClients(list);
   list = dynamicFilterClients(list, query);
 
@@ -701,7 +727,6 @@ function getCleanClients(opts = {}){
 
 function getPhotoClients(query){
   return getCleanClients({
-    requirePhoto: true,
     limit: 2,
     query: query || ""
   });
@@ -709,7 +734,6 @@ function getPhotoClients(query){
 
 function getBookingSearchClients(query){
   return getCleanClients({
-    requirePhoto: true,
     query: query || ""
   });
 }
@@ -1136,7 +1160,7 @@ function clientMatchesExactly(client, name, phone, email){
 }
 
 function findClientLocalExact(name, phone, email){
-  const list = clientsCache || [];
+  const list = dedupeClients(clientsCache || []);
 
   if(email){
     const hit = list.find(x => normEmail(x.email) === normEmail(email));
@@ -1167,7 +1191,7 @@ async function searchClientsRemote(name, phone, email){
       const url = new URL(API_BASE + "/admin/clients");
       url.searchParams.set("q", q);
       const data = await apiGet(url.toString());
-      const items = data.items || [];
+      const items = dedupeClients(data.items || []);
       const exact = items.find(x => clientMatchesExactly(x, name, phone, email));
       if(exact) return exact;
     }catch(e){}
@@ -1202,7 +1226,7 @@ async function reloadClients(){
   try{
     const url = new URL(API_BASE + "/admin/clients");
     const data = await apiGet(url.toString());
-    clientsCache = data.items || [];
+    clientsCache = dedupeClients(data.items || []);
     clientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
     filterPhotoClients();
     filterBookingClients();
@@ -1259,7 +1283,7 @@ function renderPhotoResults(items){
   box.innerHTML = "";
 
   if(!items.length){
-    box.innerHTML = `<div class="mini">Sem clientes com foto.</div>`;
+    box.innerHTML = `<div class="mini">Sem clientes.</div>`;
     return;
   }
 
@@ -1273,7 +1297,7 @@ function renderPhotoResults(items){
         [
           c.photo_before_url ? "foto antes" : "",
           c.photo_after_url ? "foto depois" : ""
-        ].filter(Boolean).join(" • ")
+        ].filter(Boolean).join(" • ") || "sem foto"
       )}</div>
     `;
     div.onclick = () => selectClient(c);
@@ -1402,23 +1426,47 @@ async function openPhotosForBooking(bid){
   const bookingName  = (b.name || b.client || "").trim();
   const bookingPhone = (b.phone || "").trim();
   const bookingEmail = (b.email || "").trim();
-  const bookingClientId = (b.client_id || "").trim();
+  const bookingClientId = String(b.client_id || "").trim();
 
   if(!(clientsCache||[]).length){
     await reloadClients().catch(()=>{});
   }
 
-  if(bookingClientId){
-    let c = (clientsCache || []).find(x => String(x.id) === String(bookingClientId)) || null;
-    if(!c){
-      try{
-        const data = await apiGet(API_BASE + "/admin/client/" + encodeURIComponent(bookingClientId));
-        c = data.item || null;
-      }catch(e){}
-    }
+  function rankCandidate(c){
+    let s = 0;
+    if(String(c?.id || "") === bookingClientId && bookingClientId) s += 10000;
+    if(normEmail(c?.email || "") && normEmail(c?.email || "") === normEmail(bookingEmail || "")) s += 5000;
+    if(normPhone(c?.phone || "") && normPhone(c?.phone || "") === normPhone(bookingPhone || "")) s += 4000;
+    if(normName(c?.name || "") && normName(c?.name || "") === normName(bookingName || "")) s += 1000;
+    if(hasAnyPhoto(c)) s += 3000;
+    s += Number(c?.updated_at || 0) / 1000000000;
+    return s;
+  }
 
-    if(c){
-      selectClient(c);
+  let candidates = dedupeClients([...(clientsCache || [])]);
+
+  if(bookingClientId){
+    candidates = candidates.filter(c => String(c?.id || "") === bookingClientId);
+  } else {
+    candidates = candidates.filter(c => {
+      return (
+        (bookingEmail && normEmail(c?.email || "") === normEmail(bookingEmail)) ||
+        (bookingPhone && normPhone(c?.phone || "") === normPhone(bookingPhone)) ||
+        (bookingName && normName(c?.name || "") === normName(bookingName))
+      );
+    });
+  }
+
+  if(candidates.length){
+    candidates.sort((a,b) => rankCandidate(b) - rankCandidate(a));
+    const best = candidates[0];
+    if(best){
+      if(bookingClientId && String(best.id || "") !== String(bookingClientId || "")){
+        await linkBookingToClient(bid, best.id).catch(()=>{});
+      }
+      await reloadMap().catch(()=>{});
+      await reloadClients().catch(()=>{});
+      selectClient(best);
       clientsStatusEl.textContent = "Cliente da marcação aberto com sucesso.";
       return;
     }
@@ -1513,7 +1561,7 @@ function renderBookingResults(items){
         [
           c.photo_before_url ? "foto antes" : "",
           c.photo_after_url ? "foto depois" : ""
-        ].filter(Boolean).join(" • ")
+        ].filter(Boolean).join(" • ") || "sem foto"
       )}</div>
     `;
     div.onclick = () => selectBookingClient(c);
