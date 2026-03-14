@@ -710,6 +710,8 @@
       payload.time = pickedTime.slice(0,5);
       payload.dur = FIXED_DUR;
       payload.notes = "";
+      payload.created_via = "public_web";
+      payload.created_by = "public_web";
 
       try {
         const r = await fetch(API_BASE + "/book", {
