@@ -23,6 +23,7 @@
   .wrap{max-width:1100px;margin:0 auto}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
   h1{font-size:20px;margin:6px 0}
+  h2{font-size:16px;margin:4px 0}
   small{color:var(--muted)}
   label{display:block;margin:10px 0 6px;font-weight:850;color:#d9deea;font-size:13px}
   input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0f1319;color:#fff;outline:none}
@@ -35,6 +36,7 @@
   @media(max-width:700px){ .row{grid-template-columns:1fr} }
 
   .status{margin-top:10px;color:var(--muted);font-size:13px}
+  .tinyCount{margin-top:6px;color:var(--muted);font-size:11px}
 
   .slots{
     display:grid; grid-template-columns:repeat(4,1fr);
@@ -120,6 +122,21 @@
     color:#d7ebff;
     background:#102238;
   }
+
+  .extraWrap{
+    margin-top:14px;
+    border-top:1px solid var(--line);
+    padding-top:14px;
+  }
+
+  .extraSlots{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-top:10px;
+  }
+  @media(max-width:980px){ .extraSlots{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:520px){ .extraSlots{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -152,19 +169,26 @@
 
         <div class="status" id="status">—</div>
         <div class="slots" id="slots"></div>
+
+        <div class="extraWrap" id="extraWrap">
+          <h2>Marcações extra</h2>
+          <small>Marcações fora do horário normal ou em horas personalizadas do barbeiro.</small>
+          <div class="extraSlots" id="extraSlots"></div>
+        </div>
       </div>
     </div>
 
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Pesquisa dinâmica por nome ou telefone. Ao escrever, os nomes compatíveis aparecem logo.</small>
+        <small>Pesquisa dinâmica por nome ou telefone.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
             <label>Pesquisar cliente</label>
             <input id="photoSearch" placeholder="Nome ou telefone" oninput="filterPhotoClients()" autocomplete="off" />
             <div class="status" id="clientsStatus">—</div>
+            <div class="tinyCount" id="photoCount">0 clientes</div>
             <div id="photoResults" class="searchList"></div>
           </div>
 
@@ -237,13 +261,14 @@
     <div id="viewBooking" class="hide">
       <div class="card">
         <h1>Nova Marcação</h1>
-        <small>Podes marcar manualmente a partir daqui. A pesquisa do cliente também é dinâmica.</small>
+        <small>Podes marcar manualmente a partir daqui. Pode ser em cima de outra marcação e fora do horário normal.</small>
 
         <div class="bookBox" style="margin-top:12px">
           <div class="card" style="margin:0">
             <label>Pesquisar cliente existente</label>
             <input id="bookSearch" placeholder="Nome ou telefone" oninput="filterBookingClients()" autocomplete="off" />
             <div class="status" id="bookSearchStatus">—</div>
+            <div class="tinyCount" id="bookCount">0 clientes</div>
             <div id="bookResults" class="searchList" style="max-height:220px"></div>
           </div>
 
@@ -378,6 +403,8 @@ const barberEl = document.getElementById("barber");
 const dateEl = document.getElementById("date");
 const statusEl = document.getElementById("status");
 const slotsEl = document.getElementById("slots");
+const extraWrapEl = document.getElementById("extraWrap");
+const extraSlotsEl = document.getElementById("extraSlots");
 
 let currentItemsById = new Map();
 let clientsCache = [];
@@ -464,6 +491,10 @@ function dynamicFilterClients(list, query){
     if(an > bn) return 1;
     return String(a?.id || "").localeCompare(String(b?.id || ""));
   });
+}
+
+function pluralClientes(n){
+  return `${n} ${n === 1 ? "cliente" : "clientes"}`;
 }
 
 function isBarberMadeBooking(x){
@@ -602,59 +633,96 @@ function buildSlots(items, schedule){
   return slots;
 }
 
-function renderSlots(slots){
+function buildExtraBookings(items, schedule){
+  const filtered = items.filter(x => !isHiddenFromMap(x));
+  const scheduleSegments = schedule?.segments || [];
+
+  function insideNormalWindow(hhmm){
+    const m = toMin(hhmm);
+    for(const seg of scheduleSegments){
+      const s = toMin(seg.start);
+      const e = toMin(seg.end);
+      if(m >= s && m < e) return true;
+    }
+    return false;
+  }
+
+  return filtered
+    .filter(x => isBarberMadeBooking(x) && !isBlock(x))
+    .filter(x => !insideNormalWindow(x.time))
+    .sort((a,b) => (a.time || "").localeCompare(b.time || ""));
+}
+
+function renderBookingCard(hit, timeLabel, extra=false){
+  const barberMade = isBarberMadeBooking(hit);
+  return `
+    <div class="t">${escapeHtml(timeLabel)} — ${barberMade ? "Marcação do Barbeiro" : "Ocupado"}</div>
+    <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
+    <div class="d">${escapeHtml(hit.service || "")}</div>
+    ${barberMade ? `<div><span class="pill barber">feito pelo barbeiro</span></div>` : ``}
+    <div class="actions">
+      <button onclick="openOutlookEmail('${hit.id}')">📧 Outlook</button>
+      <button onclick="openSMS('${hit.id}')">📱 SMS (iPhone)</button>
+      <button onclick="openPhotosForBooking('${hit.id}')">📸 Fotos</button>
+      <button onclick="prefillBookingFromSlot('${hit.id}')">➕ Marcar por cima</button>
+      <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
+    </div>
+    <div class="dbg hide" id="dbg_${hit.id}"></div>
+  `;
+}
+
+function renderSlots(slots, extraItems){
   slotsEl.innerHTML = "";
+  extraSlotsEl.innerHTML = "";
 
   if(!slots.length){
     slotsEl.innerHTML = `<div class="status">Sem horários (domingo fechado ou data inválida).</div>`;
-    return;
+  } else {
+    for(const s of slots){
+      const div = document.createElement("div");
+      const hit = s.hit;
+      const busy = !!hit && !isBlock(hit);
+      const block = !!hit && isBlock(hit);
+      const barberMade = !!hit && isBarberMadeBooking(hit);
+
+      div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "") + (barberMade ? " barber-made" : "");
+
+      if(busy){
+        div.innerHTML = renderBookingCard(hit, s.time);
+      } else if (block){
+        div.innerHTML = `
+          <div class="t">${escapeHtml(s.time)} — Indisponível</div>
+          <div class="d">Bloqueado</div>
+          <div class="actions">
+            <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
+            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
+          </div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div class="t">${escapeHtml(s.time)} — Livre</div>
+          <div class="d">Toque para bloquear</div>
+          <div class="actions">
+            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
+          </div>
+        `;
+        div.addEventListener("click", () => blockAt(s.time));
+      }
+
+      slotsEl.appendChild(div);
+    }
   }
 
-  for(const s of slots){
-    const div = document.createElement("div");
-    const hit = s.hit;
-    const busy = !!hit && !isBlock(hit);
-    const block = !!hit && isBlock(hit);
-    const barberMade = !!hit && isBarberMadeBooking(hit);
-
-    div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "") + (barberMade ? " barber-made" : "");
-
-    if(busy){
-      div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — ${barberMade ? "Marcação do Barbeiro" : "Ocupado"}</div>
-        <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
-        <div class="d">${escapeHtml(hit.service || "")}</div>
-        ${barberMade ? `<div><span class="pill barber">feito pelo barbeiro</span></div>` : ``}
-        <div class="actions">
-          <button onclick="openOutlookEmail('${hit.id}')">📧 Outlook</button>
-          <button onclick="openSMS('${hit.id}')">📱 SMS (iPhone)</button>
-          <button onclick="openPhotosForBooking('${hit.id}')">📸 Fotos</button>
-          <button onclick="prefillBookingFromSlot('${hit.id}')">➕ Marcar por cima</button>
-          <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
-        </div>
-        <div class="dbg hide" id="dbg_${hit.id}"></div>
-      `;
-    } else if (block){
-      div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — Indisponível</div>
-        <div class="d">Bloqueado</div>
-        <div class="actions">
-          <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
-          <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
-        </div>
-      `;
-    } else {
-      div.innerHTML = `
-        <div class="t">${escapeHtml(s.time)} — Livre</div>
-        <div class="d">Toque para bloquear</div>
-        <div class="actions">
-          <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
-        </div>
-      `;
-      div.addEventListener("click", () => blockAt(s.time));
+  if(!extraItems.length){
+    extraWrapEl.classList.add("hide");
+  } else {
+    extraWrapEl.classList.remove("hide");
+    for(const hit of extraItems){
+      const div = document.createElement("div");
+      div.className = "slot busy barber-made";
+      div.innerHTML = renderBookingCard(hit, hit.time, true);
+      extraSlotsEl.appendChild(div);
     }
-
-    slotsEl.appendChild(div);
   }
 }
 
@@ -666,8 +734,19 @@ async function reloadMap(){
   const schedule = getScheduleForDate(d);
 
   if(schedule.closed){
-    slotsEl.innerHTML = "";
-    statusEl.textContent = `Fechado • ${b} • ${d}`;
+    try{
+      const items = await fetchAdminDay(d,b);
+      currentItemsById = new Map();
+      for(const it of items){
+        if(it && it.id) currentItemsById.set(it.id, it);
+      }
+      const extraItems = buildExtraBookings(items, schedule);
+      slotsEl.innerHTML = "";
+      renderSlots([], extraItems);
+      statusEl.textContent = `Fechado • ${b} • ${d}`;
+    }catch(ex){
+      statusEl.textContent = "Erro: " + ex.message;
+    }
     return;
   }
 
@@ -683,7 +762,8 @@ async function reloadMap(){
     }
 
     const slots = buildSlots(items, schedule);
-    renderSlots(slots);
+    const extraItems = buildExtraBookings(items, schedule);
+    renderSlots(slots, extraItems);
 
     statusEl.textContent = `OK • ${b} • ${d} • ${segText}`;
   }catch(ex){
@@ -985,6 +1065,7 @@ function renderPhotoResults(items){
 function filterPhotoClients(){
   const q = document.getElementById("photoSearch").value || "";
   const items = dynamicFilterClients(clientsCache, q);
+  document.getElementById("photoCount").textContent = pluralClientes(items.length);
   renderPhotoResults(items.slice(0, 100));
 }
 
@@ -1219,6 +1300,7 @@ function filterBookingClients(){
   const items = dynamicFilterClients(clientsCache, q);
   renderBookingResults(items.slice(0, 100));
   bookSearchStatus.textContent = `${items.length} resultado(s)`;
+  document.getElementById("bookCount").textContent = pluralClientes(items.length);
 }
 
 function selectBookingClient(c){
