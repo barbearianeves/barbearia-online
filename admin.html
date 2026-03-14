@@ -18,18 +18,55 @@
     --btn:#ffffff; --btnTxt:#000;
     --danger:#ff5c5c;
   }
+
   *{box-sizing:border-box}
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--txt);padding:16px}
-  .wrap{max-width:1100px;margin:0 auto}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+  body{
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    margin:0;
+    background:var(--bg);
+    color:var(--txt);
+    padding:14px;
+  }
+  .wrap{max-width:1420px;margin:0 auto}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:14px;
+    margin:12px 0;
+  }
   h1{font-size:20px;margin:6px 0}
-  h2{font-size:16px;margin:4px 0}
+  h2{font-size:15px;margin:4px 0}
   small{color:var(--muted)}
-  label{display:block;margin:10px 0 6px;font-weight:850;color:#d9deea;font-size:13px}
-  input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0f1319;color:#fff;outline:none}
+  label{
+    display:block;
+    margin:10px 0 6px;
+    font-weight:850;
+    color:#d9deea;
+    font-size:13px
+  }
+  input,select,textarea{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#0f1319;
+    color:#fff;
+    outline:none;
+  }
   textarea{min-height:84px;resize:vertical}
-  button{width:100%;padding:12px;border-radius:12px;border:0;cursor:pointer;font-weight:950;background:var(--btn);color:var(--btnTxt)}
+  button{
+    width:100%;
+    padding:11px 12px;
+    border-radius:12px;
+    border:0;
+    cursor:pointer;
+    font-weight:950;
+    background:var(--btn);
+    color:var(--btnTxt);
+  }
   button.danger{background:var(--danger);color:#000}
+
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   @media(max-width:900px){ .row3{grid-template-columns:1fr} }
@@ -38,39 +75,126 @@
   .status{margin-top:10px;color:var(--muted);font-size:13px}
   .tinyCount{margin-top:6px;color:var(--muted);font-size:11px}
 
-  .slots{
-    display:grid; grid-template-columns:repeat(4,1fr);
-    gap:10px; margin-top:12px; max-height:72vh; overflow:auto; padding-right:6px;
+  .scheduleLayout{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) 300px;
+    gap:10px;
+    margin-top:12px;
+    align-items:start;
   }
-  @media(max-width:980px){ .slots{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:980px){
+    .scheduleLayout{grid-template-columns:1fr}
+  }
+
+  .slots{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+    max-height:74vh;
+    overflow:auto;
+    padding-right:4px;
+  }
+  @media(max-width:1280px){ .slots{grid-template-columns:repeat(4,1fr)} }
+  @media(max-width:980px){ .slots{grid-template-columns:repeat(3,1fr)} }
+  @media(max-width:760px){ .slots{grid-template-columns:repeat(2,1fr)} }
   @media(max-width:520px){ .slots{grid-template-columns:1fr} }
 
-  .slot{
-    border:1px solid var(--freeLine); background:var(--freeBg);
-    border-radius:14px; padding:12px; cursor:pointer; user-select:none;
-    display:flex; flex-direction:column; gap:6px;
+  .extraPanel{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#0f1319;
+    padding:10px;
+    max-height:74vh;
+    overflow:auto;
+    min-width:0;
   }
-  .slot .t{font-weight:950}
-  .slot .d{font-size:12px;color:var(--muted)}
+
+  .extraSlots{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+    margin-top:10px;
+  }
+
+  .slot{
+    border:1px solid var(--freeLine);
+    background:var(--freeBg);
+    border-radius:12px;
+    padding:9px;
+    cursor:pointer;
+    user-select:none;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    min-height:96px;
+  }
+  .slot .t{
+    font-weight:950;
+    font-size:13px;
+    line-height:1.2;
+  }
+  .slot .d{
+    font-size:11px;
+    color:var(--muted);
+    line-height:1.2;
+  }
   .slot.busy{background:var(--busyBg);border-color:var(--busyLine)}
   .slot.block{background:var(--blockBg);border-color:var(--blockLine)}
   .slot.barber-made{background:var(--barberBg);border-color:var(--barberLine)}
-  .actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
-  .actions button{width:auto;padding:10px;border-radius:12px;font-size:12px}
 
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
-  .loginBox{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+  .actions{
+    display:flex;
+    gap:6px;
+    margin-top:4px;
+    flex-wrap:wrap;
+  }
+  .actions button{
+    width:auto;
+    padding:7px 8px;
+    border-radius:10px;
+    font-size:11px;
+    line-height:1;
+  }
+
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .loginBox{
+    width:100%;
+    max-width:420px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:16px;
+  }
   .hide{display:none}
 
   .dbg{
-    margin-top:8px; padding:10px; border:1px dashed var(--line);
-    border-radius:12px; font-size:12px; color:var(--muted); white-space:pre-wrap;
+    margin-top:8px;
+    padding:10px;
+    border:1px dashed var(--line);
+    border-radius:12px;
+    font-size:12px;
+    color:var(--muted);
+    white-space:pre-wrap;
   }
 
   .tabs{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
   .tabbtn{
-    width:auto; padding:10px 12px; border-radius:14px; border:1px solid var(--line);
-    background:#0f1319; color:#fff; font-weight:900; cursor:pointer;
+    width:auto;
+    padding:10px 12px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:#0f1319;
+    color:#fff;
+    font-weight:900;
+    cursor:pointer;
   }
   .tabbtn.active{background:#fff;color:#000;border-color:#fff}
 
@@ -79,8 +203,19 @@
 
   .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:700px){ .photos{grid-template-columns:1fr} }
-  .ph{border:1px solid var(--line);border-radius:14px;background:#0f1319;padding:10px}
-  .ph img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
+  .ph{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#0f1319;
+    padding:10px;
+  }
+  .ph img{
+    width:100%;
+    height:auto;
+    border-radius:12px;
+    border:1px solid var(--line);
+    display:block;
+  }
   .ph .t{font-weight:950;margin-bottom:8px}
   .mini{font-size:12px;color:var(--muted)}
 
@@ -110,8 +245,8 @@
 
   .pill{
     display:inline-block;
-    font-size:11px;
-    padding:4px 8px;
+    font-size:10px;
+    padding:4px 7px;
     border-radius:999px;
     border:1px solid var(--line);
     color:#fff;
@@ -122,21 +257,6 @@
     color:#d7ebff;
     background:#102238;
   }
-
-  .extraWrap{
-    margin-top:14px;
-    border-top:1px solid var(--line);
-    padding-top:14px;
-  }
-
-  .extraSlots{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-    margin-top:10px;
-  }
-  @media(max-width:980px){ .extraSlots{grid-template-columns:repeat(2,1fr)} }
-  @media(max-width:520px){ .extraSlots{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -153,6 +273,7 @@
     <div id="viewMap">
       <div class="card">
         <h1>Mapa do Barbeiro</h1>
+
         <div class="row" style="margin-top:10px">
           <div>
             <label>Barbeiro</label>
@@ -168,12 +289,17 @@
         </div>
 
         <div class="status" id="status">—</div>
-        <div class="slots" id="slots"></div>
 
-        <div class="extraWrap" id="extraWrap">
-          <h2>Marcações extra</h2>
-          <small>Marcações fora do horário normal ou em horas personalizadas do barbeiro.</small>
-          <div class="extraSlots" id="extraSlots"></div>
+        <div class="scheduleLayout">
+          <div>
+            <div class="slots" id="slots"></div>
+          </div>
+
+          <div class="extraPanel hide" id="extraWrap">
+            <h2>Marcações extra</h2>
+            <small>Fora do horário normal ou em horas personalizadas.</small>
+            <div class="extraSlots" id="extraSlots"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -181,7 +307,7 @@
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Pesquisa dinâmica por nome ou telefone.</small>
+        <small>Mostra só 2 clientes, sem duplicados e apenas com foto.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
@@ -318,8 +444,18 @@
 
             <div class="row3">
               <div>
+                <label>Origem</label>
+                <select id="b_origin">
+                  <option value="Pedro">Pedro</option>
+                  <option value="Joao">Joao</option>
+                </select>
+              </div>
+              <div>
                 <label>Serviço</label>
-                <input id="b_service" placeholder="Ex: Corte" />
+                <select id="b_service">
+                  <option value="Corte">Corte</option>
+                  <option value="Corte + Barba">Corte + Barba</option>
+                </select>
               </div>
               <div>
                 <label>Duração (min)</label>
@@ -332,10 +468,6 @@
                   <option value="90">90</option>
                   <option value="120">120</option>
                 </select>
-              </div>
-              <div>
-                <label>Origem</label>
-                <input id="b_status_preview" value="Marcação do barbeiro" disabled />
               </div>
             </div>
 
@@ -417,11 +549,13 @@ function toMin(hhmm){ const [h,m]=hhmm.split(":").map(Number); return h*60+m; }
 function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad2(h)+":"+pad2(m); }
 function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
 function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+
 function escapeHtml(s){
   return (s||"").replace(/[&<>"']/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
 }
+
 function normPhone(p){ return (p||"").replace(/\D+/g,"").replace(/^351/,""); }
 function normEmail(e){ return (e||"").trim().toLowerCase(); }
 function normName(n){ return (n||"").trim().toLowerCase().replace(/\s+/g," "); }
@@ -500,7 +634,84 @@ function pluralClientes(n){
 function isBarberMadeBooking(x){
   const createdBy = String(x?.created_by || "").trim().toLowerCase();
   const createdVia = String(x?.created_via || "").trim().toLowerCase();
-  return createdBy === "barber_admin" || createdVia === "barber_page";
+
+  return (
+    createdBy === "barber_admin" ||
+    createdBy === "pedro" ||
+    createdBy === "joao" ||
+    createdVia === "barber_page"
+  );
+}
+
+function getBookingOriginLabel(x){
+  const createdBy = String(x?.created_by || "").trim();
+  if(createdBy === "Pedro" || createdBy === "Joao") return createdBy;
+  if(createdBy.toLowerCase() === "pedro") return "Pedro";
+  if(createdBy.toLowerCase() === "joao") return "Joao";
+  return "Barbeiro";
+}
+
+function hasAnyPhoto(client){
+  return !!((client?.photo_before_url || "").trim() || (client?.photo_after_url || "").trim());
+}
+
+function dedupeClients(list){
+  const out = [];
+  const seen = new Set();
+
+  for(const c of (list || [])){
+    const phone = normPhone(c?.phone || "");
+    const email = normEmail(c?.email || "");
+    const name  = normName(c?.name || "");
+
+    let key = "";
+    if(email) key = "e:" + email;
+    else if(phone) key = "p:" + phone;
+    else if(name) key = "n:" + name;
+    else key = "id:" + String(c?.id || "");
+
+    if(seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
+  }
+
+  return out;
+}
+
+function getCleanClients(opts = {}){
+  const requirePhoto = !!opts.requirePhoto;
+  const limit = Number.isFinite(opts.limit) ? opts.limit : null;
+  const query = opts.query || "";
+
+  let list = [...(clientsCache || [])];
+
+  if(requirePhoto){
+    list = list.filter(hasAnyPhoto);
+  }
+
+  list = dedupeClients(list);
+  list = dynamicFilterClients(list, query);
+
+  if(limit !== null){
+    list = list.slice(0, limit);
+  }
+
+  return list;
+}
+
+function getPhotoClients(query){
+  return getCleanClients({
+    requirePhoto: true,
+    limit: 2,
+    query: query || ""
+  });
+}
+
+function getBookingSearchClients(query){
+  return getCleanClients({
+    requirePhoto: true,
+    query: query || ""
+  });
 }
 
 async function apiGet(url){
@@ -653,18 +864,20 @@ function buildExtraBookings(items, schedule){
     .sort((a,b) => (a.time || "").localeCompare(b.time || ""));
 }
 
-function renderBookingCard(hit, timeLabel, extra=false){
+function renderBookingCard(hit, timeLabel){
   const barberMade = isBarberMadeBooking(hit);
+  const originLabel = getBookingOriginLabel(hit);
+
   return `
-    <div class="t">${escapeHtml(timeLabel)} — ${barberMade ? "Marcação do Barbeiro" : "Ocupado"}</div>
+    <div class="t">${escapeHtml(timeLabel)} — ${barberMade ? "Marcação" : "Ocupado"}</div>
     <div class="d">${escapeHtml(hit.name || hit.client || "")}</div>
     <div class="d">${escapeHtml(hit.service || "")}</div>
-    ${barberMade ? `<div><span class="pill barber">feito pelo barbeiro</span></div>` : ``}
+    ${barberMade ? `<div><span class="pill barber">origem: ${escapeHtml(originLabel)}</span></div>` : ``}
     <div class="actions">
       <button onclick="openOutlookEmail('${hit.id}')">📧 Outlook</button>
-      <button onclick="openSMS('${hit.id}')">📱 SMS (iPhone)</button>
+      <button onclick="openSMS('${hit.id}')">📱 SMS</button>
       <button onclick="openPhotosForBooking('${hit.id}')">📸 Fotos</button>
-      <button onclick="prefillBookingFromSlot('${hit.id}')">➕ Marcar por cima</button>
+      <button onclick="prefillBookingFromSlot('${hit.id}')">➕ Por cima</button>
       <button class="danger" onclick="cancelBooking('${hit.id}')">Cancelar</button>
     </div>
     <div class="dbg hide" id="dbg_${hit.id}"></div>
@@ -695,7 +908,7 @@ function renderSlots(slots, extraItems){
           <div class="d">Bloqueado</div>
           <div class="actions">
             <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
-            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
+            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar</button>
           </div>
         `;
       } else {
@@ -703,7 +916,7 @@ function renderSlots(slots, extraItems){
           <div class="t">${escapeHtml(s.time)} — Livre</div>
           <div class="d">Toque para bloquear</div>
           <div class="actions">
-            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar aqui</button>
+            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar</button>
           </div>
         `;
         div.addEventListener("click", () => blockAt(s.time));
@@ -720,7 +933,7 @@ function renderSlots(slots, extraItems){
     for(const hit of extraItems){
       const div = document.createElement("div");
       div.className = "slot busy barber-made";
-      div.innerHTML = renderBookingCard(hit, hit.time, true);
+      div.innerHTML = renderBookingCard(hit, hit.time);
       extraSlotsEl.appendChild(div);
     }
   }
@@ -1046,7 +1259,7 @@ function renderPhotoResults(items){
   box.innerHTML = "";
 
   if(!items.length){
-    box.innerHTML = `<div class="mini">Sem resultados.</div>`;
+    box.innerHTML = `<div class="mini">Sem clientes com foto.</div>`;
     return;
   }
 
@@ -1056,6 +1269,12 @@ function renderPhotoResults(items){
     div.innerHTML = `
       <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
       <div class="m">${escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "))}</div>
+      <div class="m">${escapeHtml(
+        [
+          c.photo_before_url ? "foto antes" : "",
+          c.photo_after_url ? "foto depois" : ""
+        ].filter(Boolean).join(" • ")
+      )}</div>
     `;
     div.onclick = () => selectClient(c);
     box.appendChild(div);
@@ -1064,9 +1283,9 @@ function renderPhotoResults(items){
 
 function filterPhotoClients(){
   const q = document.getElementById("photoSearch").value || "";
-  const items = dynamicFilterClients(clientsCache, q);
+  const items = getPhotoClients(q);
   document.getElementById("photoCount").textContent = pluralClientes(items.length);
-  renderPhotoResults(items.slice(0, 100));
+  renderPhotoResults(items);
 }
 
 function newClient(){
@@ -1266,6 +1485,7 @@ const b_email = document.getElementById("b_email");
 const b_barber = document.getElementById("b_barber");
 const b_date = document.getElementById("b_date");
 const b_time = document.getElementById("b_time");
+const b_origin = document.getElementById("b_origin");
 const b_service = document.getElementById("b_service");
 const b_dur = document.getElementById("b_dur");
 const b_notes = document.getElementById("b_notes");
@@ -1289,6 +1509,12 @@ function renderBookingResults(items){
     div.innerHTML = `
       <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
       <div class="m">${escapeHtml([c.phone||"", c.email||"", c.id||""].filter(Boolean).join(" • "))}</div>
+      <div class="m">${escapeHtml(
+        [
+          c.photo_before_url ? "foto antes" : "",
+          c.photo_after_url ? "foto depois" : ""
+        ].filter(Boolean).join(" • ")
+      )}</div>
     `;
     div.onclick = () => selectBookingClient(c);
     box.appendChild(div);
@@ -1297,7 +1523,7 @@ function renderBookingResults(items){
 
 function filterBookingClients(){
   const q = document.getElementById("bookSearch").value || "";
-  const items = dynamicFilterClients(clientsCache, q);
+  const items = getBookingSearchClients(q);
   renderBookingResults(items.slice(0, 100));
   bookSearchStatus.textContent = `${items.length} resultado(s)`;
   document.getElementById("bookCount").textContent = pluralClientes(items.length);
@@ -1319,7 +1545,8 @@ function clearBookingForm(){
   b_name.value = "";
   b_phone.value = "";
   b_email.value = "";
-  b_service.value = "";
+  b_origin.value = "Pedro";
+  b_service.value = "Corte";
   b_notes.value = "";
   b_dur.value = "45";
   if(!b_date.value) b_date.value = todayISO();
@@ -1340,7 +1567,7 @@ async function createBookingFromAdmin(){
     service: (b_service.value || "").trim(),
     dur: parseInt(b_dur.value || "45", 10),
     notes: (b_notes.value || "").trim(),
-    created_by: "barber_admin",
+    created_by: (b_origin.value || "Pedro").trim(),
     created_via: "barber_page"
   };
 
@@ -1388,8 +1615,9 @@ async function prefillBookingFromSlot(bid){
   b_barber.value = b.barber || "Pedro";
   b_date.value = b.date || todayISO();
   b_time.value = b.time || "";
-  b_service.value = b.service || "";
+  b_service.value = b.service || "Corte";
   b_dur.value = String(b.dur || 45);
+  b_origin.value = getBookingOriginLabel(b);
   b_notes.value = "";
   bookSelTitle.textContent = "Nova marcação por cima de um slot existente";
   bookSelMeta.textContent = "Podes alterar a hora, serviço e duração antes de gravar.";
@@ -1402,6 +1630,8 @@ function prefillBookingByTime(hhmm){
   b_date.value = dateEl.value || todayISO();
   b_time.value = hhmm || "";
   if(!b_dur.value) b_dur.value = "45";
+  if(!b_service.value) b_service.value = "Corte";
+  if(!b_origin.value) b_origin.value = "Pedro";
   bookCreateStatus.textContent = "—";
 }
 
