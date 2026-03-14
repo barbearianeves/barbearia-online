@@ -307,7 +307,7 @@
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Mostra só 2 clientes, sem duplicados.</small>
+        <small>Mostra clientes sem duplicados.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
@@ -327,6 +327,7 @@
               <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <button style="width:auto" onclick="newClient()">➕ Novo</button>
                 <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
+                <button style="width:auto" onclick="resetClientsFromApi()">♻️ Reset API</button>
                 <button style="width:auto" class="danger" onclick="deleteClientById((c_id.value||'').trim())">🗑️ Apagar</button>
               </div>
             </div>
@@ -556,9 +557,15 @@ function escapeHtml(s){
   }[c]));
 }
 
+function stripAccents(s){
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function normPhone(p){ return (p||"").replace(/\D+/g,"").replace(/^351/,""); }
 function normEmail(e){ return (e||"").trim().toLowerCase(); }
-function normName(n){ return (n||"").trim().toLowerCase().replace(/\s+/g," "); }
+function normName(n){ return stripAccents((n||"").trim().toLowerCase()).replace(/\s+/g," "); }
 
 function splitWords(s){
   return normName(s).split(" ").filter(Boolean);
@@ -659,15 +666,15 @@ function hasAnyPhoto(client){
 }
 
 function clientLogicalKey(c){
-  const id = String(c?.id || "").trim();
   const email = normEmail(c?.email || "");
   const phone = normPhone(c?.phone || "");
   const name = normName(c?.name || "");
+  const id = String(c?.id || "").trim();
 
-  if(id) return "id:" + id;
   if(email) return "e:" + email;
   if(phone) return "p:" + phone;
   if(name) return "n:" + name;
+  if(id) return "id:" + id;
   return "fallback:" + Math.random();
 }
 
@@ -679,6 +686,20 @@ function chooseBetterClient(a, b){
   const bPhoto = hasAnyPhoto(b) ? 1 : 0;
   if(aPhoto !== bPhoto) return bPhoto > aPhoto ? b : a;
 
+  const aFields =
+    (a?.name ? 1 : 0) +
+    (a?.phone ? 1 : 0) +
+    (a?.email ? 1 : 0) +
+    (a?.notes ? 1 : 0);
+
+  const bFields =
+    (b?.name ? 1 : 0) +
+    (b?.phone ? 1 : 0) +
+    (b?.email ? 1 : 0) +
+    (b?.notes ? 1 : 0);
+
+  if(aFields !== bFields) return bFields > aFields ? b : a;
+
   const aUpd = Number(a?.updated_at || 0);
   const bUpd = Number(b?.updated_at || 0);
   if(aUpd !== bUpd) return bUpd > aUpd ? b : a;
@@ -687,13 +708,9 @@ function chooseBetterClient(a, b){
   const bCreated = Number(b?.created_at || 0);
   if(aCreated !== bCreated) return bCreated > aCreated ? b : a;
 
-  const aId = String(a?.id || "");
-  const bId = String(b?.id || "");
-  if(aId && bId){
-    const na = Number(aId);
-    const nb = Number(bId);
-    if(Number.isFinite(na) && Number.isFinite(nb)) return na < nb ? a : b;
-  }
+  const aId = Number(a?.id || 0);
+  const bId = Number(b?.id || 0);
+  if(aId && bId) return aId < bId ? a : b;
 
   return a;
 }
@@ -727,7 +744,6 @@ function getCleanClients(opts = {}){
 
 function getPhotoClients(query){
   return getCleanClients({
-    limit: 2,
     query: query || ""
   });
 }
@@ -1219,6 +1235,60 @@ function absUrlMaybe(u){
   if(u.startsWith("http://") || u.startsWith("https://")) return u;
   if(u.startsWith("/")) return API_BASE + u;
   return API_BASE + "/" + u;
+}
+
+async function getResetClientsStatus(){
+  try{
+    return await apiGet(API_BASE + "/admin/reset_clients_status");
+  }catch(e){
+    console.warn("Falhou reset status", e);
+    return null;
+  }
+}
+
+async function resetClientsFromApi(){
+  const st = await getResetClientsStatus();
+
+  if(st && !st.allowed_today){
+    alert(
+      "O reset de clientes já foi usado hoje.\n" +
+      "Último reset: " + (st.last_reset_date || "-")
+    );
+    return;
+  }
+
+  const ok = confirm(
+    "Isto vai apagar TODOS os clientes da API.\n\n" +
+    "As marcações ficam, mas os clientes serão repostos pela bridge.\n\n" +
+    "Continuar?"
+  );
+  if(!ok) return;
+
+  clientsStatusEl.textContent = "A fazer reset da API…";
+  clientSaveStatusEl.textContent = "A fazer reset da API…";
+
+  try{
+    const data = await apiPost(API_BASE + "/admin/reset_clients", {
+      unlink_bookings: false,
+      delete_uploads: false
+    });
+
+    clientsCache = [];
+    selectedClient = null;
+    bookingSelectedClient = null;
+
+    newClient();
+    await reloadClients().catch(()=>{});
+    await reloadMap().catch(()=>{});
+
+    clientsStatusEl.textContent =
+      `✅ Reset feito. Clientes apagados da API: ${data.deleted_clients || 0}`;
+    clientSaveStatusEl.textContent =
+      "Agora corre a bridge com FORCE_PUSH_CLIENTS=1 e FORCE_PUSH_PHOTOS=1.";
+  }catch(ex){
+    clientsStatusEl.textContent = "❌ Erro no reset: " + ex.message;
+    clientSaveStatusEl.textContent = "❌ Erro no reset: " + ex.message;
+  }
 }
 
 async function reloadClients(){
