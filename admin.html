@@ -237,6 +237,35 @@
     gap:10px;
     margin-top:12px;
   }
+
+  .voiceRow{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:8px;
+    align-items:center;
+  }
+  .voiceBtn{
+    width:auto;
+    min-width:52px;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#0f1319;
+    color:#fff;
+    font-size:18px;
+    line-height:1;
+  }
+  .voiceBtn.listening{
+    background:#ff5c5c;
+    color:#000;
+    border-color:#ff5c5c;
+    animation:pulseMic 1s infinite;
+  }
+  @keyframes pulseMic{
+    0%{transform:scale(1)}
+    50%{transform:scale(1.06)}
+    100%{transform:scale(1)}
+  }
 </style>
 </head>
 <body>
@@ -282,7 +311,10 @@
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
             <label>Pesquisar cliente</label>
-            <input id="photoSearch" placeholder="Nome, telefone ou email" oninput="filterPhotoClients()" autocomplete="off" />
+            <div class="voiceRow">
+              <input id="photoSearch" placeholder="Nome, telefone ou email" oninput="filterPhotoClients()" autocomplete="off" />
+              <button type="button" id="photoMicBtn" class="voiceBtn" onclick="startVoiceSearch('photo')">🎤</button>
+            </div>
 
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
               <div>
@@ -366,7 +398,10 @@
         <div class="bookBox" style="margin-top:12px">
           <div class="card" style="margin:0">
             <label>Pesquisar cliente existente</label>
-            <input id="bookSearch" placeholder="Nome, telefone ou email" oninput="filterBookingClients()" autocomplete="off" />
+            <div class="voiceRow">
+              <input id="bookSearch" placeholder="Nome, telefone ou email" oninput="filterBookingClients()" autocomplete="off" />
+              <button type="button" id="bookMicBtn" class="voiceBtn" onclick="startVoiceSearch('booking')">🎤</button>
+            </div>
 
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
               <div>
@@ -502,6 +537,10 @@ const STEP_MIN = 45;
 const DEBUG_ON_MISSING = true;
 const TEST_PHONE_FALLBACK = "916634329";
 const SEARCH_LIMIT = 3;
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+let activeRecognition = null;
+let activeVoiceTarget = null;
 
 function getScheduleForDate(dateISO){
   const [y,m,d] = dateISO.split("-").map(Number);
@@ -742,6 +781,109 @@ function getPhotoClients(query = ""){
 
 function getBookingSearchClients(query = ""){
   return dynamicFilterClients(getRawClients(), query, SEARCH_LIMIT);
+}
+
+function getVoiceConfig(target){
+  if(target === "photo"){
+    return {
+      input: document.getElementById("photoSearch"),
+      button: document.getElementById("photoMicBtn"),
+      statusEl: clientsStatusEl,
+      filterFn: filterPhotoClients,
+      idleText: "Pesquisa por voz disponível."
+    };
+  }
+
+  return {
+    input: document.getElementById("bookSearch"),
+    button: document.getElementById("bookMicBtn"),
+    statusEl: bookSearchStatus,
+    filterFn: filterBookingClients,
+    idleText: `${clientsCache.length} clientes na API`
+  };
+}
+
+function stopVoiceRecognition(){
+  if(activeRecognition){
+    try{ activeRecognition.stop(); }catch(e){}
+  }
+}
+
+function resetVoiceButton(target){
+  const cfg = getVoiceConfig(target);
+  if(cfg?.button) cfg.button.classList.remove("listening");
+}
+
+function startVoiceSearch(target){
+  if(!SpeechRecognitionAPI){
+    alert("Pesquisa por voz não suportada neste navegador.");
+    return;
+  }
+
+  if(activeRecognition && activeVoiceTarget === target){
+    stopVoiceRecognition();
+    return;
+  }
+
+  if(activeRecognition){
+    stopVoiceRecognition();
+    resetVoiceButton(activeVoiceTarget);
+  }
+
+  const cfg = getVoiceConfig(target);
+  if(!cfg || !cfg.input || !cfg.button) return;
+
+  const recognition = new SpeechRecognitionAPI();
+  activeRecognition = recognition;
+  activeVoiceTarget = target;
+
+  recognition.lang = "pt-PT";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  cfg.button.classList.add("listening");
+  cfg.statusEl.textContent = "🎤 A ouvir...";
+
+  recognition.onresult = (event) => {
+    const transcript = Array.from(event.results || [])
+      .map(r => r && r[0] ? r[0].transcript : "")
+      .join(" ")
+      .trim();
+
+    if(transcript){
+      cfg.input.value = transcript;
+      cfg.filterFn();
+      cfg.statusEl.textContent = `🎤 Pesquisa por voz: "${transcript}"`;
+    }else{
+      cfg.statusEl.textContent = "Não percebi a pesquisa por voz.";
+    }
+  };
+
+  recognition.onerror = (event) => {
+    const err = String(event?.error || "");
+    if(err === "not-allowed"){
+      cfg.statusEl.textContent = "Microfone bloqueado. Permite acesso ao microfone no navegador.";
+    }else if(err === "no-speech"){
+      cfg.statusEl.textContent = "Não foi detetada fala.";
+    }else{
+      cfg.statusEl.textContent = "Erro na pesquisa por voz.";
+    }
+  };
+
+  recognition.onend = () => {
+    cfg.button.classList.remove("listening");
+    activeRecognition = null;
+    activeVoiceTarget = null;
+  };
+
+  try{
+    recognition.start();
+  }catch(e){
+    cfg.button.classList.remove("listening");
+    activeRecognition = null;
+    activeVoiceTarget = null;
+    cfg.statusEl.textContent = "Não foi possível iniciar a pesquisa por voz.";
+  }
 }
 
 async function apiGet(url){
