@@ -940,27 +940,39 @@ function buildTimelineItems(items, schedule){
 
   for(const seg of scheduleSegments){
     const start = toMin(seg.start);
-    const end   = toMin(seg.end);
+    const end = toMin(seg.end);
 
-    for(let t=start; t + STEP_MIN <= end; t += STEP_MIN){
-      const s=t, e=t+STEP_MIN;
+    for(let t = start; t + STEP_MIN <= end; t += STEP_MIN){
+      const s = t;
+      const e = t + STEP_MIN;
 
       let hit = null;
       for(const b of booked){
-        if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
+        if(overlaps(s, e, b.s, b.e)){
+          hit = b;
+          break;
+        }
       }
 
       if(hit){
-        seenBookingIds.add(String(hit.id || ""));
+        const hitId = String(hit.id || "");
+
+        // se já desenhámos esta marcação, não voltamos a criar outro slot
+        if(seenBookingIds.has(hitId)){
+          continue;
+        }
+
+        seenBookingIds.add(hitId);
+
         timeline.push({
-          kind:"booking",
+          kind: "booking",
           time: hit.time || toHHMM(t),
           hit,
           isExtra: false
         });
       }else{
         timeline.push({
-          kind:"free",
+          kind: "free",
           time: toHHMM(t)
         });
       }
@@ -971,7 +983,7 @@ function buildTimelineItems(items, schedule){
     .filter(x => !seenBookingIds.has(String(x.id || "")))
     .sort((a,b) => (a.time || "").localeCompare(b.time || ""))
     .map(hit => ({
-      kind:"booking",
+      kind: "booking",
       time: hit.time,
       hit,
       isExtra: true
