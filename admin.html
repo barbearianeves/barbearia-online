@@ -315,7 +315,7 @@
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Lista completa, sem filtros. IDs são internos e não aparecem no ecrã.</small>
+        <small>Lista completa, sem filtros nem deduplicação. IDs são internos e não aparecem no ecrã.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
@@ -397,7 +397,7 @@
     <div id="viewBooking" class="hide">
       <div class="card">
         <h1>Nova Marcação</h1>
-        <small>Só podes marcar clientes já existentes. Lista completa, sem filtros.</small>
+        <small>Só podes marcar clientes já existentes. Lista completa, sem filtros nem deduplicação.</small>
 
         <div class="bookBox" style="margin-top:12px">
           <div class="card" style="margin:0">
@@ -501,7 +501,7 @@
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
           <div>
             <h1>Todos os Clientes da API</h1>
-            <small>Lista completa devolvida pela API, sem filtros.</small>
+            <small>Lista completa devolvida pela API, sem deduplicação.</small>
           </div>
           <button style="width:auto" onclick="reloadClients()">↻ Atualizar</button>
         </div>
@@ -695,16 +695,20 @@ function dedupeClients(list){
   });
 }
 
+function getRawClients(){
+  return [...(clientsCache || [])];
+}
+
 function getCleanClients(){
-  return dedupeClients([...(clientsCache || [])]);
+  return getRawClients();
 }
 
 function getPhotoClients(){
-  return getCleanClients();
+  return getRawClients();
 }
 
 function getBookingSearchClients(){
-  return getCleanClients();
+  return getRawClients();
 }
 
 async function apiGet(url){
@@ -1139,7 +1143,7 @@ function clientMatchesExactly(client, name, phone, email){
 }
 
 function findClientLocalExact(name, phone, email){
-  const list = dedupeClients(clientsCache || []);
+  const list = getRawClients();
 
   if(email){
     const hit = list.find(x => normEmail(x.email) === normEmail(email));
@@ -1170,7 +1174,7 @@ async function searchClientsRemote(name, phone, email){
       const url = new URL(API_BASE + "/admin/clients");
       url.searchParams.set("q", q);
       const data = await apiGet(url.toString());
-      const items = dedupeClients(data.items || []);
+      const items = data.items || [];
       const exact = items.find(x => clientMatchesExactly(x, name, phone, email));
       if(exact) return exact;
     }catch(e){}
@@ -1308,10 +1312,11 @@ async function reloadClients(){
   try{
     const url = new URL(API_BASE + "/admin/clients");
     const data = await apiGet(url.toString());
-    clientsCache = dedupeClients(data.items || []);
-    clientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
-    bookSearchStatus.textContent = `OK • ${clientsCache.length} clientes`;
-    apiClientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
+    clientsCache = data.items || [];
+    const total = clientsCache.length;
+    clientsStatusEl.textContent = `OK • ${total} clientes`;
+    bookSearchStatus.textContent = `OK • ${total} clientes`;
+    apiClientsStatusEl.textContent = `OK • ${total} clientes`;
     filterPhotoClients();
     filterBookingClients();
     renderApiClients();
@@ -1409,7 +1414,7 @@ function filterPhotoClients(){
 
 function renderApiClients(){
   const box = document.getElementById("apiClientsResults");
-  const items = getCleanClients();
+  const items = getRawClients();
   apiClientsCountEl.textContent = pluralClientes(items.length);
   box.innerHTML = "";
 
@@ -1572,7 +1577,7 @@ async function openPhotosForBooking(bid){
     return s;
   }
 
-  let candidates = dedupeClients([...(clientsCache || [])]);
+  let candidates = [...(clientsCache || [])];
 
   if(bookingClientId){
     candidates = candidates.filter(c => String(c?.id || "") === bookingClientId);
