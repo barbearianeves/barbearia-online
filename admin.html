@@ -75,17 +75,6 @@
   .status{margin-top:10px;color:var(--muted);font-size:13px}
   .tinyCount{margin-top:6px;color:var(--muted);font-size:11px}
 
-  .scheduleLayout{
-    display:grid;
-    grid-template-columns:minmax(0, 1fr) 300px;
-    gap:10px;
-    margin-top:12px;
-    align-items:start;
-  }
-  @media(max-width:980px){
-    .scheduleLayout{grid-template-columns:1fr}
-  }
-
   .slots{
     display:grid;
     grid-template-columns:repeat(5,1fr);
@@ -93,28 +82,12 @@
     max-height:74vh;
     overflow:auto;
     padding-right:4px;
+    margin-top:12px;
   }
   @media(max-width:1280px){ .slots{grid-template-columns:repeat(4,1fr)} }
   @media(max-width:980px){ .slots{grid-template-columns:repeat(3,1fr)} }
   @media(max-width:760px){ .slots{grid-template-columns:repeat(2,1fr)} }
   @media(max-width:520px){ .slots{grid-template-columns:1fr} }
-
-  .extraPanel{
-    border:1px solid var(--line);
-    border-radius:14px;
-    background:#0f1319;
-    padding:10px;
-    max-height:74vh;
-    overflow:auto;
-    min-width:0;
-  }
-
-  .extraSlots{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:8px;
-    margin-top:10px;
-  }
 
   .slot{
     border:1px solid var(--freeLine);
@@ -297,31 +270,22 @@
         </div>
 
         <div class="status" id="status">—</div>
-
-        <div class="scheduleLayout">
-          <div>
-            <div class="slots" id="slots"></div>
-          </div>
-
-          <div class="extraPanel hide" id="extraWrap">
-            <h2>Marcações extra</h2>
-            <small>Fora do horário normal ou em horas personalizadas.</small>
-            <div class="extraSlots" id="extraSlots"></div>
-          </div>
-        </div>
+        <div class="slots" id="slots"></div>
       </div>
     </div>
 
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>Lista completa, sem filtros nem deduplicação. IDs são internos e não aparecem no ecrã.</small>
+        <small>Busca rápida inteligente. Mostra no máximo 3 clientes.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+            <label>Pesquisar cliente</label>
+            <input id="photoSearch" placeholder="Nome, telefone ou email" oninput="filterPhotoClients()" autocomplete="off" />
+
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
               <div>
-                <label style="margin:0">Clientes</label>
                 <div class="status" id="clientsStatus">—</div>
                 <div class="tinyCount" id="photoCount">0 clientes</div>
               </div>
@@ -397,13 +361,15 @@
     <div id="viewBooking" class="hide">
       <div class="card">
         <h1>Nova Marcação</h1>
-        <small>Só podes marcar clientes já existentes. Lista completa, sem filtros nem deduplicação.</small>
+        <small>Busca rápida inteligente. Mostra no máximo 3 clientes.</small>
 
         <div class="bookBox" style="margin-top:12px">
           <div class="card" style="margin:0">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+            <label>Pesquisar cliente existente</label>
+            <input id="bookSearch" placeholder="Nome, telefone ou email" oninput="filterBookingClients()" autocomplete="off" />
+
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
               <div>
-                <label style="margin:0">Clientes existentes</label>
                 <div class="status" id="bookSearchStatus">—</div>
                 <div class="tinyCount" id="bookCount">0 clientes</div>
               </div>
@@ -535,6 +501,7 @@ const API_BASE = "https://barbearia-api-ki25.onrender.com";
 const STEP_MIN = 45;
 const DEBUG_ON_MISSING = true;
 const TEST_PHONE_FALLBACK = "916634329";
+const SEARCH_LIMIT = 3;
 
 function getScheduleForDate(dateISO){
   const [y,m,d] = dateISO.split("-").map(Number);
@@ -565,8 +532,6 @@ const barberEl = document.getElementById("barber");
 const dateEl = document.getElementById("date");
 const statusEl = document.getElementById("status");
 const slotsEl = document.getElementById("slots");
-const extraWrapEl = document.getElementById("extraWrap");
-const extraSlotsEl = document.getElementById("extraSlots");
 
 let currentItemsById = new Map();
 let clientsCache = [];
@@ -595,6 +560,74 @@ function stripAccents(s){
 function normPhone(p){ return (p||"").replace(/\D+/g,"").replace(/^351/,""); }
 function normEmail(e){ return (e||"").trim().toLowerCase(); }
 function normName(n){ return stripAccents((n||"").trim().toLowerCase()).replace(/\s+/g," "); }
+
+function splitWords(s){
+  return normName(s).split(" ").filter(Boolean);
+}
+
+function clientScoreForQuery(client, query){
+  const qRaw = (query || "").trim();
+  if(!qRaw) return 1;
+
+  const qName = normName(qRaw);
+  const qWords = splitWords(qRaw);
+  const qPhone = normPhone(qRaw);
+  const qEmail = normEmail(qRaw);
+
+  const name = normName(client?.name || "");
+  const nameWords = splitWords(client?.name || "");
+  const phone = normPhone(client?.phone || "");
+  const email = normEmail(client?.email || "");
+
+  if(qEmail){
+    if(email === qEmail) return 2000;
+    if(email.startsWith(qEmail)) return 1800;
+    if(email.includes(qEmail)) return 1600;
+  }
+
+  if(qPhone){
+    if(phone === qPhone) return 1900;
+    if(phone.startsWith(qPhone)) return 1700;
+    if(phone.includes(qPhone)) return 1500;
+  }
+
+  if(qName){
+    if(name === qName) return 2200;
+    if(name.startsWith(qName)) return 2000;
+    if(name.includes(qName)) return 1200;
+  }
+
+  if(qWords.length){
+    const allPrefixes = qWords.every(qw => nameWords.some(nw => nw.startsWith(qw)));
+    if(allPrefixes) return 1400 - qWords.length;
+  }
+
+  if(qWords.length){
+    const allContained = qWords.every(qw => name.includes(qw));
+    if(allContained) return 1000 - qWords.length;
+  }
+
+  return 0;
+}
+
+function dynamicFilterClients(list, query, limit = SEARCH_LIMIT){
+  const base = [...(list || [])];
+
+  const items = base
+    .map(c => ({ c, score: clientScoreForQuery(c, query) }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => {
+      if(b.score !== a.score) return b.score - a.score;
+      const an = normName(a.c?.name || "");
+      const bn = normName(b.c?.name || "");
+      if(an < bn) return -1;
+      if(an > bn) return 1;
+      return String(a.c?.id || "").localeCompare(String(b.c?.id || ""));
+    })
+    .map(x => x.c);
+
+  return items.slice(0, limit);
+}
 
 function pluralClientes(n){
   return `${n} ${n === 1 ? "cliente" : "clientes"}`;
@@ -703,12 +736,12 @@ function getCleanClients(){
   return getRawClients();
 }
 
-function getPhotoClients(){
-  return getRawClients();
+function getPhotoClients(query = ""){
+  return dynamicFilterClients(getRawClients(), query, SEARCH_LIMIT);
 }
 
-function getBookingSearchClients(){
-  return getRawClients();
+function getBookingSearchClients(query = ""){
+  return dynamicFilterClients(getRawClients(), query, SEARCH_LIMIT);
 }
 
 async function apiGet(url){
@@ -815,8 +848,13 @@ async function fetchAdminDay(date, barber){
   return (data.items || []);
 }
 
-function buildSlots(items, schedule){
-  if(schedule?.closed) return [];
+function buildTimelineItems(items, schedule){
+  if(schedule?.closed){
+    return items
+      .filter(x => !isHiddenFromMap(x))
+      .sort((a,b) => (a.time || "").localeCompare(b.time || ""))
+      .map(hit => ({ kind:"booking", time: hit.time, hit }));
+  }
 
   const filtered = items.filter(x => !isHiddenFromMap(x));
   const booked = filtered.map(x => {
@@ -825,10 +863,11 @@ function buildSlots(items, schedule){
     return { ...x, s, e };
   });
 
-  const segments = schedule.segments || [];
-  const slots = [];
+  const scheduleSegments = schedule.segments || [];
+  const timeline = [];
+  const seenBookingIds = new Set();
 
-  for(const seg of segments){
+  for(const seg of scheduleSegments){
     const start = toMin(seg.start);
     const end   = toMin(seg.end);
 
@@ -839,31 +878,47 @@ function buildSlots(items, schedule){
       for(const b of booked){
         if(overlaps(s,e,b.s,b.e)){ hit=b; break; }
       }
-      slots.push({ time: toHHMM(t), hit });
+
+      if(hit){
+        seenBookingIds.add(String(hit.id || ""));
+        timeline.push({
+          kind:"booking",
+          time: hit.time || toHHMM(t),
+          hit
+        });
+      }else{
+        timeline.push({
+          kind:"free",
+          time: toHHMM(t)
+        });
+      }
     }
   }
 
-  return slots;
-}
+  const extras = booked
+    .filter(x => !seenBookingIds.has(String(x.id || "")))
+    .sort((a,b) => (a.time || "").localeCompare(b.time || ""))
+    .map(hit => ({
+      kind:"booking",
+      time: hit.time,
+      hit
+    }));
 
-function buildExtraBookings(items, schedule){
-  const filtered = items.filter(x => !isHiddenFromMap(x));
-  const scheduleSegments = schedule?.segments || [];
+  const all = [...timeline, ...extras];
 
-  function insideNormalWindow(hhmm){
-    const m = toMin(hhmm);
-    for(const seg of scheduleSegments){
-      const s = toMin(seg.start);
-      const e = toMin(seg.end);
-      if(m >= s && m < e) return true;
-    }
-    return false;
-  }
+  all.sort((a,b) => {
+    const ta = toMin(a.time);
+    const tb = toMin(b.time);
+    if(ta !== tb) return ta - tb;
 
-  return filtered
-    .filter(x => isBarberMadeBooking(x) && !isBlock(x))
-    .filter(x => !insideNormalWindow(x.time))
-    .sort((a,b) => (a.time || "").localeCompare(b.time || ""));
+    const pa = a.kind === "booking" ? 0 : 1;
+    const pb = b.kind === "booking" ? 0 : 1;
+    if(pa !== pb) return pa - pb;
+
+    return 0;
+  });
+
+  return all;
 }
 
 function renderBookingCard(hit, timeLabel){
@@ -886,16 +941,19 @@ function renderBookingCard(hit, timeLabel){
   `;
 }
 
-function renderSlots(slots, extraItems){
+function renderTimeline(timeline, isClosedDay){
   slotsEl.innerHTML = "";
-  extraSlotsEl.innerHTML = "";
 
-  if(!slots.length){
-    slotsEl.innerHTML = `<div class="status">Sem horários (domingo fechado ou data inválida).</div>`;
-  } else {
-    for(const s of slots){
-      const div = document.createElement("div");
-      const hit = s.hit;
+  if(!timeline.length){
+    slotsEl.innerHTML = `<div class="status">${isClosedDay ? "Fechado sem marcações." : "Sem horários (domingo fechado ou data inválida)."}</div>`;
+    return;
+  }
+
+  for(const item of timeline){
+    const div = document.createElement("div");
+
+    if(item.kind === "booking"){
+      const hit = item.hit;
       const busy = !!hit && !isBlock(hit);
       const block = !!hit && isBlock(hit);
       const barberMade = !!hit && isBarberMadeBooking(hit);
@@ -903,41 +961,30 @@ function renderSlots(slots, extraItems){
       div.className = "slot" + (busy ? " busy" : "") + (block ? " block" : "") + (barberMade ? " barber-made" : "");
 
       if(busy){
-        div.innerHTML = renderBookingCard(hit, s.time);
+        div.innerHTML = renderBookingCard(hit, item.time);
       } else if (block){
         div.innerHTML = `
-          <div class="t">${escapeHtml(s.time)} — Indisponível</div>
+          <div class="t">${escapeHtml(item.time)} — Indisponível</div>
           <div class="d">Bloqueado</div>
           <div class="actions">
             <button class="danger" onclick="unblock('${hit.id}')">Desbloquear</button>
-            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar</button>
+            <button onclick="prefillBookingByTime('${item.time}')">➕ Marcar</button>
           </div>
         `;
-      } else {
-        div.innerHTML = `
-          <div class="t">${escapeHtml(s.time)} — Livre</div>
-          <div class="d">Toque para bloquear</div>
-          <div class="actions">
-            <button onclick="prefillBookingByTime('${s.time}')">➕ Marcar</button>
-          </div>
-        `;
-        div.addEventListener("click", () => blockAt(s.time));
       }
-
-      slotsEl.appendChild(div);
+    } else {
+      div.className = "slot";
+      div.innerHTML = `
+        <div class="t">${escapeHtml(item.time)} — Livre</div>
+        <div class="d">Toque para bloquear</div>
+        <div class="actions">
+          <button onclick="prefillBookingByTime('${item.time}')">➕ Marcar</button>
+        </div>
+      `;
+      div.addEventListener("click", () => blockAt(item.time));
     }
-  }
 
-  if(!extraItems.length){
-    extraWrapEl.classList.add("hide");
-  } else {
-    extraWrapEl.classList.remove("hide");
-    for(const hit of extraItems){
-      const div = document.createElement("div");
-      div.className = "slot busy barber-made";
-      div.innerHTML = renderBookingCard(hit, hit.time);
-      extraSlotsEl.appendChild(div);
-    }
+    slotsEl.appendChild(div);
   }
 }
 
@@ -948,26 +995,6 @@ async function reloadMap(){
 
   const schedule = getScheduleForDate(d);
 
-  if(schedule.closed){
-    try{
-      const items = await fetchAdminDay(d,b);
-      currentItemsById = new Map();
-      for(const it of items){
-        if(it && it.id) currentItemsById.set(it.id, it);
-      }
-      const extraItems = buildExtraBookings(items, schedule);
-      slotsEl.innerHTML = "";
-      renderSlots([], extraItems);
-      statusEl.textContent = `Fechado • ${b} • ${d}`;
-    }catch(ex){
-      statusEl.textContent = "Erro: " + ex.message;
-    }
-    return;
-  }
-
-  const segText = (schedule.segments || []).map(s => `${s.start}–${s.end}`).join(" • ");
-
-  statusEl.textContent="A carregar…";
   try{
     const items = await fetchAdminDay(d,b);
 
@@ -976,11 +1003,15 @@ async function reloadMap(){
       if(it && it.id) currentItemsById.set(it.id, it);
     }
 
-    const slots = buildSlots(items, schedule);
-    const extraItems = buildExtraBookings(items, schedule);
-    renderSlots(slots, extraItems);
+    const timeline = buildTimelineItems(items, schedule);
+    renderTimeline(timeline, !!schedule.closed);
 
-    statusEl.textContent = `OK • ${b} • ${d} • ${segText}`;
+    if(schedule.closed){
+      statusEl.textContent = `Fechado • ${b} • ${d}`;
+    }else{
+      const segText = (schedule.segments || []).map(s => `${s.start}–${s.end}`).join(" • ");
+      statusEl.textContent = `OK • ${b} • ${d} • ${segText}`;
+    }
   }catch(ex){
     statusEl.textContent = "Erro: " + ex.message;
   }
@@ -1314,8 +1345,8 @@ async function reloadClients(){
     const data = await apiGet(url.toString());
     clientsCache = data.items || [];
     const total = clientsCache.length;
-    clientsStatusEl.textContent = `OK • ${total} clientes`;
-    bookSearchStatus.textContent = `OK • ${total} clientes`;
+    clientsStatusEl.textContent = `OK • ${total} clientes na API`;
+    bookSearchStatus.textContent = `OK • ${total} clientes na API`;
     apiClientsStatusEl.textContent = `OK • ${total} clientes`;
     filterPhotoClients();
     filterBookingClients();
@@ -1389,7 +1420,7 @@ function renderPhotoResults(items){
   box.innerHTML = "";
 
   if(!items.length){
-    box.innerHTML = `<div class="mini">Sem clientes.</div>`;
+    box.innerHTML = `<div class="mini">Sem resultados.</div>`;
     return;
   }
 
@@ -1407,8 +1438,9 @@ function renderPhotoResults(items){
 }
 
 function filterPhotoClients(){
-  const items = getPhotoClients();
-  document.getElementById("photoCount").textContent = pluralClientes(items.length);
+  const q = document.getElementById("photoSearch").value || "";
+  const items = getPhotoClients(q);
+  document.getElementById("photoCount").textContent = `${items.length} de ${clientsCache.length} mostrados`;
   renderPhotoResults(items);
 }
 
@@ -1672,10 +1704,11 @@ function renderBookingResults(items){
 }
 
 function filterBookingClients(){
-  const items = getBookingSearchClients();
-  renderBookingResults(items.slice(0, 1000));
-  bookSearchStatus.textContent = `${items.length} cliente(s) carregados`;
-  document.getElementById("bookCount").textContent = pluralClientes(items.length);
+  const q = document.getElementById("bookSearch").value || "";
+  const items = getBookingSearchClients(q);
+  renderBookingResults(items);
+  bookSearchStatus.textContent = `${clientsCache.length} clientes na API`;
+  document.getElementById("bookCount").textContent = `${items.length} de ${clientsCache.length} mostrados`;
 }
 
 function selectBookingClient(c){
