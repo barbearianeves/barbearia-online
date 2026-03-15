@@ -257,6 +257,13 @@
     color:#d7ebff;
     background:#102238;
   }
+
+  .apiListWrap{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    margin-top:12px;
+  }
 </style>
 </head>
 <body>
@@ -268,6 +275,7 @@
       <button class="tabbtn active" id="tabMap" onclick="showTab('map')">🗓️ Mapa</button>
       <button class="tabbtn" id="tabPhotos" onclick="showTab('photos')">📸 Fotos</button>
       <button class="tabbtn" id="tabBooking" onclick="showTab('booking')">➕ Marcar</button>
+      <button class="tabbtn" id="tabClientsApi" onclick="showTab('clientsApi')">👥 Clientes API</button>
     </div>
 
     <div id="viewMap">
@@ -307,14 +315,18 @@
     <div id="viewPhotos" class="hide">
       <div class="card">
         <h1>Fotos dos Clientes</h1>
-        <small>IDs são internos e não aparecem no ecrã.</small>
+        <small>Lista completa, sem filtros. IDs são internos e não aparecem no ecrã.</small>
 
         <div class="clientGrid" style="margin-top:12px">
           <div class="card" style="margin:0">
-            <label>Pesquisar cliente</label>
-            <input id="photoSearch" placeholder="Nome ou telefone" oninput="filterPhotoClients()" autocomplete="off" />
-            <div class="status" id="clientsStatus">—</div>
-            <div class="tinyCount" id="photoCount">0 clientes</div>
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+              <div>
+                <label style="margin:0">Clientes</label>
+                <div class="status" id="clientsStatus">—</div>
+                <div class="tinyCount" id="photoCount">0 clientes</div>
+              </div>
+              <button style="width:auto" onclick="reloadClients()">↻ Atualizar</button>
+            </div>
             <div id="photoResults" class="searchList"></div>
           </div>
 
@@ -385,14 +397,18 @@
     <div id="viewBooking" class="hide">
       <div class="card">
         <h1>Nova Marcação</h1>
-        <small>Só podes marcar clientes já existentes. Se não existir, cria primeiro na aba Fotos.</small>
+        <small>Só podes marcar clientes já existentes. Lista completa, sem filtros.</small>
 
         <div class="bookBox" style="margin-top:12px">
           <div class="card" style="margin:0">
-            <label>Pesquisar cliente existente</label>
-            <input id="bookSearch" placeholder="Nome ou telefone" oninput="filterBookingClients()" autocomplete="off" />
-            <div class="status" id="bookSearchStatus">—</div>
-            <div class="tinyCount" id="bookCount">0 clientes</div>
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+              <div>
+                <label style="margin:0">Clientes existentes</label>
+                <div class="status" id="bookSearchStatus">—</div>
+                <div class="tinyCount" id="bookCount">0 clientes</div>
+              </div>
+              <button style="width:auto" onclick="reloadClients()">↻ Atualizar</button>
+            </div>
             <div id="bookResults" class="searchList" style="max-height:220px"></div>
           </div>
 
@@ -480,6 +496,25 @@
       </div>
     </div>
 
+    <div id="viewClientsApi" class="hide">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+          <div>
+            <h1>Todos os Clientes da API</h1>
+            <small>Lista completa devolvida pela API, sem filtros.</small>
+          </div>
+          <button style="width:auto" onclick="reloadClients()">↻ Atualizar</button>
+        </div>
+
+        <div class="status" id="apiClientsStatus">—</div>
+        <div class="tinyCount" id="apiClientsCount">0 clientes</div>
+
+        <div class="apiListWrap">
+          <div id="apiClientsResults" class="searchList" style="max-height:70vh"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div id="loginOverlay" class="overlay">
@@ -546,7 +581,7 @@ function overlaps(s1,e1,s2,e2){ return (s1<e2) && (s2<e1); }
 function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
 
 function escapeHtml(s){
-  return (s||"").replace(/[&<>"']/g, c => ({
+  return (s||"").replace(/[&<>\"']/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
 }
@@ -560,73 +595,6 @@ function stripAccents(s){
 function normPhone(p){ return (p||"").replace(/\D+/g,"").replace(/^351/,""); }
 function normEmail(e){ return (e||"").trim().toLowerCase(); }
 function normName(n){ return stripAccents((n||"").trim().toLowerCase()).replace(/\s+/g," "); }
-
-function splitWords(s){
-  return normName(s).split(" ").filter(Boolean);
-}
-
-function clientScoreForQuery(client, query){
-  const qRaw = (query || "").trim();
-  if(!qRaw) return 1;
-
-  const qName = normName(qRaw);
-  const qWords = splitWords(qRaw);
-  const qPhone = normPhone(qRaw);
-
-  const name = normName(client?.name || "");
-  const nameWords = splitWords(client?.name || "");
-  const phone = normPhone(client?.phone || "");
-  const email = normEmail(client?.email || "");
-
-  if(qPhone){
-    if(phone.startsWith(qPhone)) return 1000;
-    if(phone.includes(qPhone)) return 900;
-  }
-
-  if(qName){
-    if(name === qName) return 1200;
-    if(name.startsWith(qName)) return 1100;
-    if(email.startsWith(qName)) return 800;
-  }
-
-  if(qWords.length){
-    const allWordPrefixes = qWords.every(qw =>
-      nameWords.some(nw => nw.startsWith(qw))
-    );
-    if(allWordPrefixes) return 1000 - qWords.length;
-  }
-
-  if(qWords.length){
-    const allContained = qWords.every(qw => name.includes(qw));
-    if(allContained) return 700 - qWords.length;
-  }
-
-  return 0;
-}
-
-function dynamicFilterClients(list, query){
-  const q = (query || "").trim();
-  const items = (list || [])
-    .map(c => ({ c, score: clientScoreForQuery(c, q) }))
-    .filter(x => x.score > 0)
-    .sort((a, b) => {
-      if(b.score !== a.score) return b.score - a.score;
-      const an = normName(a.c?.name || "");
-      const bn = normName(b.c?.name || "");
-      if(an < bn) return -1;
-      if(an > bn) return 1;
-      return String(a.c?.id || "").localeCompare(String(b.c?.id || ""));
-    })
-    .map(x => x.c);
-
-  return q ? items : [...list].sort((a,b) => {
-    const an = normName(a?.name || "");
-    const bn = normName(b?.name || "");
-    if(an < bn) return -1;
-    if(an > bn) return 1;
-    return String(a?.id || "").localeCompare(String(b?.id || ""));
-  });
-}
 
 function pluralClientes(n){
   return `${n} ${n === 1 ? "cliente" : "clientes"}`;
@@ -718,34 +686,25 @@ function dedupeClients(list){
     map.set(key, chooseBetterClient(prev, c));
   }
 
-  return Array.from(map.values());
-}
-
-function getCleanClients(opts = {}){
-  const limit = Number.isFinite(opts.limit) ? opts.limit : null;
-  const query = opts.query || "";
-
-  let list = [...(clientsCache || [])];
-  list = dedupeClients(list);
-  list = dynamicFilterClients(list, query);
-
-  if(limit !== null){
-    list = list.slice(0, limit);
-  }
-
-  return list;
-}
-
-function getPhotoClients(query){
-  return getCleanClients({
-    query: query || ""
+  return Array.from(map.values()).sort((a,b) => {
+    const an = normName(a?.name || "");
+    const bn = normName(b?.name || "");
+    if(an < bn) return -1;
+    if(an > bn) return 1;
+    return String(a?.id || "").localeCompare(String(b?.id || ""));
   });
 }
 
-function getBookingSearchClients(query){
-  return getCleanClients({
-    query: query || ""
-  });
+function getCleanClients(){
+  return dedupeClients([...(clientsCache || [])]);
+}
+
+function getPhotoClients(){
+  return getCleanClients();
+}
+
+function getBookingSearchClients(){
+  return getCleanClients();
 }
 
 async function apiGet(url){
@@ -792,18 +751,22 @@ function showTab(which){
   const map = document.getElementById("viewMap");
   const photos = document.getElementById("viewPhotos");
   const booking = document.getElementById("viewBooking");
+  const clientsApi = document.getElementById("viewClientsApi");
 
   const b1 = document.getElementById("tabMap");
   const b2 = document.getElementById("tabPhotos");
   const b3 = document.getElementById("tabBooking");
+  const b4 = document.getElementById("tabClientsApi");
 
   map.classList.add("hide");
   photos.classList.add("hide");
   booking.classList.add("hide");
+  clientsApi.classList.add("hide");
 
   b1.classList.remove("active");
   b2.classList.remove("active");
   b3.classList.remove("active");
+  b4.classList.remove("active");
 
   if(which === "photos"){
     photos.classList.remove("hide");
@@ -811,6 +774,9 @@ function showTab(which){
   }else if(which === "booking"){
     booking.classList.remove("hide");
     b3.classList.add("active");
+  }else if(which === "clientsApi"){
+    clientsApi.classList.remove("hide");
+    b4.classList.add("active");
   }else{
     map.classList.remove("hide");
     b1.classList.add("active");
@@ -831,8 +797,6 @@ async function doLogin(){
     if(!document.getElementById("b_date").value) document.getElementById("b_date").value = todayISO();
     await reloadMap();
     await reloadClients();
-    filterPhotoClients();
-    filterBookingClients();
   }catch(ex){
     localStorage.removeItem("admin_token");
     loginStatusEl.textContent="❌ Senha errada ou API offline.";
@@ -1140,6 +1104,8 @@ const clientsStatusEl = document.getElementById("clientsStatus");
 const clientSaveStatusEl = document.getElementById("clientSaveStatus");
 const selNameEl = document.getElementById("selName");
 const selMetaEl = document.getElementById("selMeta");
+const apiClientsStatusEl = document.getElementById("apiClientsStatus");
+const apiClientsCountEl = document.getElementById("apiClientsCount");
 
 const c_name = document.getElementById("c_name");
 const c_phone = document.getElementById("c_phone");
@@ -1308,6 +1274,7 @@ async function resetClientsFromApi(){
 
   clientsStatusEl.textContent = "A fazer reset da API…";
   clientSaveStatusEl.textContent = "A fazer reset da API…";
+  apiClientsStatusEl.textContent = "A fazer reset da API…";
 
   try{
     const data = await apiPost(API_BASE + "/admin/reset_clients", {
@@ -1330,20 +1297,28 @@ async function resetClientsFromApi(){
   }catch(ex){
     clientsStatusEl.textContent = "❌ Erro no reset: " + ex.message;
     clientSaveStatusEl.textContent = "❌ Erro no reset: " + ex.message;
+    apiClientsStatusEl.textContent = "❌ Erro no reset: " + ex.message;
   }
 }
 
 async function reloadClients(){
   clientsStatusEl.textContent = "A carregar clientes…";
+  bookSearchStatus.textContent = "A carregar clientes…";
+  apiClientsStatusEl.textContent = "A carregar clientes…";
   try{
     const url = new URL(API_BASE + "/admin/clients");
     const data = await apiGet(url.toString());
     clientsCache = dedupeClients(data.items || []);
     clientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
+    bookSearchStatus.textContent = `OK • ${clientsCache.length} clientes`;
+    apiClientsStatusEl.textContent = `OK • ${clientsCache.length} clientes`;
     filterPhotoClients();
     filterBookingClients();
+    renderApiClients();
   }catch(ex){
     clientsStatusEl.textContent = "Erro: " + ex.message;
+    bookSearchStatus.textContent = "Erro: " + ex.message;
+    apiClientsStatusEl.textContent = "Erro: " + ex.message;
   }
 }
 
@@ -1389,6 +1364,21 @@ function selectClient(c){
   if(c) clientsStatusEl.textContent = "Cliente selecionado.";
 }
 
+function renderClientPhotosRowMeta(c){
+  return [
+    c.phone || "",
+    c.email || ""
+  ].filter(Boolean).join(" • ") || "—";
+}
+
+function renderClientFlags(c){
+  return [
+    c.photo_before_url ? "foto antes" : "",
+    c.photo_after_url ? "foto depois" : "",
+    c.notes ? "com notas" : ""
+  ].filter(Boolean).join(" • ") || "sem extras";
+}
+
 function renderPhotoResults(items){
   const box = document.getElementById("photoResults");
   box.innerHTML = "";
@@ -1403,13 +1393,8 @@ function renderPhotoResults(items){
     div.className = "searchItem";
     div.innerHTML = `
       <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
-      <div class="m">${escapeHtml([c.phone||"", c.email||""].filter(Boolean).join(" • "))}</div>
-      <div class="m">${escapeHtml(
-        [
-          c.photo_before_url ? "foto antes" : "",
-          c.photo_after_url ? "foto depois" : ""
-        ].filter(Boolean).join(" • ") || "sem foto"
-      )}</div>
+      <div class="m">${escapeHtml(renderClientPhotosRowMeta(c))}</div>
+      <div class="m">${escapeHtml(renderClientFlags(c))}</div>
     `;
     div.onclick = () => selectClient(c);
     box.appendChild(div);
@@ -1417,10 +1402,37 @@ function renderPhotoResults(items){
 }
 
 function filterPhotoClients(){
-  const q = document.getElementById("photoSearch").value || "";
-  const items = getPhotoClients(q);
+  const items = getPhotoClients();
   document.getElementById("photoCount").textContent = pluralClientes(items.length);
   renderPhotoResults(items);
+}
+
+function renderApiClients(){
+  const box = document.getElementById("apiClientsResults");
+  const items = getCleanClients();
+  apiClientsCountEl.textContent = pluralClientes(items.length);
+  box.innerHTML = "";
+
+  if(!items.length){
+    box.innerHTML = `<div class="mini">Sem clientes.</div>`;
+    return;
+  }
+
+  for(const c of items){
+    const div = document.createElement("div");
+    div.className = "searchItem";
+    div.innerHTML = `
+      <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
+      <div class="m">${escapeHtml(renderClientPhotosRowMeta(c))}</div>
+      <div class="m">${escapeHtml(renderClientFlags(c))}</div>
+      <div class="m">${escapeHtml("ID interno: " + String(c.id || "—"))}</div>
+    `;
+    div.onclick = () => {
+      showTab("photos");
+      selectClient(c);
+    };
+    box.appendChild(div);
+  }
 }
 
 function newClient(){
@@ -1646,13 +1658,8 @@ function renderBookingResults(items){
     div.className = "searchItem";
     div.innerHTML = `
       <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
-      <div class="m">${escapeHtml([c.phone||"", c.email||""].filter(Boolean).join(" • "))}</div>
-      <div class="m">${escapeHtml(
-        [
-          c.photo_before_url ? "foto antes" : "",
-          c.photo_after_url ? "foto depois" : ""
-        ].filter(Boolean).join(" • ") || "sem foto"
-      )}</div>
+      <div class="m">${escapeHtml(renderClientPhotosRowMeta(c))}</div>
+      <div class="m">${escapeHtml(renderClientFlags(c))}</div>
     `;
     div.onclick = () => selectBookingClient(c);
     box.appendChild(div);
@@ -1660,10 +1667,9 @@ function renderBookingResults(items){
 }
 
 function filterBookingClients(){
-  const q = document.getElementById("bookSearch").value || "";
-  const items = getBookingSearchClients(q);
-  renderBookingResults(items.slice(0, 100));
-  bookSearchStatus.textContent = `${items.length} resultado(s)`;
+  const items = getBookingSearchClients();
+  renderBookingResults(items.slice(0, 1000));
+  bookSearchStatus.textContent = `${items.length} cliente(s) carregados`;
   document.getElementById("bookCount").textContent = pluralClientes(items.length);
 }
 
