@@ -277,6 +277,7 @@
     <div class="tabs">
       <button class="tabbtn active" id="tabMap" onclick="showTab('map')">🗓️ Mapa</button>
       <button class="tabbtn" id="tabPhotos" onclick="showTab('photos')">📸 Fotos</button>
+      <button class="tabbtn" id="tabCreateClient" onclick="showTab('createClient')">🧾 Criar Cliente</button>
       <button class="tabbtn" id="tabBooking" onclick="showTab('booking')">➕ Marcar</button>
       <button class="tabbtn" id="tabClientsApi" onclick="showTab('clientsApi')">👥 Clientes API</button>
     </div>
@@ -333,34 +334,9 @@
                 <div class="mini" id="selMeta">—</div>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button style="width:auto" onclick="newClient()">➕ Novo</button>
-                <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
-                <button style="width:auto" onclick="resetClientsFromApi()">♻️ Reset API</button>
-                <button style="width:auto" class="danger" onclick="deleteCurrentClient()">🗑️ Apagar</button>
+                <button style="width:auto" onclick="showTab('createClient')">🧾 Editar Cliente</button>
               </div>
             </div>
-
-            <div class="row" style="margin-top:10px">
-              <div>
-                <label>Nome</label>
-                <input id="c_name" placeholder="ex: Rui Silva" />
-              </div>
-              <div>
-                <label>Telefone</label>
-                <input id="c_phone" placeholder="9xxxxxxxx" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div>
-                <label>Email</label>
-                <input id="c_email" placeholder="email@..." />
-              </div>
-              <div></div>
-            </div>
-
-            <label>Notas</label>
-            <textarea id="c_notes" placeholder="Notas do cliente..."></textarea>
 
             <div class="photos" style="margin-top:12px">
               <div class="ph">
@@ -387,6 +363,49 @@
             <div class="status" id="clientSaveStatus">—</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="viewCreateClient" class="hide">
+      <div class="card">
+        <h1>Criar Cliente</h1>
+
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:950;font-size:16px" id="createSelName">Seleciona um cliente</div>
+            <div class="mini" id="createSelMeta">—</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button style="width:auto" onclick="newClient()">➕ Novo</button>
+            <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
+            <button style="width:auto" onclick="resetClientsFromApi()">♻️ Reset API</button>
+            <button style="width:auto" class="danger" onclick="deleteCurrentClient()">🗑️ Apagar</button>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Nome</label>
+            <input id="c_name" placeholder="ex: Rui Silva" />
+          </div>
+          <div>
+            <label>Telefone</label>
+            <input id="c_phone" placeholder="9xxxxxxxx" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input id="c_email" placeholder="email@..." />
+          </div>
+          <div></div>
+        </div>
+
+        <label>Notas</label>
+        <textarea id="c_notes" placeholder="Notas do cliente..."></textarea>
+
+        <div class="status" id="createClientStatus">Seleciona um cliente na tab Fotos ou cria um novo.</div>
       </div>
     </div>
 
@@ -592,6 +611,38 @@ function stripAccents(s){
   return (s || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function normalizeTextInput(s){
+  return stripAccents(String(s || ""))
+    .replace(/[^\w\s@.+\-]/g, " ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeNameInput(s){
+  return normalizeTextInput(s)
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function normalizeEmailInput(s){
+  return stripAccents(String(s || ""))
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9@._+\-]/g, "")
+    .trim();
+}
+
+function normalizePhoneInput(s){
+  return String(s || "")
+    .replace(/\D+/g, "")
+    .replace(/^351/, "")
+    .trim();
+}
+
+function normalizeNotesInput(s){
+  return normalizeTextInput(s);
 }
 
 function normPhone(p){ return (p||"").replace(/\D+/g,"").replace(/^351/,""); }
@@ -858,16 +909,19 @@ function isHiddenFromMap(x){
 function showTab(which){
   const map = document.getElementById("viewMap");
   const photos = document.getElementById("viewPhotos");
+  const createClient = document.getElementById("viewCreateClient");
   const booking = document.getElementById("viewBooking");
   const clientsApi = document.getElementById("viewClientsApi");
 
   const b1 = document.getElementById("tabMap");
   const b2 = document.getElementById("tabPhotos");
-  const b3 = document.getElementById("tabBooking");
-  const b4 = document.getElementById("tabClientsApi");
+  const b3 = document.getElementById("tabCreateClient");
+  const b4 = document.getElementById("tabBooking");
+  const b5 = document.getElementById("tabClientsApi");
 
   map.classList.add("hide");
   photos.classList.add("hide");
+  createClient.classList.add("hide");
   booking.classList.add("hide");
   clientsApi.classList.add("hide");
 
@@ -875,16 +929,20 @@ function showTab(which){
   b2.classList.remove("active");
   b3.classList.remove("active");
   b4.classList.remove("active");
+  b5.classList.remove("active");
 
   if(which === "photos"){
     photos.classList.remove("hide");
     b2.classList.add("active");
+  }else if(which === "createClient"){
+    createClient.classList.remove("hide");
+    b3.classList.add("active");
   }else if(which === "booking"){
     booking.classList.remove("hide");
-    b3.classList.add("active");
+    b4.classList.add("active");
   }else if(which === "clientsApi"){
     clientsApi.classList.remove("hide");
-    b4.classList.add("active");
+    b5.classList.add("active");
   }else{
     map.classList.remove("hide");
     b1.classList.add("active");
@@ -957,7 +1015,6 @@ function buildTimelineItems(items, schedule){
       if(hit){
         const hitId = String(hit.id || "");
 
-        // se já desenhámos esta marcação, não voltamos a criar outro slot
         if(seenBookingIds.has(hitId)){
           continue;
         }
@@ -1228,8 +1285,11 @@ Obrigado!`;
 
 const clientsStatusEl = document.getElementById("clientsStatus");
 const clientSaveStatusEl = document.getElementById("clientSaveStatus");
+const createClientStatusEl = document.getElementById("createClientStatus");
 const selNameEl = document.getElementById("selName");
 const selMetaEl = document.getElementById("selMeta");
+const createSelNameEl = document.getElementById("createSelName");
+const createSelMetaEl = document.getElementById("createSelMeta");
 const apiClientsStatusEl = document.getElementById("apiClientsStatus");
 const apiClientsCountEl = document.getElementById("apiClientsCount");
 
@@ -1404,6 +1464,7 @@ async function resetClientsFromApi(){
 
   clientsStatusEl.textContent = "A fazer reset da API…";
   clientSaveStatusEl.textContent = "A fazer reset da API…";
+  createClientStatusEl.textContent = "A fazer reset da API…";
   apiClientsStatusEl.textContent = "A fazer reset da API…";
 
   try{
@@ -1424,9 +1485,12 @@ async function resetClientsFromApi(){
       `✅ Reset feito. Clientes apagados da API: ${data.deleted_clients || 0}`;
     clientSaveStatusEl.textContent =
       "Agora corre a bridge com FORCE_PUSH_CLIENTS=1 e FORCE_PUSH_PHOTOS=1.";
+    createClientStatusEl.textContent =
+      "Agora corre a bridge com FORCE_PUSH_CLIENTS=1 e FORCE_PUSH_PHOTOS=1.";
   }catch(ex){
     clientsStatusEl.textContent = "❌ Erro no reset: " + ex.message;
     clientSaveStatusEl.textContent = "❌ Erro no reset: " + ex.message;
+    createClientStatusEl.textContent = "❌ Erro no reset: " + ex.message;
     apiClientsStatusEl.textContent = "❌ Erro no reset: " + ex.message;
   }
 }
@@ -1485,13 +1549,23 @@ function renderClientPhotos(c){
   }
 }
 
+function updateClientHeaders(c){
+  const name = c?.name || "Seleciona um cliente";
+  const meta = [c?.phone||"", c?.email||""].filter(Boolean).join(" • ") || "—";
+
+  selNameEl.textContent = name;
+  selMetaEl.textContent = meta;
+  createSelNameEl.textContent = name;
+  createSelMetaEl.textContent = meta;
+}
+
 function selectClient(c){
   selectedClient = c || null;
-  selNameEl.textContent = c?.name || "Seleciona um cliente";
-  selMetaEl.textContent = [c?.phone||"", c?.email||""].filter(Boolean).join(" • ") || "—";
+  updateClientHeaders(c || {});
   fillClientForm(c || {});
   renderClientPhotos(c || {});
   clientSaveStatusEl.textContent = "—";
+  createClientStatusEl.textContent = "—";
   if(c) clientsStatusEl.textContent = "Cliente selecionado.";
 }
 
@@ -1569,23 +1643,34 @@ function renderApiClients(){
 
 function newClient(){
   selectedClient = { id:"", name:"", phone:"", email:"", notes:"" };
-  selNameEl.textContent = "Novo cliente";
-  selMetaEl.textContent = "—";
+  updateClientHeaders(selectedClient);
   fillClientForm(selectedClient);
   renderClientPhotos({});
   clientSaveStatusEl.textContent = "—";
+  createClientStatusEl.textContent = "—";
   clientsStatusEl.textContent = "Novo cliente.";
-  showTab("photos");
+  showTab("createClient");
 }
 
 async function saveClient(){
   clientSaveStatusEl.textContent = "A guardar…";
+  createClientStatusEl.textContent = "A guardar…";
   try{
+    const cleanName = normalizeNameInput(c_name.value);
+    const cleanPhone = normalizePhoneInput(c_phone.value);
+    const cleanEmail = normalizeEmailInput(c_email.value);
+    const cleanNotes = normalizeNotesInput(c_notes.value);
+
+    c_name.value = cleanName;
+    c_phone.value = cleanPhone;
+    c_email.value = cleanEmail;
+    c_notes.value = cleanNotes;
+
     const payload = {
-      name: (c_name.value || "").trim(),
-      phone: (c_phone.value || "").trim(),
-      email: (c_email.value || "").trim(),
-      notes: (c_notes.value || "").trim()
+      name: cleanName,
+      phone: cleanPhone,
+      email: cleanEmail,
+      notes: cleanNotes
     };
 
     const existingInternalId = currentSelectedClientId();
@@ -1602,6 +1687,7 @@ async function saveClient(){
       }
       if(existing && existing.id){
         clientSaveStatusEl.textContent = "⚠️ Já existe um cliente com esse telefone/email.";
+        createClientStatusEl.textContent = "⚠️ Já existe um cliente com esse telefone/email.";
         alert("Já existe um cliente com esse telefone ou email.");
         return;
       }
@@ -1613,9 +1699,12 @@ async function saveClient(){
       await reloadClients().catch(()=>{});
       selectClient(item);
     }
-    clientSaveStatusEl.textContent = data.created ? "✅ Cliente criado" : "✅ Cliente atualizado";
+    const okText = data.created ? "✅ Cliente criado" : "✅ Cliente atualizado";
+    clientSaveStatusEl.textContent = okText;
+    createClientStatusEl.textContent = okText;
   }catch(ex){
     clientSaveStatusEl.textContent = "❌ Erro: " + ex.message;
+    createClientStatusEl.textContent = "❌ Erro: " + ex.message;
   }
 }
 
@@ -1666,12 +1755,14 @@ async function deleteCurrentClient(){
     newClient();
     await reloadClients();
     clientSaveStatusEl.textContent = "✅ Cliente apagado.";
+    createClientStatusEl.textContent = "✅ Cliente apagado.";
   }catch(e1){
     try{
       await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(cid) + "/delete", {});
       newClient();
       await reloadClients();
       clientSaveStatusEl.textContent = "✅ Cliente apagado.";
+      createClientStatusEl.textContent = "✅ Cliente apagado.";
     }catch(e2){
       alert("Não consegui apagar: " + (e2?.message || e1?.message || "erro"));
     }
@@ -1751,13 +1842,15 @@ async function openPhotosForBooking(bid){
   }
 
   newClient();
-  c_name.value = bookingName;
-  c_phone.value = bookingPhone;
-  c_email.value = bookingEmail;
+  c_name.value = normalizeNameInput(bookingName);
+  c_phone.value = normalizePhoneInput(bookingPhone);
+  c_email.value = normalizeEmailInput(bookingEmail);
 
   clientsStatusEl.textContent = "Cliente não encontrado.";
   clientSaveStatusEl.textContent =
-    "⚠️ Não encontrei este cliente na API. Cria/guarda primeiro aqui na aba Fotos.";
+    "⚠️ Não encontrei este cliente na API. Cria/guarda primeiro aqui na aba Criar Cliente.";
+  createClientStatusEl.textContent =
+    "⚠️ Não encontrei este cliente na API. Cria/guarda primeiro aqui na aba Criar Cliente.";
 }
 
 const b_name = document.getElementById("b_name");
@@ -1859,7 +1952,7 @@ async function createBookingFromAdmin(){
       bookCreateStatus.textContent = "❌ Cliente não existe.";
       alert(
         "Na página do barbeiro só podes criar marcações para clientes já existentes.\n\n" +
-        "Primeiro cria/guarda o cliente na aba Fotos e só depois faz a marcação."
+        "Primeiro cria/guarda o cliente na aba Criar Cliente e só depois faz a marcação."
       );
       return;
     }
