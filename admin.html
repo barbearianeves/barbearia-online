@@ -210,6 +210,11 @@
   .searchItem:hover{border-color:#fff}
   .searchItem .n{font-weight:900}
   .searchItem .m{font-size:12px;color:var(--muted);margin-top:4px}
+  .searchItem.selected{
+    border-color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.15) inset;
+    background:#141922;
+  }
 
   .bookBox{
     display:grid;
@@ -378,8 +383,6 @@
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button style="width:auto" onclick="newClient()">➕ Novo</button>
             <button style="width:auto" onclick="saveClient()">💾 Guardar</button>
-            <button style="width:auto" onclick="resetClientsFromApi()">♻️ Reset API</button>
-            <button style="width:auto" class="danger" onclick="deleteCurrentClient()">🗑️ Apagar</button>
           </div>
         </div>
 
@@ -521,7 +524,11 @@
           <div>
             <h1>Clientes</h1>
           </div>
-          <button style="width:auto" onclick="reloadClients()">↻ Atualizar</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button style="width:auto" onclick="reloadClients()">↻ Atualizar</button>
+            <button style="width:auto" onclick="resetClientsFromApi()">♻️ Reset API</button>
+            <button style="width:auto" class="danger" onclick="deleteSelectedApiClient()">🗑️ Apagar Cliente</button>
+          </div>
         </div>
 
         <div class="status" id="apiClientsStatus">—</div>
@@ -593,6 +600,7 @@ let currentItemsById = new Map();
 let clientsCache = [];
 let selectedClient = null;
 let bookingSelectedClient = null;
+let selectedApiClientId = "";
 
 function token(){ return (localStorage.getItem("admin_token") || "").trim(); }
 function pad2(n){ return (n<10?"0":"")+n; }
@@ -1382,9 +1390,9 @@ async function getClientById(clientId){
 }
 
 async function resolveExistingClientForBookingDraft(){
-  const name = (b_name.value || "").trim();
-  const phone = (b_phone.value || "").trim();
-  const email = (b_email.value || "").trim();
+  const name = normalizeNameInput(b_name.value || "");
+  const phone = normalizePhoneInput(b_phone.value || "");
+  const email = normalizeEmailInput(b_email.value || "");
 
   if(bookingSelectedClient && String(bookingSelectedClient.id || "").trim()){
     const full = await getClientById(bookingSelectedClient.id);
@@ -1476,6 +1484,7 @@ async function resetClientsFromApi(){
     clientsCache = [];
     selectedClient = null;
     bookingSelectedClient = null;
+    selectedApiClientId = "";
 
     newClient();
     await reloadClients().catch(()=>{});
@@ -1487,6 +1496,8 @@ async function resetClientsFromApi(){
       "Agora corre a bridge com FORCE_PUSH_CLIENTS=1 e FORCE_PUSH_PHOTOS=1.";
     createClientStatusEl.textContent =
       "Agora corre a bridge com FORCE_PUSH_CLIENTS=1 e FORCE_PUSH_PHOTOS=1.";
+    apiClientsStatusEl.textContent =
+      `✅ Reset feito. Clientes apagados da API: ${data.deleted_clients || 0}`;
   }catch(ex){
     clientsStatusEl.textContent = "❌ Erro no reset: " + ex.message;
     clientSaveStatusEl.textContent = "❌ Erro no reset: " + ex.message;
@@ -1504,9 +1515,18 @@ async function reloadClients(){
     const data = await apiGet(url.toString());
     clientsCache = data.items || [];
     const total = clientsCache.length;
+
+    if(selectedApiClientId){
+      const stillExists = clientsCache.some(x => String(x.id || "") === String(selectedApiClientId));
+      if(!stillExists) selectedApiClientId = "";
+    }
+
     clientsStatusEl.textContent = `OK • ${total} clientes na API`;
     bookSearchStatus.textContent = `OK • ${total} clientes na API`;
-    apiClientsStatusEl.textContent = `OK • ${total} clientes`;
+    apiClientsStatusEl.textContent = selectedApiClientId
+      ? `OK • ${total} clientes • cliente selecionado`
+      : `OK • ${total} clientes`;
+
     filterPhotoClients();
     filterBookingClients();
     renderApiClients();
@@ -1613,6 +1633,13 @@ function filterPhotoClients(){
   renderPhotoResults(items);
 }
 
+function selectApiClient(c){
+  selectedApiClientId = String(c?.id || "");
+  selectClient(c);
+  apiClientsStatusEl.textContent = `Cliente selecionado: ${c?.name || "(sem nome)"}${c?.id ? " • ID " + c.id : ""}`;
+  renderApiClients();
+}
+
 function renderApiClients(){
   const box = document.getElementById("apiClientsResults");
   const items = getRawClients();
@@ -1626,17 +1653,14 @@ function renderApiClients(){
 
   for(const c of items){
     const div = document.createElement("div");
-    div.className = "searchItem";
+    div.className = "searchItem" + (String(c.id || "") === String(selectedApiClientId) ? " selected" : "");
     div.innerHTML = `
       <div class="n">${escapeHtml(c.name || "(sem nome)")}</div>
       <div class="m">${escapeHtml(renderClientPhotosRowMeta(c))}</div>
       <div class="m">${escapeHtml(renderClientFlags(c))}</div>
       <div class="m">${escapeHtml("ID interno: " + String(c.id || "—"))}</div>
     `;
-    div.onclick = () => {
-      showTab("photos");
-      selectClient(c);
-    };
+    div.onclick = () => selectApiClient(c);
     box.appendChild(div);
   }
 }
@@ -1698,6 +1722,8 @@ async function saveClient(){
     if(item){
       await reloadClients().catch(()=>{});
       selectClient(item);
+      selectedApiClientId = String(item.id || selectedApiClientId || "");
+      renderApiClients();
     }
     const okText = data.created ? "✅ Cliente criado" : "✅ Cliente atualizado";
     clientSaveStatusEl.textContent = okText;
@@ -1753,6 +1779,7 @@ async function deleteCurrentClient(){
   try{
     await apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(cid));
     newClient();
+    selectedApiClientId = "";
     await reloadClients();
     clientSaveStatusEl.textContent = "✅ Cliente apagado.";
     createClientStatusEl.textContent = "✅ Cliente apagado.";
@@ -1760,6 +1787,7 @@ async function deleteCurrentClient(){
     try{
       await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(cid) + "/delete", {});
       newClient();
+      selectedApiClientId = "";
       await reloadClients();
       clientSaveStatusEl.textContent = "✅ Cliente apagado.";
       createClientStatusEl.textContent = "✅ Cliente apagado.";
@@ -1767,6 +1795,46 @@ async function deleteCurrentClient(){
       alert("Não consegui apagar: " + (e2?.message || e1?.message || "erro"));
     }
   }
+}
+
+async function deleteSelectedApiClient(){
+  const cid = String(selectedApiClientId || "").trim();
+  if(!cid){
+    alert("Seleciona primeiro um cliente na lista da tab Clientes API.");
+    return;
+  }
+
+  const client = (clientsCache || []).find(x => String(x.id || "") === cid);
+  const label = client?.name ? `${client.name}${client.phone ? " • " + client.phone : ""}` : `ID ${cid}`;
+
+  if(!confirm(`Apagar este cliente?\n\n${label}`)) return;
+
+  apiClientsStatusEl.textContent = "A apagar cliente…";
+
+  try{
+    await apiDelete(API_BASE + "/admin/client/" + encodeURIComponent(cid));
+  }catch(e1){
+    try{
+      await apiPost(API_BASE + "/admin/client/" + encodeURIComponent(cid) + "/delete", {});
+    }catch(e2){
+      apiClientsStatusEl.textContent = "❌ Erro a apagar: " + (e2?.message || e1?.message || "erro");
+      alert("Não consegui apagar: " + (e2?.message || e1?.message || "erro"));
+      return;
+    }
+  }
+
+  if(String(selectedClient?.id || "") === cid){
+    selectedClient = null;
+    updateClientHeaders({});
+    fillClientForm({});
+    renderClientPhotos({});
+    clientSaveStatusEl.textContent = "—";
+    createClientStatusEl.textContent = "—";
+  }
+
+  selectedApiClientId = "";
+  await reloadClients().catch(()=>{});
+  apiClientsStatusEl.textContent = `✅ Cliente apagado com sucesso.`;
 }
 
 async function openPhotosForBooking(bid){
@@ -1821,6 +1889,8 @@ async function openPhotosForBooking(bid){
       await reloadMap().catch(()=>{});
       await reloadClients().catch(()=>{});
       selectClient(best);
+      selectedApiClientId = String(best.id || selectedApiClientId || "");
+      renderApiClients();
       clientsStatusEl.textContent = "Cliente da marcação aberto com sucesso.";
       return;
     }
@@ -1836,6 +1906,8 @@ async function openPhotosForBooking(bid){
     await reloadMap().catch(()=>{});
     await reloadClients().catch(()=>{});
     selectClient(existing);
+    selectedApiClientId = String(existing.id || selectedApiClientId || "");
+    renderApiClients();
     clientSaveStatusEl.textContent = "✅ Cliente encontrado e ligado à marcação.";
     clientsStatusEl.textContent = "Cliente da marcação aberto com sucesso.";
     return;
@@ -1919,6 +1991,11 @@ function clearBookingForm(){
 }
 
 async function createBookingFromAdmin(){
+  b_name.value = normalizeNameInput(b_name.value);
+  b_phone.value = normalizePhoneInput(b_phone.value);
+  b_email.value = normalizeEmailInput(b_email.value);
+  b_notes.value = normalizeNotesInput(b_notes.value);
+
   const payload = {
     client_id: "",
     name: (b_name.value || "").trim(),
@@ -1985,9 +2062,9 @@ async function prefillBookingFromSlot(bid){
   showTab("booking");
 
   bookingSelectedClient = b.client_id ? { id: b.client_id } : null;
-  b_name.value = b.name || b.client || "";
-  b_phone.value = b.phone || "";
-  b_email.value = b.email || "";
+  b_name.value = normalizeNameInput(b.name || b.client || "");
+  b_phone.value = normalizePhoneInput(b.phone || "");
+  b_email.value = normalizeEmailInput(b.email || "");
   b_barber.value = b.barber || "Pedro";
   b_date.value = b.date || todayISO();
   b_time.value = b.time || "";
@@ -2028,6 +2105,17 @@ function prefillBookingByTime(hhmm){
 
 dateEl.addEventListener("change", reloadMap);
 barberEl.addEventListener("change", reloadMap);
+
+c_name.addEventListener("blur", () => { c_name.value = normalizeNameInput(c_name.value); });
+c_phone.addEventListener("blur", () => { c_phone.value = normalizePhoneInput(c_phone.value); });
+c_email.addEventListener("blur", () => { c_email.value = normalizeEmailInput(c_email.value); });
+c_notes.addEventListener("blur", () => { c_notes.value = normalizeNotesInput(c_notes.value); });
+
+b_name.addEventListener("blur", () => { b_name.value = normalizeNameInput(b_name.value); });
+b_phone.addEventListener("blur", () => { b_phone.value = normalizePhoneInput(b_phone.value); });
+b_email.addEventListener("blur", () => { b_email.value = normalizeEmailInput(b_email.value); });
+b_notes.addEventListener("blur", () => { b_notes.value = normalizeNotesInput(b_notes.value); });
+
 setInterval(() => {
   if(!overlayEl.classList.contains("hide")) return;
   reloadMap();
