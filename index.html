@@ -6,13 +6,18 @@
   <title>Barbearia Neves — Marcação</title>
   <style>
     :root{
-      --bg:#0b0d10;
-      --card:#12161c;
+      --bg:#08090c;
+      --bg2:#0d1016;
+      --card:#121720;
+      --card2:#0f141c;
       --muted:#aeb6c2;
       --text:#ffffff;
-      --line:#2a3240;
-      --input:#0f1319;
+      --line:#273140;
+      --line2:#364255;
+      --input:#0d1218;
       --accent:#ffffff;
+      --accentText:#000000;
+      --softGlow:0 0 0 1px rgba(255,255,255,.03), 0 18px 40px rgba(0,0,0,.38);
 
       --okbg:#0f2a16;
       --okline:#2bd66a;
@@ -23,80 +28,238 @@
       --slotFreeBorder:#2a3240;
       --slotBusy:#241216;
       --slotBusyBorder:#7a2a3a;
-      --slotPick:#1a2230;
-      --slotPickBorder:#5e7aa8;
+      --slotPick:#182334;
+      --slotPickBorder:#6f8dbf;
 
-      --sheetBg:#12161c;
-      --backdrop:rgba(0,0,0,.62);
+      --tabBg:#0d1218;
+      --tabBorder:#2a3240;
+      --tabActiveBg:linear-gradient(135deg,#ffffff 0%,#dfe7f3 100%);
+      --tabActiveText:#000000;
+
+      --gold:#d4b06a;
+      --goldSoft:rgba(212,176,106,.18);
     }
 
     *{box-sizing:border-box}
-    html,body{overflow-x:hidden}
+    html{scroll-behavior:smooth}
 
     body{
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       margin:0;
       min-height:100vh;
-      background:var(--bg);
+      background:
+        radial-gradient(circle at top right, rgba(212,176,106,.10), transparent 26%),
+        radial-gradient(circle at top left, rgba(103,134,184,.12), transparent 24%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
       color:var(--text);
       display:flex;
       justify-content:center;
       padding:22px;
     }
 
-    .wrap{width:100%; max-width:1100px;}
+    .wrap{
+      width:100%;
+      max-width:1120px;
+    }
 
     .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:18px;
-      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      background:linear-gradient(180deg, rgba(18,23,32,.95) 0%, rgba(13,17,24,.98) 100%);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:24px;
+      padding:20px;
+      box-shadow:var(--softGlow);
+      backdrop-filter:blur(10px);
     }
 
     .brand{
       display:flex;
       align-items:center;
-      gap:14px;
+      gap:16px;
       margin-bottom:10px;
     }
 
     .brand img{
-      width:64px;height:64px;
+      width:74px;
+      height:74px;
       object-fit:contain;
-      border-radius:12px;
+      border-radius:18px;
       background:#fff;
       padding:8px;
+      box-shadow:0 10px 28px rgba(0,0,0,.22);
     }
 
-    h1{margin:0;font-size:34px}
-    h2{margin:0 0 8px 0;font-size:22px}
-    p{margin:6px 0 0;color:var(--muted)}
+    .brandText{
+      flex:1;
+      min-width:0;
+    }
+
+    h1{
+      margin:0;
+      font-size:36px;
+      letter-spacing:-.03em;
+    }
+
+    h2{
+      margin:0 0 8px 0;
+      font-size:22px;
+      letter-spacing:-.02em;
+    }
+
+    p{
+      margin:6px 0 0;
+      color:var(--muted);
+    }
+
+    .heroInfo{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(255,255,255,.03);
+      line-height:1.35;
+      backdrop-filter:blur(6px);
+    }
+
+    .tabsWrap{
+      margin-top:18px;
+      padding:6px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+
+    .tabBtn{
+      width:100%;
+      margin:0;
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px solid var(--tabBorder);
+      background:var(--tabBg);
+      color:var(--text);
+      font-size:15px;
+      font-weight:800;
+      letter-spacing:.01em;
+      cursor:pointer;
+      transition:all .18s ease;
+    }
+
+    .tabBtn:hover{
+      transform:translateY(-1px);
+      border-color:var(--line2);
+    }
+
+    .tabBtn.active{
+      background:var(--tabActiveBg);
+      color:var(--tabActiveText);
+      border-color:transparent;
+      box-shadow:0 10px 24px rgba(255,255,255,.08);
+    }
+
+    .ok,.err{
+      padding:13px 14px;
+      border-radius:14px;
+      margin:14px 0 0;
+      display:none;
+      white-space:pre-wrap;
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .ok{
+      background:var(--okbg);
+      border:1px solid var(--okline);
+    }
+
+    .err{
+      background:var(--errbg);
+      border:1px solid var(--errline);
+    }
+
+    .tabPanel{
+      display:none;
+      margin-top:18px;
+      animation:fadeIn .22s ease;
+    }
+
+    .tabPanel.active{
+      display:block;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0; transform:translateY(8px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1.02fr .98fr;
+      gap:18px;
+    }
+
+    .panel{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:22px;
+      padding:16px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.025) 0%, rgba(255,255,255,.01) 100%),
+        var(--card2);
+      box-shadow:var(--softGlow);
+    }
+
+    .panelHeader{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:10px;
+    }
+
+    .panelHeader .sub{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:4px;
+    }
 
     label{
       display:block;
       margin-top:14px;
-      font-weight:650;
+      font-weight:700;
       color:var(--text);
+      font-size:14px;
     }
 
     input,select,button{
       width:100%;
-      padding:12px 12px;
+      padding:13px 13px;
       margin-top:8px;
       font-size:16px;
-      border-radius:12px;
+      border-radius:14px;
       border:1px solid var(--line);
       background:var(--input);
       color:var(--text);
       outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease, transform .06s ease;
     }
 
     input::placeholder{color:#7f8aa0}
 
     input:focus,select:focus{
-      border-color:#55637d;
-      box-shadow:0 0 0 3px rgba(85,99,125,.25);
+      border-color:#5c6f8f;
+      box-shadow:0 0 0 4px rgba(92,111,143,.20);
     }
 
     .row{
@@ -108,12 +271,11 @@
 
     button{
       cursor:pointer;
-      margin-top:16px;
-      background:var(--accent);
+      margin-top:18px;
+      background:linear-gradient(135deg,#ffffff 0%,#dde5f0 100%);
       color:#000;
-      font-weight:750;
+      font-weight:850;
       border:0;
-      transition:transform .06s ease;
     }
 
     button:active{transform:translateY(1px)}
@@ -123,32 +285,6 @@
       background:#0f1319;
       color:#fff;
       border:1px solid var(--line);
-    }
-
-    .ok,.err{
-      padding:12px 12px;
-      border-radius:12px;
-      margin:12px 0 0;
-      display:none;
-      white-space:pre-wrap;
-    }
-
-    .ok{background:var(--okbg); border:1px solid var(--okline)}
-    .err{background:var(--errbg); border:1px solid var(--errline)}
-
-    .grid2{
-      display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap:16px;
-      margin-top:14px;
-    }
-
-    .agenda,
-    .mine{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#0e1218;
     }
 
     .agendaTop,
@@ -167,80 +303,86 @@
 
     .slots{
       display:grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns:repeat(2,1fr);
       gap:10px;
-      max-height:420px;
+      max-height:470px;
       overflow:auto;
-      padding-right:6px;
+      padding-right:4px;
     }
 
     .slot{
       border:1px solid var(--slotFreeBorder);
-      background:var(--slotFree);
-      border-radius:12px;
-      padding:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,.02) 0%, rgba(255,255,255,.00) 100%), var(--slotFree);
+      border-radius:16px;
+      padding:12px;
       cursor:pointer;
       user-select:none;
       display:flex;
       flex-direction:column;
       gap:6px;
+      transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease;
     }
 
-    .slot .t{font-weight:800}
-    .slot .d{font-size:12px;color:var(--muted)}
-
-    .slot.busy{
-      background:var(--slotBusy);
-      border-color:var(--slotBusyBorder);
-      cursor:not-allowed;
-      opacity:.85;
+    .slot:hover:not(.busy){
+      transform:translateY(-1px);
+      border-color:#435169;
     }
 
-    .slot.pick{
-      background:var(--slotPick);
-      border-color:var(--slotPickBorder);
-      box-shadow:0 0 0 3px rgba(94,122,168,.22);
+    .slot .t{
+      font-weight:850;
+      font-size:15px;
     }
 
-    .pill{
-      display:inline-block;
-      padding:4px 8px;
-      border:1px solid var(--line);
-      border-radius:999px;
+    .slot .d{
       font-size:12px;
       color:var(--muted);
-      margin-top:8px;
       line-height:1.35;
     }
 
-    .topActions{
-      display:flex;
-      gap:10px;
-      margin-top:14px;
-      flex-wrap:wrap;
+    .slot.busy{
+      background:linear-gradient(180deg, rgba(255,255,255,.015) 0%, rgba(255,255,255,.00) 100%), var(--slotBusy);
+      border-color:var(--slotBusyBorder);
+      cursor:not-allowed;
+      opacity:.9;
     }
 
-    .topActions button{
+    .slot.pick{
+      background:linear-gradient(180deg, rgba(255,255,255,.035) 0%, rgba(255,255,255,.00) 100%), var(--slotPick);
+      border-color:var(--slotPickBorder);
+      box-shadow:0 0 0 4px rgba(111,141,191,.16);
+    }
+
+    .myActions{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:end;
+      margin-bottom:14px;
+    }
+
+    .myActions button{
       width:auto;
       min-width:190px;
       margin-top:0;
-      padding:12px 16px;
+      padding-left:18px;
+      padding-right:18px;
     }
 
     .myList{
       display:flex;
       flex-direction:column;
-      gap:10px;
-      max-height:min(60vh, 520px);
+      gap:12px;
+      max-height:560px;
       overflow:auto;
-      padding-right:6px;
+      padding-right:4px;
     }
 
     .bookingCard{
-      border:1px solid var(--line);
-      border-radius:12px;
-      background:#11161d;
-      padding:12px;
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.02) 0%, rgba(255,255,255,.00) 100%), #11161d;
+      padding:14px;
+      box-shadow:0 8px 22px rgba(0,0,0,.20);
     }
 
     .bookingHead{
@@ -251,127 +393,97 @@
     }
 
     .bookingTitle{
-      font-weight:800;
-      font-size:16px;
+      font-weight:850;
+      font-size:17px;
+      letter-spacing:-.02em;
     }
 
     .bookingMeta{
-      margin-top:6px;
+      margin-top:8px;
       color:var(--muted);
       font-size:13px;
-      line-height:1.45;
+      line-height:1.55;
     }
 
     .statusPill{
-      display:inline-block;
-      border:1px solid var(--line);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid rgba(255,255,255,.08);
       border-radius:999px;
-      padding:4px 8px;
+      padding:5px 10px;
       font-size:12px;
       color:var(--muted);
+      background:rgba(255,255,255,.03);
     }
 
     .mutedBox{
-      border:1px dashed var(--line);
-      border-radius:12px;
-      padding:12px;
+      border:1px dashed rgba(255,255,255,.10);
+      border-radius:16px;
+      padding:14px;
       color:var(--muted);
       background:#0d1117;
+      line-height:1.45;
     }
 
-    .sheetBackdrop{
-      position:fixed;
-      inset:0;
-      background:var(--backdrop);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      z-index:1000;
-      padding:0;
+    .glowLine{
+      width:100%;
+      height:1px;
+      margin:8px 0 2px;
+      background:linear-gradient(90deg, transparent 0%, rgba(212,176,106,.45) 25%, rgba(255,255,255,.20) 50%, rgba(212,176,106,.45) 75%, transparent 100%);
+      opacity:.7;
     }
 
-    .sheetBackdrop.open{
-      display:flex;
-    }
-
-    .sheet{
-      width:min(100%, 780px);
-      background:var(--sheetBg);
-      border:1px solid var(--line);
-      border-bottom:none;
-      border-top-left-radius:20px;
-      border-top-right-radius:20px;
-      box-shadow:0 -10px 30px rgba(0,0,0,.45);
-      transform:translateY(100%);
-      transition:transform .22s ease;
-      max-height:88vh;
-      display:flex;
-      flex-direction:column;
-    }
-
-    .sheetBackdrop.open .sheet{
-      transform:translateY(0);
-    }
-
-    .sheetHandle{
-      width:54px;
-      height:6px;
-      border-radius:999px;
-      background:#4a5568;
-      margin:10px auto 4px;
-      flex:0 0 auto;
-    }
-
-    .sheetHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:8px 14px 6px;
-      border-bottom:1px solid var(--line);
-      flex:0 0 auto;
-    }
-
-    .sheetTitle{
-      font-weight:800;
-      font-size:18px;
-    }
-
-    .sheetClose{
-      width:auto;
-      min-width:44px;
-      margin:0;
-      padding:10px 12px;
-      border-radius:10px;
-      background:#0f1319;
-      color:#fff;
-      border:1px solid var(--line);
-    }
-
-    .sheetBody{
-      padding:14px;
-      overflow:auto;
-    }
-
-    body.sheetOpen{
-      overflow:hidden;
-    }
-
-    @media (max-width: 900px){
+    @media (max-width: 960px){
       .grid2{grid-template-columns:1fr}
       .row{grid-template-columns:1fr}
-      h1{font-size:28px}
-      .slots{grid-template-columns: 1fr}
-      .topActions button{
+      .slots{grid-template-columns:1fr}
+      .myActions{
+        grid-template-columns:1fr;
+      }
+      .myActions button{
         width:100%;
         min-width:0;
       }
+    }
+
+    @media (max-width: 700px){
       body{
-        padding:12px;
+        padding:10px;
       }
+
       .card{
+        border-radius:18px;
         padding:14px;
+      }
+
+      .brand{
+        align-items:flex-start;
+      }
+
+      .brand img{
+        width:62px;
+        height:62px;
         border-radius:14px;
+      }
+
+      h1{
+        font-size:28px;
+      }
+
+      .tabsWrap{
+        gap:6px;
+        padding:5px;
+      }
+
+      .tabBtn{
+        padding:12px 10px;
+        font-size:14px;
+      }
+
+      .panel{
+        padding:14px;
+        border-radius:18px;
       }
     }
   </style>
@@ -381,111 +493,120 @@
     <div class="card">
       <div class="brand">
         <img src="logo.jpg" alt="Logo Barbearia Neves">
-        <div>
+        <div class="brandText">
           <h1>Barbearia Neves</h1>
-          <p>Escolhe um horário livre e confirma. A marcação entra automaticamente na agenda.</p>
-          <div class="pill">
-            3ª–6ª: 10:00–12:30 • 14:00–20:00<br>
-            Sábado: 09:00–14:00 • Domingo e 2ª: Fechado<br>
+          <p>Marca o teu horário em segundos e acompanha as tuas marcações num só lugar.</p>
+
+          <div class="heroInfo">
+            <div class="pill">✂️ Corte clássico e moderno</div>
+            <div class="pill">🪒 Corte + barba</div>
+            <div class="pill">📅 3ª–6ª: 10:00–12:30 • 14:00–20:00</div>
+            <div class="pill">🕘 Sábado: 09:00–14:00</div>
           </div>
         </div>
       </div>
+
+      <div class="glowLine"></div>
 
       <div id="ok" class="ok"></div>
       <div id="err" class="err"></div>
 
-      <div class="topActions">
-        <button type="button" id="openMineBtn" class="btnGhost">As minhas marcações</button>
+      <div class="tabsWrap">
+        <button type="button" class="tabBtn active" id="tabBookingBtn">✨ Nova marcação</button>
+        <button type="button" class="tabBtn" id="tabMineBtn">📋 As minhas marcações</button>
       </div>
 
-      <div class="grid2">
-        <div>
-          <form id="f" autocomplete="on">
-            <label>Nome</label>
-            <input
-              name="name"
-              id="nameInput"
-              required
-              placeholder="Nome do cliente"
-              autocomplete="name"
-              maxlength="60"
-            >
-
-            <div class="row">
+      <div class="tabPanel active" id="tabBooking">
+        <div class="grid2">
+          <div class="panel">
+            <div class="panelHeader">
               <div>
-                <label>Telefone</label>
-                <input name="phone" id="phoneInput" required placeholder="9xx xxx xxx" inputmode="tel">
-              </div>
-              <div>
-                <label>Email (opcional)</label>
-                <input name="email" type="email" placeholder="email@exemplo.com">
+                <h2>Nova marcação</h2>
+                <div class="sub">Preenche os teus dados e escolhe um horário livre.</div>
               </div>
             </div>
 
-            <div class="row">
-              <div>
-                <label>Serviço</label>
-                <select name="service" id="service" required>
-                  <option value="Corte">Corte</option>
-                  <option value="Corte+Barba">Corte+Barba</option>
-                </select>
-              </div>
-              <div>
-                <label>Barbeiro</label>
-                <select name="barber" id="barber" required>
-                  <option value="Pedro">Pedro Neves</option>
-                  <option value="Joao">João Leite</option>
-                </select>
-              </div>
-            </div>
+            <form id="f" autocomplete="on">
+              <label>Nome</label>
+              <input
+                name="name"
+                id="nameInput"
+                required
+                placeholder="Nome do cliente"
+                autocomplete="name"
+                maxlength="60"
+              >
 
-            <div class="row">
-              <div>
-                <label>Data</label>
-                <input name="date" id="date" type="date" required>
+              <div class="row">
+                <div>
+                  <label>Telefone</label>
+                  <input name="phone" id="phoneInput" required placeholder="9xx xxx xxx" inputmode="tel">
+                </div>
+                <div>
+                  <label>Email (opcional)</label>
+                  <input name="email" type="email" placeholder="email@exemplo.com">
+                </div>
               </div>
-            </div>
 
-            <button id="btn" type="submit">Marcar</button>
-          </form>
-        </div>
+              <div class="row">
+                <div>
+                  <label>Serviço</label>
+                  <select name="service" id="service" required>
+                    <option value="Corte">Corte</option>
+                    <option value="Corte+Barba">Corte + Barba</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Barbeiro</label>
+                  <select name="barber" id="barber" required>
+                    <option value="Pedro">Pedro Neves</option>
+                    <option value="Joao">João Leite</option>
+                  </select>
+                </div>
+              </div>
 
-        <div class="agenda">
-          <div class="agendaTop">
-            <div class="small" id="agendaStatus">A carregar…</div>
+              <div class="row">
+                <div>
+                  <label>Data</label>
+                  <input name="date" id="date" type="date" required>
+                </div>
+              </div>
+
+              <button id="btn" type="submit">Confirmar marcação</button>
+            </form>
           </div>
 
-          <div class="slots" id="slots"></div>
+          <div class="panel">
+            <div class="agendaTop">
+              <div>
+                <h2>Horários disponíveis</h2>
+                <div class="small" id="agendaStatus">A carregar…</div>
+              </div>
+            </div>
+
+            <div class="slots" id="slots"></div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="sheetBackdrop" id="sheetBackdrop" aria-hidden="true">
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-      <div class="sheetHandle"></div>
+      <div class="tabPanel" id="tabMine">
+        <div class="panel">
+          <div class="mineTop">
+            <div>
+              <h2>As minhas marcações</h2>
+              <div class="small">Consulta rapidamente as tuas marcações futuras pelo telefone.</div>
+            </div>
+          </div>
 
-      <div class="sheetHeader">
-        <div>
-          <div class="sheetTitle" id="sheetTitle">As minhas marcações</div>
-          <div class="small">Introduz o teu telefone para veres as tuas marcações.</div>
-        </div>
-        <button type="button" class="sheetClose" id="closeMineBtn">Fechar</button>
-      </div>
-
-      <div class="sheetBody">
-        <div class="mine">
-          <div class="row">
+          <div class="myActions">
             <div>
               <label>Telefone para consultar</label>
               <input id="myPhone" placeholder="9xx xxx xxx" inputmode="tel">
             </div>
-            <div>
-              <button id="btnLoadMine" type="button">Ver minhas marcações</button>
-            </div>
+            <button id="btnLoadMine" type="button">Ver minhas marcações</button>
           </div>
 
-          <div style="margin-top:14px" id="myList" class="myList">
+          <div id="myList" class="myList">
             <div class="mutedBox">Ainda não carregaste as tuas marcações.</div>
           </div>
         </div>
@@ -515,9 +636,10 @@
     const btnLoadMine = document.getElementById('btnLoadMine');
     const myListEl = document.getElementById('myList');
 
-    const openMineBtn = document.getElementById('openMineBtn');
-    const closeMineBtn = document.getElementById('closeMineBtn');
-    const sheetBackdrop = document.getElementById('sheetBackdrop');
+    const tabBookingBtn = document.getElementById('tabBookingBtn');
+    const tabMineBtn = document.getElementById('tabMineBtn');
+    const tabBooking = document.getElementById('tabBooking');
+    const tabMine = document.getElementById('tabMine');
 
     let pickedTime = "";
 
@@ -617,31 +739,20 @@
       return /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/.test(v);
     }
 
-    function openMineSheet(){
-      sheetBackdrop.classList.add("open");
-      sheetBackdrop.setAttribute("aria-hidden", "false");
-      document.body.classList.add("sheetOpen");
-      setTimeout(() => myPhoneEl.focus(), 60);
+    function switchTab(tab){
+      const isBooking = tab === "booking";
+
+      tabBookingBtn.classList.toggle("active", isBooking);
+      tabMineBtn.classList.toggle("active", !isBooking);
+
+      tabBooking.classList.toggle("active", isBooking);
+      tabMine.classList.toggle("active", !isBooking);
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function closeMineSheet(){
-      sheetBackdrop.classList.remove("open");
-      sheetBackdrop.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("sheetOpen");
-    }
-
-    openMineBtn.addEventListener("click", openMineSheet);
-    closeMineBtn.addEventListener("click", closeMineSheet);
-
-    sheetBackdrop.addEventListener("click", (e) => {
-      if (e.target === sheetBackdrop) closeMineSheet();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && sheetBackdrop.classList.contains("open")){
-        closeMineSheet();
-      }
-    });
+    tabBookingBtn.addEventListener("click", () => switchTab("booking"));
+    tabMineBtn.addEventListener("click", () => switchTab("mine"));
 
     async function fetchDay(date, barber){
       const u = new URL(API_BASE + "/day");
@@ -712,7 +823,7 @@
       const picked = pickedTime;
 
       if (!slots.length){
-        slotsEl.innerHTML = `<div class="small">Sem horários disponíveis (domingo, segunda fechado ou a data já passou).</div>`;
+        slotsEl.innerHTML = `<div class="mutedBox">Sem horários disponíveis para esta data. Domingo e segunda-feira estamos fechados.</div>`;
         return;
       }
 
@@ -726,12 +837,12 @@
 
           div.innerHTML = `
             <div class="t">${s.time} — ${escapeHtml(label)}</div>
-            <div class="d">${escapeHtml(reason)}</div>
+            <div class="d">${escapeHtml(reason || "Este horário não está disponível.")}</div>
           `;
         } else {
           div.innerHTML = `
             <div class="t">${s.time} — Livre</div>
-            <div class="d">Clique para escolher</div>
+            <div class="d">Toque para escolher este horário</div>
           `;
           div.addEventListener("click", () => {
             pickedTime = s.time;
@@ -911,8 +1022,8 @@
         myPhoneEl.value = keepPhone || "";
 
         await refreshAgenda();
-        openMineSheet();
         await loadMyBookings();
+        switchTab("mine");
 
       } catch (ex) {
         show(err, "❌ Não foi possível marcar: " + ex.message);
