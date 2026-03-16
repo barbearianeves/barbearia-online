@@ -38,6 +38,13 @@
 
       --gold:#d4b06a;
       --goldSoft:rgba(212,176,106,.18);
+
+      --poleBlue:#2f73ff;
+      --poleRed:#d72e3c;
+      --poleWhite:#f8fbff;
+      --poleMetal1:#d5dbe6;
+      --poleMetal2:#97a2b3;
+      --poleDark:#5d6676;
     }
 
     *{box-sizing:border-box}
@@ -55,6 +62,7 @@
       display:flex;
       justify-content:center;
       padding:22px;
+      overflow-x:hidden;
     }
 
     .wrap{
@@ -63,6 +71,8 @@
     }
 
     .card{
+      position:relative;
+      overflow:hidden;
       background:linear-gradient(180deg, rgba(18,23,32,.95) 0%, rgba(13,17,24,.98) 100%);
       border:1px solid rgba(255,255,255,.06);
       border-radius:24px;
@@ -71,11 +81,24 @@
       backdrop-filter:blur(10px);
     }
 
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 85% 14%, rgba(47,115,255,.10), transparent 16%),
+        radial-gradient(circle at 78% 20%, rgba(215,46,60,.10), transparent 20%),
+        radial-gradient(circle at 20% 0%, rgba(255,255,255,.04), transparent 24%);
+    }
+
     .brand{
       display:flex;
       align-items:center;
       gap:16px;
       margin-bottom:10px;
+      position:relative;
+      z-index:2;
     }
 
     .brand img{
@@ -86,11 +109,139 @@
       background:#fff;
       padding:8px;
       box-shadow:0 10px 28px rgba(0,0,0,.22);
+      position:relative;
+      z-index:2;
     }
 
     .brandText{
       flex:1;
       min-width:0;
+    }
+
+    .heroRight{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-width:120px;
+      position:relative;
+    }
+
+    .barberPoleWrap{
+      position:relative;
+      width:62px;
+      height:132px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      filter:drop-shadow(0 12px 30px rgba(0,0,0,.45));
+      animation:poleFloat 3.4s ease-in-out infinite;
+    }
+
+    .barberPoleCapTop,
+    .barberPoleCapBottom{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      width:60px;
+      height:14px;
+      border-radius:999px;
+      background:linear-gradient(180deg, var(--poleMetal1), var(--poleMetal2));
+      border:1px solid rgba(255,255,255,.28);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.45),
+        0 2px 10px rgba(0,0,0,.24);
+      z-index:3;
+    }
+
+    .barberPoleCapTop{ top:0; }
+    .barberPoleCapBottom{ bottom:0; }
+
+    .barberPoleRod{
+      position:absolute;
+      left:50%;
+      top:8px;
+      bottom:8px;
+      width:10px;
+      transform:translateX(-50%);
+      border-radius:999px;
+      background:linear-gradient(180deg, #f4f7fb, #a4afbf);
+      opacity:.9;
+      z-index:1;
+    }
+
+    .barberPoleGlass{
+      position:absolute;
+      top:8px;
+      bottom:8px;
+      left:50%;
+      transform:translateX(-50%);
+      width:38px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.22);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,255,255,.03) 28%, rgba(255,255,255,.12) 64%, rgba(255,255,255,.02));
+      overflow:hidden;
+      z-index:2;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.06),
+        inset 0 0 18px rgba(255,255,255,.06);
+    }
+
+    .barberPoleSpin{
+      position:absolute;
+      inset:-18px;
+      border-radius:999px;
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          var(--poleRed) 0 14px,
+          var(--poleWhite) 14px 28px,
+          var(--poleBlue) 28px 42px,
+          var(--poleWhite) 42px 56px
+        );
+      animation:spinPole 2.2s linear infinite;
+      filter:saturate(1.1) contrast(1.05);
+    }
+
+    .barberPoleShine{
+      position:absolute;
+      top:10px;
+      bottom:10px;
+      left:8px;
+      width:9px;
+      border-radius:999px;
+      background:linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.12));
+      opacity:.72;
+      z-index:4;
+      filter:blur(.2px);
+    }
+
+    .barberPoleGlow{
+      position:absolute;
+      inset:auto;
+      width:120px;
+      height:120px;
+      border-radius:999px;
+      background:
+        radial-gradient(circle, rgba(47,115,255,.14), rgba(215,46,60,.10) 44%, transparent 70%);
+      z-index:0;
+      filter:blur(12px);
+      animation:poleGlow 2.8s ease-in-out infinite;
+    }
+
+    @keyframes spinPole{
+      from{ transform:translateY(0); }
+      to{ transform:translateY(56px); }
+    }
+
+    @keyframes poleFloat{
+      0%,100%{ transform:translateY(0px); }
+      50%{ transform:translateY(-4px); }
+    }
+
+    @keyframes poleGlow{
+      0%,100%{ opacity:.7; transform:scale(1); }
+      50%{ opacity:1; transform:scale(1.06); }
     }
 
     h1{
@@ -129,6 +280,12 @@
       background:rgba(255,255,255,.03);
       line-height:1.35;
       backdrop-filter:blur(6px);
+      transition:transform .14s ease, border-color .14s ease;
+    }
+
+    .pill:hover{
+      transform:translateY(-1px);
+      border-color:rgba(255,255,255,.16);
     }
 
     .tabsWrap{
@@ -140,6 +297,8 @@
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:8px;
+      position:relative;
+      z-index:2;
     }
 
     .tabBtn{
@@ -177,6 +336,8 @@
       white-space:pre-wrap;
       font-size:14px;
       line-height:1.45;
+      position:relative;
+      z-index:2;
     }
 
     .ok{
@@ -193,6 +354,8 @@
       display:none;
       margin-top:18px;
       animation:fadeIn .22s ease;
+      position:relative;
+      z-index:2;
     }
 
     .tabPanel.active{
@@ -432,6 +595,26 @@
       margin:8px 0 2px;
       background:linear-gradient(90deg, transparent 0%, rgba(212,176,106,.45) 25%, rgba(255,255,255,.20) 50%, rgba(212,176,106,.45) 75%, transparent 100%);
       opacity:.7;
+      position:relative;
+      z-index:2;
+    }
+
+    ::-webkit-scrollbar{
+      width:10px;
+      height:10px;
+    }
+
+    ::-webkit-scrollbar-track{
+      background:transparent;
+    }
+
+    ::-webkit-scrollbar-thumb{
+      background:rgba(255,255,255,.10);
+      border-radius:999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover{
+      background:rgba(255,255,255,.16);
     }
 
     @media (max-width: 960px){
@@ -459,12 +642,32 @@
 
       .brand{
         align-items:flex-start;
+        flex-wrap:wrap;
       }
 
       .brand img{
         width:62px;
         height:62px;
         border-radius:14px;
+      }
+
+      .heroRight{
+        width:100%;
+        justify-content:flex-start;
+      }
+
+      .barberPoleWrap{
+        width:54px;
+        height:116px;
+      }
+
+      .barberPoleCapTop,
+      .barberPoleCapBottom{
+        width:52px;
+      }
+
+      .barberPoleGlass{
+        width:32px;
       }
 
       h1{
@@ -493,6 +696,7 @@
     <div class="card">
       <div class="brand">
         <img src="logo.jpg" alt="Logo Barbearia Neves">
+
         <div class="brandText">
           <h1>Barbearia Neves</h1>
           <p>Marca o teu horário em segundos e acompanha as tuas marcações num só lugar.</p>
@@ -502,6 +706,19 @@
             <div class="pill">🪒 Corte + barba</div>
             <div class="pill">📅 3ª–6ª: 10:00–12:30 • 14:00–20:00</div>
             <div class="pill">🕘 Sábado: 09:00–14:00</div>
+          </div>
+        </div>
+
+        <div class="heroRight" aria-hidden="true">
+          <div class="barberPoleWrap">
+            <div class="barberPoleGlow"></div>
+            <div class="barberPoleRod"></div>
+            <div class="barberPoleCapTop"></div>
+            <div class="barberPoleGlass">
+              <div class="barberPoleSpin"></div>
+              <div class="barberPoleShine"></div>
+            </div>
+            <div class="barberPoleCapBottom"></div>
           </div>
         </div>
       </div>
@@ -857,6 +1074,7 @@
     async function refreshAgenda(){
       setTodayIfEmpty();
       agendaStatus.textContent = "A carregar…";
+      hide(err);
 
       const date = dateEl.value;
       const barber = barberEl.value;
