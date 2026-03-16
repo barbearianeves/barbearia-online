@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Barbearia Neves — Marcação</title>
   <style>
     :root{
@@ -26,12 +26,12 @@
       --slotPick:#1a2230;
       --slotPickBorder:#5e7aa8;
 
-      --danger:#ff6b6b;
-      --dangerBg:#2b1212;
-      --dangerBorder:#7d2c2c;
+      --sheetBg:#12161c;
+      --backdrop:rgba(0,0,0,.62);
     }
 
     *{box-sizing:border-box}
+    html,body{overflow-x:hidden}
 
     body{
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
@@ -118,6 +118,12 @@
 
     button:active{transform:translateY(1px)}
     button:disabled{opacity:.6; cursor:not-allowed}
+
+    .btnGhost{
+      background:#0f1319;
+      color:#fff;
+      border:1px solid var(--line);
+    }
 
     .ok,.err{
       padding:12px 12px;
@@ -207,15 +213,25 @@
       line-height:1.35;
     }
 
-    .sectionSpacer{
-      height:16px;
+    .topActions{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+      flex-wrap:wrap;
+    }
+
+    .topActions button{
+      width:auto;
+      min-width:190px;
+      margin-top:0;
+      padding:12px 16px;
     }
 
     .myList{
       display:flex;
       flex-direction:column;
       gap:10px;
-      max-height:420px;
+      max-height:min(60vh, 520px);
       overflow:auto;
       padding-right:6px;
     }
@@ -263,11 +279,100 @@
       background:#0d1117;
     }
 
+    .sheetBackdrop{
+      position:fixed;
+      inset:0;
+      background:var(--backdrop);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      z-index:1000;
+      padding:0;
+    }
+
+    .sheetBackdrop.open{
+      display:flex;
+    }
+
+    .sheet{
+      width:min(100%, 780px);
+      background:var(--sheetBg);
+      border:1px solid var(--line);
+      border-bottom:none;
+      border-top-left-radius:20px;
+      border-top-right-radius:20px;
+      box-shadow:0 -10px 30px rgba(0,0,0,.45);
+      transform:translateY(100%);
+      transition:transform .22s ease;
+      max-height:88vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .sheetBackdrop.open .sheet{
+      transform:translateY(0);
+    }
+
+    .sheetHandle{
+      width:54px;
+      height:6px;
+      border-radius:999px;
+      background:#4a5568;
+      margin:10px auto 4px;
+      flex:0 0 auto;
+    }
+
+    .sheetHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:8px 14px 6px;
+      border-bottom:1px solid var(--line);
+      flex:0 0 auto;
+    }
+
+    .sheetTitle{
+      font-weight:800;
+      font-size:18px;
+    }
+
+    .sheetClose{
+      width:auto;
+      min-width:44px;
+      margin:0;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#0f1319;
+      color:#fff;
+      border:1px solid var(--line);
+    }
+
+    .sheetBody{
+      padding:14px;
+      overflow:auto;
+    }
+
+    body.sheetOpen{
+      overflow:hidden;
+    }
+
     @media (max-width: 900px){
       .grid2{grid-template-columns:1fr}
       .row{grid-template-columns:1fr}
       h1{font-size:28px}
       .slots{grid-template-columns: 1fr}
+      .topActions button{
+        width:100%;
+        min-width:0;
+      }
+      body{
+        padding:12px;
+      }
+      .card{
+        padding:14px;
+        border-radius:14px;
+      }
     }
   </style>
 </head>
@@ -288,6 +393,10 @@
 
       <div id="ok" class="ok"></div>
       <div id="err" class="err"></div>
+
+      <div class="topActions">
+        <button type="button" id="openMineBtn" class="btnGhost">As minhas marcações</button>
+      </div>
 
       <div class="grid2">
         <div>
@@ -349,29 +458,36 @@
           <div class="slots" id="slots"></div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <div class="sectionSpacer"></div>
+  <div class="sheetBackdrop" id="sheetBackdrop" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheetHandle"></div>
 
-      <div class="mine">
-        <div class="mineTop">
-          <div>
-            <h2>As minhas marcações</h2>
-            <div class="small">Introduz o teu telefone para veres as tuas marcações.</div>
-          </div>
+      <div class="sheetHeader">
+        <div>
+          <div class="sheetTitle" id="sheetTitle">As minhas marcações</div>
+          <div class="small">Introduz o teu telefone para veres as tuas marcações.</div>
         </div>
+        <button type="button" class="sheetClose" id="closeMineBtn">Fechar</button>
+      </div>
 
-        <div class="row">
-          <div>
-            <label>Telefone para consultar</label>
-            <input id="myPhone" placeholder="9xx xxx xxx" inputmode="tel">
+      <div class="sheetBody">
+        <div class="mine">
+          <div class="row">
+            <div>
+              <label>Telefone para consultar</label>
+              <input id="myPhone" placeholder="9xx xxx xxx" inputmode="tel">
+            </div>
+            <div>
+              <button id="btnLoadMine" type="button">Ver minhas marcações</button>
+            </div>
           </div>
-          <div>
-            <button id="btnLoadMine" type="button">Ver minhas marcações</button>
-          </div>
-        </div>
 
-        <div style="margin-top:14px" id="myList" class="myList">
-          <div class="mutedBox">Ainda não carregaste as tuas marcações.</div>
+          <div style="margin-top:14px" id="myList" class="myList">
+            <div class="mutedBox">Ainda não carregaste as tuas marcações.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -398,6 +514,10 @@
     const myPhoneEl = document.getElementById('myPhone');
     const btnLoadMine = document.getElementById('btnLoadMine');
     const myListEl = document.getElementById('myList');
+
+    const openMineBtn = document.getElementById('openMineBtn');
+    const closeMineBtn = document.getElementById('closeMineBtn');
+    const sheetBackdrop = document.getElementById('sheetBackdrop');
 
     let pickedTime = "";
 
@@ -496,6 +616,32 @@
     function isValidName(v){
       return /^[A-Za-z]+(?:\s+[A-Za-z]+)*$/.test(v);
     }
+
+    function openMineSheet(){
+      sheetBackdrop.classList.add("open");
+      sheetBackdrop.setAttribute("aria-hidden", "false");
+      document.body.classList.add("sheetOpen");
+      setTimeout(() => myPhoneEl.focus(), 60);
+    }
+
+    function closeMineSheet(){
+      sheetBackdrop.classList.remove("open");
+      sheetBackdrop.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("sheetOpen");
+    }
+
+    openMineBtn.addEventListener("click", openMineSheet);
+    closeMineBtn.addEventListener("click", closeMineSheet);
+
+    sheetBackdrop.addEventListener("click", (e) => {
+      if (e.target === sheetBackdrop) closeMineSheet();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sheetBackdrop.classList.contains("open")){
+        closeMineSheet();
+      }
+    });
 
     async function fetchDay(date, barber){
       const u = new URL(API_BASE + "/day");
@@ -765,6 +911,7 @@
         myPhoneEl.value = keepPhone || "";
 
         await refreshAgenda();
+        openMineSheet();
         await loadMyBookings();
 
       } catch (ex) {
